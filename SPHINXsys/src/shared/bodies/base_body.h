@@ -70,8 +70,9 @@ namespace SPH
 	protected:
 		std::string body_name_;
 		SPHSystem &sph_system_;
-		bool newly_updated_;			/**< whether this body is in a newly updated state */
 		BaseParticles *base_particles_; /**< Base particles for dynamic cast DataDelegate  */
+		bool newly_updated_;			/**< whether this body is in a newly updated state */
+		bool newly_moved_;				/**< whether this body has moved to a new position */
 
 	public:
 		Shape *body_shape_;					   /**< volumetric geometry enclosing the body */
@@ -90,12 +91,19 @@ namespace SPH
 		size_t &LoopRange() { return base_particles_->total_real_particles_; };
 		size_t SizeOfLoopRange() { return base_particles_->total_real_particles_; };
 		Real getSPHBodyResolutionRef() { return sph_adaptation_->ReferenceSpacing(); };
-		void setNewlyUpdated() { newly_updated_ = true; };
-		void setNotNewlyUpdated() { newly_updated_ = false; };
-		bool checkNewlyUpdated() { return newly_updated_; };
 		BoundingBox getBodyShapeBounds();
 		BoundingBox getSPHSystemBounds();
 		void allocateConfigurationMemoriesForBufferParticles();
+		//----------------------------------------------------------------------
+		//		access the statues of the body
+		//----------------------------------------------------------------------
+		void setNewlyUpdated() { newly_updated_ = true; };
+		void setNotNewlyUpdated() { newly_updated_ = false; };
+		bool checkNewlyUpdated() { return newly_updated_; };
+
+		void setNewlyMoved() { newly_moved_ = true; };
+		void setNotNewlyMoved() { newly_moved_ = false; };
+		bool checkNewlyMoved() { return newly_moved_; };
 		//----------------------------------------------------------------------
 		//		Object factory template functions
 		//----------------------------------------------------------------------
@@ -152,7 +160,7 @@ namespace SPH
 			base_particles_->initializeOtherVariables();
 			base_material_->assignBaseParticles(base_particles_);
 		};
-			
+
 		template <typename VariableType>
 		void addBodyStateForRecording(const std::string &variable_name)
 		{
@@ -195,13 +203,15 @@ namespace SPH
 		bool use_split_cell_lists_;
 		size_t iteration_count_;
 		bool cell_linked_list_created_;
+		bool to_update_cell_linked_list_;
 
 	public:
 		template <typename... ConstructorArgs>
 		RealBody(ConstructorArgs &&...args)
 			: SPHBody(std::forward<ConstructorArgs>(args)...),
 			  use_split_cell_lists_(false), iteration_count_(1),
-			  cell_linked_list_created_(false)
+			  cell_linked_list_created_(false),
+			  to_update_cell_linked_list_(true)
 		{
 			this->getSPHSystem().real_bodies_.push_back(this);
 			size_t number_of_split_cell_lists = powerN(3, Vecd::Zero().size());
@@ -214,6 +224,12 @@ namespace SPH
 		SplitCellLists &getSplitCellLists() { return split_cell_lists_; };
 		void updateCellLinkedList();
 		void updateCellLinkedListWithParticleSort(size_t particle_sort_period);
+		//----------------------------------------------------------------------
+		//		access the updating statues of the cell linked list
+		//----------------------------------------------------------------------
+		void setToUpdateCellLinkedList() { to_update_cell_linked_list_ = true; };
+		void setNotToUpdateCellLinkedList() { to_update_cell_linked_list_ = false; };
+		bool checkToUpdateCellLinkedList() { return to_update_cell_linked_list_; };
 	};
 }
 #endif // BASE_BODY_H
