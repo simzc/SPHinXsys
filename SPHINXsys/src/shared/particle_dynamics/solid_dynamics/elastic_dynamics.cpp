@@ -5,7 +5,7 @@
 
 namespace SPH
 {
-//=========================================================================================================//
+	//=========================================================================================================//
 	namespace solid_dynamics
 	{
 		//=================================================================================================//
@@ -79,6 +79,11 @@ namespace SPH
 			vel_[index_i] += (acc_prior_[index_i] + acc_[index_i]) * dt;
 		}
 		//=================================================================================================//
+		void BaseIntegration1stHalf::setupDynamics(Real dt)
+		{
+			sph_body_.setNewlyMoved();
+		}
+		//=================================================================================================//
 		Integration1stHalf::
 			Integration1stHalf(BaseInnerRelation &inner_relation)
 			: BaseIntegration1stHalf(inner_relation)
@@ -114,9 +119,10 @@ namespace SPH
 				Real weight = inner_neighborhood.W_ij_[n] * inv_W0_;
 				Matd numerical_stress_ij =
 					0.5 * (F_[index_i] + F_[index_j]) * elastic_solid_.PairNumericalDamping(strain_rate, smoothing_length_);
-				acceleration += inv_rho0_ *  inner_neighborhood.dW_ijV_j_[n] *
+				acceleration += inv_rho0_ * inner_neighborhood.dW_ijV_j_[n] *
 								(stress_PK1_B_[index_i] + stress_PK1_B_[index_j] +
-								 	numerical_dissipation_factor_ * weight * numerical_stress_ij) * e_ij;
+								 numerical_dissipation_factor_ * weight * numerical_stress_ij) *
+								e_ij;
 			}
 
 			acc_[index_i] = acceleration;
@@ -141,8 +147,9 @@ namespace SPH
 			// obtain the first Piola-Kirchhoff stress from the Kirchhoff stress
 			// it seems using reproducing correction here increases convergence rate
 			// near the free surface however, this correction is not used for the numerical dissipation
-			stress_PK1_B_[index_i] = ( Matd::Identity() * elastic_solid_.VolumetricKirchhoff(J) +
-									  	elastic_solid_.DeviatoricKirchhoff(deviatoric_b) ) * inverse_F_T * B_[index_i];
+			stress_PK1_B_[index_i] = (Matd::Identity() * elastic_solid_.VolumetricKirchhoff(J) +
+									  elastic_solid_.DeviatoricKirchhoff(deviatoric_b)) *
+									 inverse_F_T * B_[index_i];
 		}
 		//=================================================================================================//
 		KirchhoffIntegration1stHalf::
@@ -162,12 +169,12 @@ namespace SPH
 			Real one_over_J = 1.0 / J;
 			rho_[index_i] = rho0_ * one_over_J;
 			J_to_minus_2_over_dimension_[index_i] = pow(one_over_J * one_over_J, one_over_dimensions_);
-			
+
 			inverse_F_T_[index_i] = F_[index_i].inverse().transpose();
-			stress_on_particle_[index_i] = inverse_F_T_[index_i] * 
-				(elastic_solid_.VolumetricKirchhoff(J) - correction_factor_ * elastic_solid_.ShearModulus() *
-				 J_to_minus_2_over_dimension_[index_i] * (F_[index_i] * F_[index_i].transpose()).trace() * one_over_dimensions_) 
-				+ elastic_solid_.NumericalDampingLeftCauchy(F_[index_i], dF_dt_[index_i], smoothing_length_, index_i) * inverse_F_T_[index_i];
+			stress_on_particle_[index_i] = inverse_F_T_[index_i] *
+											   (elastic_solid_.VolumetricKirchhoff(J) - correction_factor_ * elastic_solid_.ShearModulus() *
+																							J_to_minus_2_over_dimension_[index_i] * (F_[index_i] * F_[index_i].transpose()).trace() * one_over_dimensions_) +
+										   elastic_solid_.NumericalDampingLeftCauchy(F_[index_i], dF_dt_[index_i], smoothing_length_, index_i) * inverse_F_T_[index_i];
 		}
 		//=================================================================================================//
 		void KirchhoffIntegration1stHalf::interaction(size_t index_i, Real dt)

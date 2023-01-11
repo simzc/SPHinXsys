@@ -201,7 +201,7 @@ namespace SPH
 		 */
 		SplitCellLists split_cell_lists_;
 		bool use_split_cell_lists_;
-		size_t iteration_count_;
+		size_t iteration_count_; /**< control the frequency of particle sorting  */
 		bool cell_linked_list_created_;
 		bool to_update_cell_linked_list_;
 

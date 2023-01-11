@@ -291,6 +291,7 @@ namespace SPH
 			explicit BaseIntegration1stHalf(BaseInnerRelation &inner_relation);
 			virtual ~BaseIntegration1stHalf(){};
 			RiemannSolverType riemann_solver_;
+			void setupDynamics(Real dt = 0.0) override;
 			void initialization(size_t index_i, Real dt = 0.0);
 			void interaction(size_t index_i, Real dt = 0.0);
 			void update(size_t index_i, Real dt = 0.0);

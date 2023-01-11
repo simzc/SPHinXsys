@@ -25,7 +25,7 @@
  * @brief 	Base classes on body and particle topology relations.
  * @author	Chi ZHang and Xiangyu Hu
  */
- 
+
 #ifndef BASE_BODY_RELATION_H
 #define BASE_BODY_RELATION_H
 
@@ -108,13 +108,15 @@ namespace SPH
 		SPHBody &sph_body_;
 		BaseParticles &base_particles_;
 		SPHBody &getDynamicsRange() { return sph_body_; };
-
 		explicit SPHRelation(SPHBody &sph_body);
 		virtual ~SPHRelation(){};
 
 		void subscribeToBody() { sph_body_.body_relations_.push_back(this); };
 		virtual void updateConfigurationMemories() = 0;
 		virtual void updateConfiguration() = 0;
+
+	protected:
+		bool is_total_lagrangian_;
 	};
 
 	/**
@@ -123,16 +125,20 @@ namespace SPH
 	 */
 	class BaseInnerRelation : public SPHRelation
 	{
-	protected:
-		virtual void resetNeighborhoodCurrentSize();
-
 	public:
 		RealBody *real_body_;
 		ParticleConfiguration inner_configuration_; /**< inner configuration for the neighbor relations. */
 		explicit BaseInnerRelation(RealBody &real_body);
 		virtual ~BaseInnerRelation(){};
-
 		virtual void updateConfigurationMemories() override;
+		BaseInnerRelation &setTotalLagrangian();
+		BaseInnerRelation &setNoParticleSort();
+		BaseInnerRelation &setSortInterval(int interval);
+
+	protected:
+		bool to_sort_particle_;
+		int sorting_interval_;
+		virtual void resetNeighborhoodCurrentSize();
 	};
 
 	/**
@@ -152,8 +158,8 @@ namespace SPH
 		BaseContactRelation(SPHBody &sph_body, BodyPartVector contact_body_parts)
 			: BaseContactRelation(sph_body, BodyPartsToRealBodies(contact_body_parts)){};
 		virtual ~BaseContactRelation(){};
-
 		virtual void updateConfigurationMemories() override;
+		BaseContactRelation &setTotalLagrangian();
 	};
 }
 #endif // BASE_BODY_RELATION_H

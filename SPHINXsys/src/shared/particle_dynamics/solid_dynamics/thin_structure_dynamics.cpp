@@ -149,6 +149,11 @@ namespace SPH
 			}
 		}
 		//=================================================================================================//
+		void ShellStressRelaxationFirstHalf::setupDynamics(Real dt)
+		{
+			sph_body_.setNewlyMoved();
+		}
+		//=================================================================================================//
 		void ShellStressRelaxationFirstHalf::initialization(size_t index_i, Real dt)
 		{
 			// Note that F_[index_i], F_bending_[index_i], dF_dt_[index_i], dF_bending_dt_[index_i]
@@ -176,26 +181,24 @@ namespace SPH
 				Matd F_gaussian_point = F_[index_i] + gaussian_point_[i] * F_bending_[index_i] * thickness_[index_i] * 0.5;
 				Matd dF_gaussian_point_dt = dF_dt_[index_i] + gaussian_point_[i] * dF_bending_dt_[index_i] * thickness_[index_i] * 0.5;
 				Matd inverse_F_gaussian_point = F_gaussian_point.inverse();
-				Matd current_local_almansi_strain = current_transformation_matrix * transformation_matrix_[index_i].transpose() * 0.5 * 
-					(Matd::Identity() - inverse_F_gaussian_point.transpose() * inverse_F_gaussian_point) * 
-					transformation_matrix_[index_i] * current_transformation_matrix.transpose();
+				Matd current_local_almansi_strain = current_transformation_matrix * transformation_matrix_[index_i].transpose() * 0.5 *
+													(Matd::Identity() - inverse_F_gaussian_point.transpose() * inverse_F_gaussian_point) *
+													transformation_matrix_[index_i] * current_transformation_matrix.transpose();
 
 				/** correct Almansi strain tensor according to plane stress problem. */
 				current_local_almansi_strain = getCorrectedAlmansiStrain(current_local_almansi_strain, nu_);
-				
-				Matd cauchy_stress = elastic_solid_.StressCauchy(current_local_almansi_strain, F_gaussian_point, index_i) + 
-					current_transformation_matrix * transformation_matrix_[index_i].transpose() * F_gaussian_point * 
-					elastic_solid_.NumericalDampingRightCauchy(F_gaussian_point, dF_gaussian_point_dt, smoothing_length_, index_i) 
-					* F_gaussian_point.transpose() * transformation_matrix_[index_i] * current_transformation_matrix.transpose() / F_gaussian_point.determinant();
+
+				Matd cauchy_stress = elastic_solid_.StressCauchy(current_local_almansi_strain, F_gaussian_point, index_i) +
+									 current_transformation_matrix * transformation_matrix_[index_i].transpose() * F_gaussian_point *
+										 elastic_solid_.NumericalDampingRightCauchy(F_gaussian_point, dF_gaussian_point_dt, smoothing_length_, index_i) * F_gaussian_point.transpose() * transformation_matrix_[index_i] * current_transformation_matrix.transpose() / F_gaussian_point.determinant();
 
 				/** Impose modeling assumptions. */
 				cauchy_stress.col(Dimensions - 1) *= shear_correction_factor_;
 				cauchy_stress.row(Dimensions - 1) *= shear_correction_factor_;
 				cauchy_stress(Dimensions - 1, Dimensions - 1) = 0.0;
 
-				Matd stress_PK2_gaussian_point = F_gaussian_point.determinant() * F_gaussian_point.inverse() * transformation_matrix_[index_i] * 
-					current_transformation_matrix.transpose() * cauchy_stress * current_transformation_matrix * transformation_matrix_[index_i].transpose() 
-					* F_gaussian_point.inverse().transpose();
+				Matd stress_PK2_gaussian_point = F_gaussian_point.determinant() * F_gaussian_point.inverse() * transformation_matrix_[index_i] *
+												 current_transformation_matrix.transpose() * cauchy_stress * current_transformation_matrix * transformation_matrix_[index_i].transpose() * F_gaussian_point.inverse().transpose();
 
 				Vecd shear_stress_PK2_gaussian_point = -stress_PK2_gaussian_point.col(Dimensions - 1);
 				Matd moment_PK2_gaussian_point = stress_PK2_gaussian_point * gaussian_point_[i] * thickness_[index_i] * 0.5;
@@ -238,25 +241,25 @@ namespace SPH
 					Real dim_inv_r_ij = Dimensions / r_ij;
 					Real weight = inner_neighborhood.W_ij_[n] * inv_W0_;
 					Vecd pos_jump = getLinearVariableJump(e_ij, r_ij, pos_[index_i],
-					transformation_matrix_[index_i].transpose() * F_[index_i] * transformation_matrix_[index_i],
-					pos_[index_j],
-					transformation_matrix_[index_i].transpose() * F_[index_j] * transformation_matrix_[index_i]);
-					acceleration += hourglass_control_factor_ * weight * E0_ * pos_jump * dim_inv_r_ij * 
+														  transformation_matrix_[index_i].transpose() * F_[index_i] * transformation_matrix_[index_i],
+														  pos_[index_j],
+														  transformation_matrix_[index_i].transpose() * F_[index_j] * transformation_matrix_[index_i]);
+					acceleration += hourglass_control_factor_ * weight * E0_ * pos_jump * dim_inv_r_ij *
 									inner_neighborhood.dW_ijV_j_[n] * thickness_[index_i];
 
 					Vecd pseudo_n_jump = getLinearVariableJump(e_ij, r_ij, pseudo_n_[index_i] - n0_[index_i],
-						transformation_matrix_[index_i].transpose() * F_bending_[index_i] * transformation_matrix_[index_i],
-						pseudo_n_[index_j] - n0_[index_j],
-						transformation_matrix_[index_j].transpose() * F_bending_[index_j] * transformation_matrix_[index_j]);
+															   transformation_matrix_[index_i].transpose() * F_bending_[index_i] * transformation_matrix_[index_i],
+															   pseudo_n_[index_j] - n0_[index_j],
+															   transformation_matrix_[index_j].transpose() * F_bending_[index_j] * transformation_matrix_[index_j]);
 					Vecd rotation_jump = getRotationJump(pseudo_n_jump, transformation_matrix_[index_i]);
-					pseudo_normal_acceleration += hourglass_control_factor_ / 3.0 * weight * Dimensions * r_ij * G0_ * rotation_jump * 
+					pseudo_normal_acceleration += hourglass_control_factor_ / 3.0 * weight * Dimensions * r_ij * G0_ * rotation_jump *
 												  inner_neighborhood.dW_ijV_j_[n] * thickness_[index_i];
 				}
 
 				acceleration += (global_stress_i + global_stress_[index_j]) * inner_neighborhood.dW_ijV_j_[n] * inner_neighborhood.e_ij_[n];
 				pseudo_normal_acceleration += (global_moment_i + global_moment_[index_j]) * inner_neighborhood.dW_ijV_j_[n] * inner_neighborhood.e_ij_[n];
 			}
-	
+
 			acc_[index_i] = acceleration * inv_rho0_ / thickness_[index_i];
 			dpseudo_n_d2t_[index_i] = pseudo_normal_acceleration * inv_rho0_ * 12.0 / powerN(thickness_[index_i], 3);
 
@@ -312,7 +315,8 @@ namespace SPH
 			ConstrainShellBodyRegion(BodyPartByParticle &body_part)
 			: LocalDynamics(body_part.getSPHBody()), ShellDataSimple(sph_body_),
 			  vel_(particles_->vel_), angular_vel_(particles_->angular_vel_)
-		{}
+		{
+		}
 		//=================================================================================================//
 		void ConstrainShellBodyRegion::update(size_t index_i, Real dt)
 		{
@@ -321,16 +325,9 @@ namespace SPH
 		}
 		//=================================================================================================//
 		ConstrainShellBodyRegionAlongAxis::ConstrainShellBodyRegionAlongAxis(BodyPartByParticle &body_part, int axis)
-			: LocalDynamics(body_part.getSPHBody())
-			, ShellDataSimple(sph_body_)
-			, axis_(axis), pos_(particles_->pos_)
-			, pos0_(particles_->pos0_)
-			, vel_(particles_->vel_)
-			, acc_(particles_->acc_)
-			, rotation_(particles_->rotation_)
-			, angular_vel_(particles_->angular_vel_)
-			, dangular_vel_dt_(particles_->dangular_vel_dt_) 
-		{}
+			: LocalDynamics(body_part.getSPHBody()), ShellDataSimple(sph_body_), axis_(axis), pos_(particles_->pos_), pos0_(particles_->pos0_), vel_(particles_->vel_), acc_(particles_->acc_), rotation_(particles_->rotation_), angular_vel_(particles_->angular_vel_), dangular_vel_dt_(particles_->dangular_vel_dt_)
+		{
+		}
 		//=================================================================================================//
 		void ConstrainShellBodyRegionAlongAxis::update(size_t index_i, Real dt)
 		{

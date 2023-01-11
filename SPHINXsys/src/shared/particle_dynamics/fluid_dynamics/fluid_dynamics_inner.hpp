@@ -42,6 +42,12 @@ namespace SPH
 			: BaseIntegration(inner_relation), riemann_solver_(fluid_, fluid_) {}
 		//=================================================================================================//
 		template <class RiemannSolverType>
+		void BaseIntegration1stHalf<RiemannSolverType>::setupDynamics(Real dt)
+		{
+			sph_body_.setNewlyMoved(); 
+		}
+		//=================================================================================================//
+		template <class RiemannSolverType>
 		void BaseIntegration1stHalf<RiemannSolverType>::initialization(size_t index_i, Real dt)
 		{
 			rho_[index_i] += drho_dt_[index_i] * dt * 0.5;
