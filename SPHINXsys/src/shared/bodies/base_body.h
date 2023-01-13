@@ -50,6 +50,8 @@
 namespace SPH
 {
 	class SPHRelation;
+	class BaseContactRelation;
+	class BaseInnerRelation;
 	class BodySurface;
 
 	/**
@@ -68,17 +70,20 @@ namespace SPH
 		UniquePtrKeeper<BaseMaterial> base_material_ptr_keeper_;
 
 	protected:
+		UniquePtrKeepers<SPHRelation> sph_relation_ptr_keeper_;
+
+	protected:
 		std::string body_name_;
 		SPHSystem &sph_system_;
-		BaseParticles *base_particles_; /**< Base particles for dynamic cast DataDelegate  */
-		bool newly_updated_;			/**< whether this body is in a newly updated state */
-		bool newly_moved_;				/**< whether this body has moved to a new position */
+		BaseParticles *base_particles_;		  /**< Base particles for dynamic cast DataDelegate  */
+		StdVec<SPHRelation *> all_relations_; /**< all relations centered from this body **/
+		bool newly_updated_;				  /**< whether this body is in a newly updated state */
+		bool newly_moved_;					  /**< whether this body has moved to a new position */
 
 	public:
-		Shape *body_shape_;					   /**< volumetric geometry enclosing the body */
-		SPHAdaptation *sph_adaptation_;		   /**< numerical adaptation policy */
-		BaseMaterial *base_material_;		   /**< base material for dynamic cast in DataDelegate */
-		StdVec<SPHRelation *> body_relations_; /**< all contact relations centered from this body **/
+		Shape *body_shape_;				/**< volumetric geometry enclosing the body */
+		SPHAdaptation *sph_adaptation_; /**< numerical adaptation policy */
+		BaseMaterial *base_material_;	/**< base material for dynamic cast in DataDelegate */
 
 		SPHBody(SPHSystem &sph_system, SharedPtr<Shape> shape_ptr, const std::string &body_name);
 		SPHBody(SPHSystem &sph_system, SharedPtr<Shape> shape_ptr);
@@ -93,6 +98,7 @@ namespace SPH
 		Real getSPHBodyResolutionRef() { return sph_adaptation_->ReferenceSpacing(); };
 		BoundingBox getBodyShapeBounds();
 		BoundingBox getSPHSystemBounds();
+		StdVec<SPHRelation *> &AllRelations() { return all_relations_; };
 		void allocateConfigurationMemoriesForBufferParticles();
 		//----------------------------------------------------------------------
 		//		access the statues of the body
@@ -161,6 +167,16 @@ namespace SPH
 			base_material_->assignBaseParticles(base_particles_);
 		};
 
+		/** create a contact relation centered at this body */
+		template <class ContactRelationType, typename... ConstructorArgs>
+		BaseContactRelation &createContactRelation(ConstructorArgs &&...args)
+		{
+			BaseContactRelation *contact_relation =
+				sph_relation_ptr_keeper_.createPtr<ContactRelationType>(*this, std::forward<ConstructorArgs>(args)...);
+			all_relations_.emplace_back(contact_relation);
+			return *contact_relation;
+		};
+
 		template <typename VariableType>
 		void addBodyStateForRecording(const std::string &variable_name)
 		{
@@ -204,6 +220,7 @@ namespace SPH
 		size_t iteration_count_; /**< control the frequency of particle sorting  */
 		bool cell_linked_list_created_;
 		bool to_update_cell_linked_list_;
+		int sorting_interval_;
 
 	public:
 		template <typename... ConstructorArgs>
@@ -211,7 +228,8 @@ namespace SPH
 			: SPHBody(std::forward<ConstructorArgs>(args)...),
 			  use_split_cell_lists_(false), iteration_count_(1),
 			  cell_linked_list_created_(false),
-			  to_update_cell_linked_list_(true)
+			  to_update_cell_linked_list_(true),
+			  sorting_interval_(MaxSize_t)
 		{
 			this->getSPHSystem().real_bodies_.push_back(this);
 			size_t number_of_split_cell_lists = powerN(3, Vecd::Zero().size());
@@ -230,6 +248,17 @@ namespace SPH
 		void setToUpdateCellLinkedList() { to_update_cell_linked_list_ = true; };
 		void setNotToUpdateCellLinkedList() { to_update_cell_linked_list_ = false; };
 		bool checkToUpdateCellLinkedList() { return to_update_cell_linked_list_; };
+
+		void setParticleSortInterval(size_t interval) { sorting_interval_ = interval; };
+		/** create a inner relation centered at this body */
+		template <class InnerRelationType, typename... ConstructorArgs>
+		BaseInnerRelation &createInnerRelation(ConstructorArgs &&...args)
+		{
+			BaseInnerRelation *inner_relation =
+				sph_relation_ptr_keeper_.createPtr<InnerRelationType>(*this, std::forward<ConstructorArgs>(args)...);
+			all_relations_.emplace_back(inner_relation);
+			return *inner_relation;
+		};
 	};
 }
 #endif // BASE_BODY_H

@@ -26,9 +26,9 @@ namespace SPH
 	{
 		for (auto &body : sph_bodies_)
 		{
-			for (size_t i = 0; i < body->body_relations_.size(); i++)
+			for (auto &relation : body->AllRelations())
 			{
-				body->body_relations_[i]->updateConfiguration();
+				relation->updateConfiguration();
 			}
 		}
 	}

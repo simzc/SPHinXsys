@@ -20,10 +20,8 @@ namespace SPH
 		  is_total_lagrangian_(false) {}
 	//=================================================================================================//
 	BaseInnerRelation::BaseInnerRelation(RealBody &real_body)
-		: SPHRelation(real_body), real_body_(&real_body),
-		  to_sort_particle_(true), sorting_interval_(100)
+		: SPHRelation(real_body), real_body_(&real_body)
 	{
-		subscribeToBody();
 		updateConfigurationMemories();
 	}
 	//=================================================================================================//
@@ -33,15 +31,9 @@ namespace SPH
 		return *this;
 	}
 	//=================================================================================================//
-	BaseInnerRelation &BaseInnerRelation::setNoParticleSort()
+	BaseInnerRelation &BaseInnerRelation::setParticleSortInterval(size_t interval)
 	{
-		to_sort_particle_ = false;
-		return *this;
-	}
-	//=================================================================================================//
-	BaseInnerRelation &BaseInnerRelation::setSortInterval(int interval)
-	{
-		sorting_interval_ = interval;
+		real_body_.setParticleSortInterval(interval);
 		return *this;
 	};
 	//=================================================================================================//
@@ -68,7 +60,6 @@ namespace SPH
 	BaseContactRelation::BaseContactRelation(SPHBody &sph_body, RealBodyVector contact_sph_bodies)
 		: SPHRelation(sph_body), contact_bodies_(contact_sph_bodies)
 	{
-		subscribeToBody();
 		updateConfigurationMemories();
 	}
 	//=================================================================================================//

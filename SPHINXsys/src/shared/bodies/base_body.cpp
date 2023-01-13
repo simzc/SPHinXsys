@@ -31,9 +31,9 @@ namespace SPH
 	//=================================================================================================//
 	void SPHBody::allocateConfigurationMemoriesForBufferParticles()
 	{
-		for (size_t i = 0; i < body_relations_.size(); i++)
+		for (size_t i = 0; i < all_relations_.size(); i++)
 		{
-			body_relations_[i]->updateConfigurationMemories();
+			all_relations_[i]->updateConfigurationMemories();
 		}
 	}
 	//=================================================================================================//
@@ -100,8 +100,17 @@ namespace SPH
 	//=================================================================================================//
 	void RealBody::updateCellLinkedList()
 	{
-		getCellLinkedList().UpdateCellLists(*base_particles_);
-		base_particles_->total_ghost_particles_ = 0;
+		if (newly_moved_ && to_update_cell_linked_list_)
+		{
+			if (iteration_count_ % sorting_interval_ == 0)
+			{
+				base_particles_->sortParticles(getCellLinkedList());
+			}
+
+			iteration_count_++;
+			getCellLinkedList().UpdateCellLists(*base_particles_);
+			base_particles_->total_ghost_particles_ = 0;
+		}
 	}
 	//=================================================================================================//
 	void RealBody::updateCellLinkedListWithParticleSort(size_t particle_sorting_period)

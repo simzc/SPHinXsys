@@ -111,7 +111,6 @@ namespace SPH
 		explicit SPHRelation(SPHBody &sph_body);
 		virtual ~SPHRelation(){};
 
-		void subscribeToBody() { sph_body_.body_relations_.push_back(this); };
 		virtual void updateConfigurationMemories() = 0;
 		virtual void updateConfiguration() = 0;
 
@@ -132,12 +131,9 @@ namespace SPH
 		virtual ~BaseInnerRelation(){};
 		virtual void updateConfigurationMemories() override;
 		BaseInnerRelation &setTotalLagrangian();
-		BaseInnerRelation &setNoParticleSort();
-		BaseInnerRelation &setSortInterval(int interval);
+		BaseInnerRelation &setParticleSortInterval(size_t interval);
 
 	protected:
-		bool to_sort_particle_;
-		int sorting_interval_;
 		virtual void resetNeighborhoodCurrentSize();
 	};
 
