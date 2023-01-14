@@ -127,10 +127,13 @@ int main(int ac, char *av[])
 		//----------------------------------------------------------------------
 		ball_random_particles.parallel_exec(0.25);
 		wall_boundary_random_particles.parallel_exec(0.25);
-
 		relaxation_step_wall_boundary_inner.mid_surface_bounding_.parallel_exec();
+		sph_system.updateSystemCellLinkedLists();
+		sph_system.updateSystemConfigurations();
+		//----------------------------------------------------------------------
+		//	First output before the simulation.
+		//----------------------------------------------------------------------
 		write_relaxed_particles.writeToFile(0);
-		wall_boundary.updateCellLinkedList();
 		write_mesh_cell_linked_list.writeToFile(0);
 		//----------------------------------------------------------------------
 		//	From here iteration for particle relaxation begins.
@@ -148,6 +151,8 @@ int main(int ac, char *av[])
 				std::cout << std::fixed << std::setprecision(9) << "Relaxation steps N = " << ite << "\n";
 				write_relaxed_particles.writeToFile(ite);
 			}
+			sph_system.updateSystemCellLinkedLists();
+			sph_system.updateSystemConfigurations();
 		}
 		std::cout << "The physics relaxation process of ball particles finish !" << std::endl;
 		shell_normal_prediction.exec();
@@ -161,8 +166,10 @@ int main(int ac, char *av[])
 	//	Basically the the range of bodies to build neighbor particle lists.
 	//----------------------------------------------------------------------
 	InnerRelation ball_inner(ball);
+	ball_inner.setTotalLagrangian();
 	SurfaceContactRelation ball_contact(ball, {&wall_boundary});
 	ContactRelation ball_observer_contact(ball_observer, {&ball});
+	ball_observer_contact.setTotalLagrangian();
 	//----------------------------------------------------------------------
 	//	Define the main numerical methods used in the simulation.
 	//	Note that there may be data dependence on the constructors of these methods.
@@ -177,7 +184,7 @@ int main(int ac, char *av[])
 	/** Algorithms for solid-solid contact. */
 	InteractionDynamics<solid_dynamics::ShellContactDensity, BodyPartByParticle> ball_update_contact_density(ball_contact);
 	InteractionDynamics<solid_dynamics::ContactForceFromWall, BodyPartByParticle> ball_compute_solid_contact_forces(ball_contact);
-	// DampingWithRandomChoice<InteractionSplit<solid_dynamics::PairwiseFrictionFromWall>> 
+	// DampingWithRandomChoice<InteractionSplit<solid_dynamics::PairwiseFrictionFromWall>>
 	// 	ball_friction(0.1, ball_contact, physical_viscosity);
 	//----------------------------------------------------------------------
 	//	Define the methods for I/O operations and observations of the simulation.
@@ -189,8 +196,8 @@ int main(int ac, char *av[])
 	//	Prepare the simulation with cell linked list, configuration
 	//	and case specified initial condition if necessary.
 	//----------------------------------------------------------------------
-	sph_system.initializeSystemCellLinkedLists();
-	sph_system.initializeSystemConfigurations();
+	sph_system.updateSystemCellLinkedLists();
+	sph_system.updateSystemConfigurations();
 	ball_corrected_configuration.parallel_exec();
 
 	/** Initial states output. */
@@ -227,11 +234,11 @@ int main(int ac, char *av[])
 				ball_update_contact_density.parallel_exec();
 				ball_compute_solid_contact_forces.parallel_exec();
 				ball_stress_relaxation_first_half.parallel_exec(dt);
-				//ball_friction.parallel_exec(dt);
+				// ball_friction.parallel_exec(dt);
 				ball_stress_relaxation_second_half.parallel_exec(dt);
 
-				ball.updateCellLinkedList();
-				ball_contact.updateConfiguration();
+				sph_system.updateSystemCellLinkedLists();
+				sph_system.updateSystemConfigurations();
 
 				ite++;
 				Real dt_ball = ball_get_time_step_size.parallel_exec();

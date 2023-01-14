@@ -80,9 +80,12 @@ int main(int ac, char *av[])
 	//	The contact map gives the topological connections between the bodies.
 	//	Basically the the range of bodies to build neighbor particle lists.
 	//----------------------------------------------------------------------
-	BaseInnerRelation &water_block_inner = water_block.createInnerRelation<InnerRelation>();
-	BaseContactRelation &water_block_contact = water_block.createContactRelation<ContactRelation>(RealBodyVector{&wall_boundary});
-	BaseContactRelation &fluid_observer_contact = fluid_observer.createContactRelation<ContactRelation>(RealBodyVector{&water_block});
+	InnerRelation water_block_inner(water_block);
+	ContactRelation water_block_contact(water_block, RealBodyVector{&wall_boundary});
+	ContactRelation fluid_observer_contact(fluid_observer, RealBodyVector{&water_block});
+	//----------------------------------------------------------------------
+	//	Combined relations.
+	//----------------------------------------------------------------------
 	ComplexRelation water_block_complex(water_block_inner, water_block_contact);
 	//----------------------------------------------------------------------
 	//	Define the numerical methods used in the simulation.
