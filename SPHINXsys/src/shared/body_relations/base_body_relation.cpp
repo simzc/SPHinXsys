@@ -17,7 +17,7 @@ namespace SPH
 	//=================================================================================================//
 	SPHRelation::SPHRelation(SPHBody &sph_body)
 		: sph_body_(sph_body), base_particles_(sph_body.getBaseParticles()),
-		  is_total_lagrangian_(false)
+		  is_total_lagrangian_(false), to_update_configuration_(true)
 	{
 		sph_body_.AllRelations().push_back(this);
 	}
@@ -34,8 +34,9 @@ namespace SPH
 		return *this;
 	}
 	//=================================================================================================//
-	void BaseInnerRelation::setUpdateCellLinkedList()
+	void BaseInnerRelation::setUpdate()
 	{
+		to_update_configuration_ = !is_total_lagrangian_;
 		if (!is_total_lagrangian_)
 		{
 			real_body_->setToUpdateCellLinkedList();
@@ -74,8 +75,9 @@ namespace SPH
 		return *this;
 	};
 	//=================================================================================================//
-	void BaseContactRelation::setUpdateCellLinkedList()
+	void BaseContactRelation::setUpdate()
 	{
+		to_update_configuration_ = !is_total_lagrangian_;
 		if (!is_total_lagrangian_)
 		{
 			for (auto &real_body : contact_bodies_)

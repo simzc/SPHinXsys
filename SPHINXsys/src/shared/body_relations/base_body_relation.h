@@ -110,13 +110,15 @@ namespace SPH
 		SPHBody &getDynamicsRange() { return sph_body_; };
 		explicit SPHRelation(SPHBody &sph_body);
 		virtual ~SPHRelation(){};
-		bool isTotalLagrangian() { return is_total_lagrangian_; };
+		bool setUpdateConfiguration() { return to_update_configuration_ = !is_total_lagrangian_; };
+		bool checkUpdateConfiguration() { return to_update_configuration_; };
 		virtual void updateConfigurationMemories() = 0;
 		virtual void updateConfiguration() = 0;
-		virtual void setUpdateCellLinkedList() = 0;
+		virtual void setUpdate() = 0;
 
 	protected:
 		bool is_total_lagrangian_;
+		bool to_update_configuration_;
 	};
 
 	/**
@@ -132,7 +134,7 @@ namespace SPH
 		virtual ~BaseInnerRelation(){};
 		virtual void updateConfigurationMemories() override;
 		BaseInnerRelation &setTotalLagrangian();
-		virtual void setUpdateCellLinkedList() override;
+		virtual void setUpdate() override;
 
 	protected:
 		virtual void resetNeighborhoodCurrentSize();
@@ -157,7 +159,7 @@ namespace SPH
 		virtual ~BaseContactRelation(){};
 		virtual void updateConfigurationMemories() override;
 		BaseContactRelation &setTotalLagrangian();
-		virtual void setUpdateCellLinkedList() override;
+		virtual void setUpdate() override;
 	};
 
 	/**
