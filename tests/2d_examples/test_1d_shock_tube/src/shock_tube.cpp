@@ -121,9 +121,9 @@ int main(int ac, char *av[])
 	//	and case specified initial condition if necessary.
 	//----------------------------------------------------------------------
 	waves_initial_condition.exec();
-	sph_system.initializeSystemCellLinkedLists();
+	sph_system.updateSystemCellLinkedLists();
 	periodic_condition_y.update_cell_linked_list_.parallel_exec();
-	sph_system.initializeSystemConfigurations();
+	sph_system.updateSystemConfigurations();
 	//----------------------------------------------------------------------
 	//	Setup for time-stepping control
 	//----------------------------------------------------------------------

@@ -237,8 +237,8 @@ int main()
 	//	Prepare the simulation with cell linked list, configuration
 	//	and case specified initial condition if necessary.
 	//----------------------------------------------------------------------
-	sph_system.initializeSystemCellLinkedLists();
-	sph_system.initializeSystemConfigurations();
+	sph_system.updateSystemCellLinkedLists();
+	sph_system.updateSystemConfigurations();
 	correct_configuration.parallel_exec();
 	setup_diffusion_initial_condition.parallel_exec();
 	left_boundary_condition.parallel_exec();

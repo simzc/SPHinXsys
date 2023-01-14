@@ -116,15 +116,4 @@ namespace SPH
 		}
 	}
 	//=================================================================================================//
-	void RealBody::updateCellLinkedListWithParticleSort(size_t particle_sorting_period)
-	{
-		if (iteration_count_ % particle_sorting_period == 0)
-		{
-			base_particles_->sortParticles(getCellLinkedList());
-		}
-
-		iteration_count_++;
-		updateCellLinkedList();
-	}
-	//=================================================================================================//
 }

@@ -238,7 +238,6 @@ namespace SPH
 		bool getUseSplitCellLists() { return use_split_cell_lists_; };
 		SplitCellLists &getSplitCellLists() { return split_cell_lists_; };
 		void updateCellLinkedList();
-		void updateCellLinkedListWithParticleSort(size_t particle_sort_period);
 		//----------------------------------------------------------------------
 		//		access the updating statues of the cell linked list
 		//----------------------------------------------------------------------
