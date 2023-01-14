@@ -110,7 +110,7 @@ namespace SPH
 		SPHBody &getDynamicsRange() { return sph_body_; };
 		explicit SPHRelation(SPHBody &sph_body);
 		virtual ~SPHRelation(){};
-
+		bool isTotalLagrangian() { return is_total_lagrangian_; };
 		virtual void updateConfigurationMemories() = 0;
 		virtual void updateConfiguration() = 0;
 		virtual void setUpdateCellLinkedList() = 0;
@@ -158,6 +158,27 @@ namespace SPH
 		virtual void updateConfigurationMemories() override;
 		BaseContactRelation &setTotalLagrangian();
 		virtual void setUpdateCellLinkedList() override;
+	};
+
+	/**
+	 * @class ComplexRelation
+	 * @brief The relation combined an inner and a contact body relation.
+	 * TODO: it seems that this class is not necessary ?
+	 */
+	class ComplexRelation
+	{
+	protected:
+		BaseInnerRelation &inner_relation_;
+		BaseContactRelation &contact_relation_;
+
+	public:
+		BaseInnerRelation &getInnerRelation() { return inner_relation_; };
+		BaseContactRelation &getContactRelation() { return contact_relation_; };
+		SPHBody &getDynamicsRange() { return inner_relation_.sph_body_; };
+		ComplexRelation(BaseInnerRelation &inner_relation, BaseContactRelation &contact_relation)
+			: inner_relation_(inner_relation),
+			  contact_relation_(contact_relation){};
+		virtual ~ComplexRelation(){};
 	};
 }
 #endif // BASE_BODY_RELATION_H

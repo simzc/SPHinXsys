@@ -164,14 +164,10 @@ namespace SPH
 			base_material_->assignBaseParticles(base_particles_);
 		};
 
-		/** create a contact relation centered at this body */
-		template <class ContactRelationType, typename... ConstructorArgs>
-		BaseContactRelation &createContactRelation(ConstructorArgs &&...args)
+		template <class RelationType, typename... ConstructorArgs>
+		RelationType &createRelation(ConstructorArgs &&...args)
 		{
-			BaseContactRelation *contact_relation =
-				sph_relation_ptr_keeper_.createPtr<ContactRelationType>(*this, std::forward<ConstructorArgs>(args)...);
-			all_relations_.emplace_back(contact_relation);
-			return *contact_relation;
+			return *sph_relation_ptr_keeper_.createPtr<RelationType>(*this, std::forward<ConstructorArgs>(args)...);
 		};
 
 		template <typename VariableType>
@@ -221,7 +217,7 @@ namespace SPH
 
 	public:
 		template <typename... ConstructorArgs>
-		RealBody(ConstructorArgs &&...args)
+		explicit RealBody(ConstructorArgs &&...args)
 			: SPHBody(std::forward<ConstructorArgs>(args)...),
 			  use_split_cell_lists_(false), iteration_count_(1),
 			  cell_linked_list_created_(false),
@@ -243,15 +239,6 @@ namespace SPH
 		//----------------------------------------------------------------------
 		void setToUpdateCellLinkedList() { to_update_cell_linked_list_ = true; };
 		void setParticleSortInterval(size_t interval) { sorting_interval_ = interval; };
-		/** create a inner relation centered at this body */
-		template <class InnerRelationType, typename... ConstructorArgs>
-		BaseInnerRelation &createInnerRelation(ConstructorArgs &&...args)
-		{
-			BaseInnerRelation *inner_relation =
-				sph_relation_ptr_keeper_.createPtr<InnerRelationType>(*this, std::forward<ConstructorArgs>(args)...);
-			all_relations_.emplace_back(inner_relation);
-			return *inner_relation;
-		};
 	};
 }
 #endif // BASE_BODY_H

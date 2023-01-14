@@ -28,8 +28,11 @@ namespace SPH
 		{
 			for (auto &relation : body->AllRelations())
 			{
-				relation->updateConfiguration();
-				relation->setUpdateCellLinkedList();
+				if (!relation->isTotalLagrangian())
+				{
+					relation->updateConfiguration();
+					relation->setUpdateCellLinkedList();
+				}
 			}
 		}
 	}

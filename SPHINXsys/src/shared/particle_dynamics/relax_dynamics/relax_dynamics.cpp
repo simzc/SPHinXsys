@@ -11,11 +11,9 @@ namespace SPH
 	{
 		//=================================================================================================//
 		GetTimeStepSizeSquare::GetTimeStepSizeSquare(SPHBody &sph_body)
-			: LocalDynamicsReduce<Real, ReduceMax>(sph_body, Real(0))
-			, RelaxDataDelegateSimple(sph_body)
-			, acc_(particles_->acc_)
-			, h_ref_(sph_body.sph_adaptation_->ReferenceSmoothingLength()) 
-		{}
+			: LocalDynamicsReduce<Real, ReduceMax>(sph_body, Real(0)),
+			  RelaxDataDelegateSimple(sph_body), acc_(particles_->acc_),
+			  h_ref_(sph_body.sph_adaptation_->ReferenceSmoothingLength()) {}
 		//=================================================================================================//
 		Real GetTimeStepSizeSquare::reduce(size_t index_i, Real dt)
 		{
@@ -58,12 +56,14 @@ namespace SPH
 		}
 		//=================================================================================================//
 		UpdateParticlePosition::UpdateParticlePosition(SPHBody &sph_body)
-			: LocalDynamics(sph_body)
-			, RelaxDataDelegateSimple(sph_body)
-			, sph_adaptation_(sph_body.sph_adaptation_)
-			, pos_(particles_->pos_)
-			, acc_(particles_->acc_) 
-		{}
+			: LocalDynamics(sph_body), RelaxDataDelegateSimple(sph_body),
+			  sph_adaptation_(sph_body.sph_adaptation_), pos_(particles_->pos_),
+			  acc_(particles_->acc_) {}
+		//=================================================================================================//
+		void UpdateParticlePosition::setupDynamics(Real dt)
+		{
+			sph_body_.setNewlyMoved();
+		}
 		//=================================================================================================//
 		void UpdateParticlePosition::update(size_t index_i, Real dt_square)
 		{
@@ -120,10 +120,8 @@ namespace SPH
 		}
 		//=================================================================================================//
 		ShapeSurfaceBounding::ShapeSurfaceBounding(NearShapeSurface &near_shape_surface)
-			: LocalDynamics(near_shape_surface.getSPHBody())
-			, RelaxDataDelegateSimple(sph_body_)
-			, pos_(particles_->pos_)
-			, constrained_distance_(0.5 * sph_body_.sph_adaptation_->MinimumSpacing())
+			: LocalDynamics(near_shape_surface.getSPHBody()), RelaxDataDelegateSimple(sph_body_),
+			  pos_(particles_->pos_), constrained_distance_(0.5 * sph_body_.sph_adaptation_->MinimumSpacing())
 		{
 			level_set_shape_ = &near_shape_surface.level_set_shape_;
 		}
@@ -309,13 +307,12 @@ namespace SPH
 		}
 		//=================================================================================================//
 		ShellNormalDirectionPrediction::NormalPrediction::NormalPrediction(SPHBody &sph_body, Real thickness)
-			: RelaxDataDelegateSimple(sph_body)
-			, LocalDynamics(sph_body), thickness_(thickness)
-			, level_set_shape_(DynamicCast<LevelSetShape>(this, sph_body.body_shape_))
-			, pos_(particles_->pos_)
-			, n_(*particles_->getVariableByName<Vecd>("NormalDirection"))
+			: RelaxDataDelegateSimple(sph_body), LocalDynamics(sph_body), thickness_(thickness),
+			  level_set_shape_(DynamicCast<LevelSetShape>(this, sph_body.body_shape_)),
+			  pos_(particles_->pos_), n_(*particles_->getVariableByName<Vecd>("NormalDirection"))
 		{
-			particles_->registerVariable(n_temp_, "PreviousNormalDirection", [&](size_t i) -> Vecd { return n_[i]; });
+			particles_->registerVariable(n_temp_, "PreviousNormalDirection", [&](size_t i) -> Vecd
+										 { return n_[i]; });
 		}
 		//=================================================================================================//
 		void ShellNormalDirectionPrediction::NormalPrediction::update(size_t index_i, Real dt)
@@ -324,12 +321,12 @@ namespace SPH
 			n_[index_i] = level_set_shape_->findNormalDirection(pos_[index_i] + 0.3 * thickness_ * n_temp_[index_i]);
 		}
 		//=================================================================================================//
-		ShellNormalDirectionPrediction::PredictionConvergenceCheck::PredictionConvergenceCheck(SPHBody &sph_body, Real convergence_criterion)
-			: LocalDynamicsReduce<bool, ReduceAND>(sph_body, true)
-			, RelaxDataDelegateSimple(sph_body), convergence_criterion_(convergence_criterion)
-			, n_(*particles_->getVariableByName<Vecd>("NormalDirection"))
-			, n_temp_(*particles_->getVariableByName<Vecd>("PreviousNormalDirection")) 
-		{}
+		ShellNormalDirectionPrediction::PredictionConvergenceCheck::
+			PredictionConvergenceCheck(SPHBody &sph_body, Real convergence_criterion)
+			: LocalDynamicsReduce<bool, ReduceAND>(sph_body, true), RelaxDataDelegateSimple(sph_body),
+			  convergence_criterion_(convergence_criterion),
+			  n_(*particles_->getVariableByName<Vecd>("NormalDirection")),
+			  n_temp_(*particles_->getVariableByName<Vecd>("PreviousNormalDirection")) {}
 		//=================================================================================================//
 		bool ShellNormalDirectionPrediction::PredictionConvergenceCheck::reduce(size_t index_i, Real dt)
 		{
@@ -342,7 +339,8 @@ namespace SPH
 			  consistency_criterion_(consistency_criterion),
 			  n_(*particles_->getVariableByName<Vecd>("NormalDirection"))
 		{
-			particles_->registerVariable(updated_indicator_, "UpdatedIndicator", [&](size_t i) -> int {return 0;});
+			particles_->registerVariable(updated_indicator_, "UpdatedIndicator", [&](size_t i) -> int
+										 { return 0; });
 			updated_indicator_[particles_->total_real_particles_ / 3] = 1;
 		}
 		//=================================================================================================//
@@ -378,10 +376,8 @@ namespace SPH
 		}
 		//=================================================================================================//
 		ShellNormalDirectionPrediction::ConsistencyUpdatedCheck::ConsistencyUpdatedCheck(SPHBody &sph_body)
-			: LocalDynamicsReduce<bool, ReduceAND>(sph_body, true)
-			,  RelaxDataDelegateSimple(sph_body)
-			,  updated_indicator_(*particles_->getVariableByName<int>("UpdatedIndicator")) 
-		{}
+			: LocalDynamicsReduce<bool, ReduceAND>(sph_body, true), RelaxDataDelegateSimple(sph_body),
+			  updated_indicator_(*particles_->getVariableByName<int>("UpdatedIndicator")) {}
 		//=================================================================================================//
 		bool ShellNormalDirectionPrediction::ConsistencyUpdatedCheck::reduce(size_t index_i, Real dt)
 		{

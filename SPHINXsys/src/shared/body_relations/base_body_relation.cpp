@@ -17,7 +17,10 @@ namespace SPH
 	//=================================================================================================//
 	SPHRelation::SPHRelation(SPHBody &sph_body)
 		: sph_body_(sph_body), base_particles_(sph_body.getBaseParticles()),
-		  is_total_lagrangian_(false) {}
+		  is_total_lagrangian_(false)
+	{
+		sph_body_.AllRelations().push_back(this);
+	}
 	//=================================================================================================//
 	BaseInnerRelation::BaseInnerRelation(RealBody &real_body)
 		: SPHRelation(real_body), real_body_(&real_body)

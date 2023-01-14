@@ -117,7 +117,7 @@ namespace SPH
 		public:
 			explicit UpdateParticlePosition(SPHBody &sph_body);
 			virtual ~UpdateParticlePosition(){};
-
+			void setupDynamics(Real dt = 0.0) override;
 			void update(size_t index_i, Real dt = 0.0);
 		};
 
