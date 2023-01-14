@@ -103,7 +103,7 @@ int main(int ac, char *av[])
 		? damping_ball.generateParticles<ParticleGeneratorReload>(io_environment, damping_ball.getName())
 		: damping_ball.generateParticles<ParticleGeneratorLattice>();
 
-	SolidBody wall_boundary(sph_system, makeShared<WallBoundary>("WallBoundary")); 
+	SolidBody wall_boundary(sph_system, makeShared<WallBoundary>("WallBoundary"));
 	wall_boundary.defineParticlesAndMaterial<SolidParticles, NeoHookeanSolid>(rho0_s, Youngs_modulus, poisson);
 	wall_boundary.generateParticles<ParticleGeneratorLattice>();
 
@@ -138,6 +138,11 @@ int main(int ac, char *av[])
 		//----------------------------------------------------------------------
 		free_ball_random_particles.parallel_exec(0.25);
 		damping_ball_random_particles.parallel_exec(0.25);
+		sph_system.updateSystemCellLinkedLists();
+		sph_system.updateSystemConfigurations();
+		//----------------------------------------------------------------------
+		//	First output before the simulation.
+		//----------------------------------------------------------------------
 		write_ball_state.writeToFile(0);
 		//----------------------------------------------------------------------
 		//	From here iteration for particle relaxation begins.
@@ -154,6 +159,8 @@ int main(int ac, char *av[])
 				std::cout << std::fixed << std::setprecision(9) << "Relaxation steps N = " << ite << "\n";
 				write_ball_state.writeToFile(ite);
 			}
+			sph_system.updateSystemCellLinkedLists();
+			sph_system.updateSystemConfigurations();
 		}
 		std::cout << "The physics relaxation process of ball particles finish !" << std::endl;
 		write_particle_reload_files.writeToFile(0);
@@ -165,11 +172,15 @@ int main(int ac, char *av[])
 	//	Basically the the range of bodies to build neighbor particle lists.
 	//----------------------------------------------------------------------
 	InnerRelation free_ball_inner(free_ball);
+	free_ball_inner.setTotalLagrangian();
 	SurfaceContactRelation free_ball_contact(free_ball, {&wall_boundary});
 	InnerRelation damping_ball_inner(damping_ball);
+	damping_ball_inner.setTotalLagrangian();
 	SurfaceContactRelation damping_ball_contact(damping_ball, {&wall_boundary});
 	ContactRelation free_ball_observer_contact(free_ball_observer, {&free_ball});
+	free_ball_observer_contact.setTotalLagrangian();
 	ContactRelation damping_all_observer_contact(damping_ball_observer, {&damping_ball});
+	damping_all_observer_contact.setTotalLagrangian();
 	//----------------------------------------------------------------------
 	//	Define the main numerical methods used in the simulation.
 	//	Note that there may be data dependence on the constructors of these methods.
@@ -206,8 +217,8 @@ int main(int ac, char *av[])
 	//	Prepare the simulation with cell linked list, configuration
 	//	and case specified initial condition if necessary.
 	//----------------------------------------------------------------------
-	sph_system.initializeSystemCellLinkedLists();
-	sph_system.initializeSystemConfigurations();
+	sph_system.updateSystemCellLinkedLists();
+	sph_system.updateSystemConfigurations();
 	free_ball_corrected_configuration.parallel_exec();
 	damping_ball_corrected_configuration.parallel_exec();
 	//----------------------------------------------------------------------
@@ -253,17 +264,14 @@ int main(int ac, char *av[])
 				free_ball_stress_relaxation_first_half.parallel_exec(dt);
 				free_ball_stress_relaxation_second_half.parallel_exec(dt);
 
-				free_ball.updateCellLinkedList();
-				free_ball_contact.updateConfiguration();
-
 				damping_ball_update_contact_density.parallel_exec();
 				damping_ball_compute_solid_contact_forces.parallel_exec();
 				damping_ball_stress_relaxation_first_half.parallel_exec(dt);
 				damping.parallel_exec(dt);
 				damping_ball_stress_relaxation_second_half.parallel_exec(dt);
 
-				damping_ball.updateCellLinkedList();
-				damping_ball_contact.updateConfiguration();
+				sph_system.updateSystemCellLinkedLists();
+				sph_system.updateSystemConfigurations();
 
 				ite++;
 				Real dt_free = free_ball_get_time_step_size.parallel_exec();
