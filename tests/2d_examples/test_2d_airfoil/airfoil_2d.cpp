@@ -43,7 +43,7 @@ int main(int ac, char *av[])
 	//	Build up -- a SPHSystem
 	//----------------------------------------------------------------------
 	SPHSystem system(system_domain_bounds, resolution_ref);
-	system.setRunParticleRelaxation(true); //tag to run particle relaxation when no commandline option
+	system.setRunParticleRelaxation(true); // tag to run particle relaxation when no commandline option
 #ifdef BOOST_AVAILABLE
 	system.handleCommandlineOptions(ac, av);
 #endif
@@ -81,7 +81,8 @@ int main(int ac, char *av[])
 	random_airfoil_particles.parallel_exec(0.25);
 	relaxation_step_inner.SurfaceBounding().parallel_exec();
 	update_smoothing_length_ratio.parallel_exec();
-	airfoil.updateCellLinkedList();
+	system.updateSystemCellLinkedLists();
+	system.updateSystemConfigurations();
 	//----------------------------------------------------------------------
 	//	First output before the simulation.
 	//----------------------------------------------------------------------
@@ -101,6 +102,8 @@ int main(int ac, char *av[])
 			std::cout << std::fixed << std::setprecision(9) << "Relaxation steps N = " << ite_p << "\n";
 			airfoil_recording_to_vtp.writeToFile(ite_p);
 		}
+		system.updateSystemCellLinkedLists();
+		system.updateSystemConfigurations();
 	}
 	std::cout << "The physics relaxation process finished !" << std::endl;
 

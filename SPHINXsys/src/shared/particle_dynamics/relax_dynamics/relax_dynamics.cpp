@@ -160,8 +160,6 @@ namespace SPH
 		//=================================================================================================//
 		void RelaxationStepInner::exec(Real dt)
 		{
-			real_body_->updateCellLinkedList();
-			inner_relation_.updateConfiguration();
 			relaxation_acceleration_inner_->exec();
 			Real dt_square = get_time_step_square_.exec();
 			update_particle_position_.exec(dt_square);
@@ -170,8 +168,6 @@ namespace SPH
 		//=================================================================================================//
 		void RelaxationStepInner::parallel_exec(Real dt)
 		{
-			real_body_->updateCellLinkedList();
-			inner_relation_.updateConfiguration();
 			relaxation_acceleration_inner_->parallel_exec();
 			Real dt_square = get_time_step_square_.parallel_exec();
 			update_particle_position_.parallel_exec(dt_square);
