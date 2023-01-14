@@ -90,7 +90,7 @@ namespace SPH
 		//=================================================================================================//
 		RelaxationAccelerationComplex::
 			RelaxationAccelerationComplex(ComplexRelation &complex_relation)
-			: LocalDynamics(complex_relation.sph_body_),
+			: LocalDynamics(complex_relation.getDynamicsRange()),
 			  RelaxDataDelegateComplex(complex_relation),
 			  acc_(particles_->acc_), pos_(particles_->pos_) {}
 		//=================================================================================================//
@@ -212,8 +212,6 @@ namespace SPH
 		//=================================================================================================//
 		void RelaxationStepComplex::exec(Real dt)
 		{
-			real_body_->updateCellLinkedList();
-			complex_relation_.updateConfiguration();
 			relaxation_acceleration_complex_->exec();
 			Real dt_square = get_time_step_square_.exec();
 			update_particle_position_.exec(dt_square);
@@ -222,8 +220,6 @@ namespace SPH
 		//=================================================================================================//
 		void RelaxationStepComplex::parallel_exec(Real dt)
 		{
-			real_body_->updateCellLinkedList();
-			complex_relation_.updateConfiguration();
 			relaxation_acceleration_complex_->parallel_exec();
 			Real dt_square = get_time_step_square_.parallel_exec();
 			update_particle_position_.parallel_exec(dt_square);

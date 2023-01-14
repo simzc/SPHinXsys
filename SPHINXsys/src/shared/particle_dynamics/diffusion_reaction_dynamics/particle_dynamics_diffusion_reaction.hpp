@@ -242,7 +242,7 @@ namespace SPH
 	template <class FirstStageType>
 	RelaxationOfAllDiffusionSpeciesRK2<FirstStageType>::
 		RelaxationOfAllDiffusionSpeciesRK2(typename FirstStageType::BodyRelationType &body_relation)
-		: BaseDynamics<void>(), rk2_initialization_(body_relation.getDynamicRange(), species_s_),
+		: BaseDynamics<void>(), rk2_initialization_(body_relation.getDynamicsRange(), species_s_),
 		  rk2_1st_stage_(body_relation), rk2_2nd_stage_(body_relation, species_s_)
 	{
 		StdVec<BaseDiffusion *> species_diffusion_ = rk2_1st_stage_.diffusion_reaction_material_.SpeciesDiffusion();
