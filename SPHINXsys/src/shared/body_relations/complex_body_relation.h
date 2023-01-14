@@ -48,6 +48,7 @@ namespace SPH
 	public:
 		BaseInnerRelation &getInnerRelation() { return inner_relation_; };
 		BaseContactRelation &getContactRelation() { return contact_relation_; };
+		RealBodyVector contact_bodies_;
 		ParticleConfiguration &inner_configuration_;
 		ContactParticleConfiguration &contact_configuration_;
 
@@ -56,6 +57,7 @@ namespace SPH
 
 		virtual void updateConfigurationMemories() override;
 		virtual void updateConfiguration() override;
+		virtual void setUpdateCellLinkedList() override;
 	};
 }
 #endif // COMPLEX_BODY_RELATION_H

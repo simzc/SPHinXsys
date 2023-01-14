@@ -14,7 +14,7 @@ namespace SPH
 		  io_environment_(nullptr), restart_step_(0), run_particle_relaxation_(false),
 		  reload_particles_(false), generate_regression_data_(false) {}
 	//=================================================================================================//
-	void SPHSystem::initializeSystemCellLinkedLists()
+	void SPHSystem::updateSystemCellLinkedLists()
 	{
 		for (auto &body : real_bodies_)
 		{
@@ -22,13 +22,14 @@ namespace SPH
 		}
 	}
 	//=================================================================================================//
-	void SPHSystem::initializeSystemConfigurations()
+	void SPHSystem::updateSystemConfigurations()
 	{
 		for (auto &body : sph_bodies_)
 		{
 			for (auto &relation : body->AllRelations())
 			{
 				relation->updateConfiguration();
+				relation->setUpdateCellLinkedList();
 			}
 		}
 	}

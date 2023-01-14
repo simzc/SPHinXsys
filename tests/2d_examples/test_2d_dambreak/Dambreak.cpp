@@ -65,6 +65,7 @@ int main(int ac, char *av[])
 						Transform2d(water_block_translation), water_block_halfsize, "WaterBody"));
 	water_block.defineParticlesAndMaterial<FluidParticles, WeaklyCompressibleFluid>(rho0_f, c_f);
 	water_block.generateParticles<ParticleGeneratorLattice>();
+	water_block.setParticleSortInterval(100);
 
 	SolidBody wall_boundary(sph_system, makeShared<WallBoundary>("WallBoundary"));
 	wall_boundary.defineParticlesAndMaterial<SolidParticles, Solid>();
@@ -109,19 +110,13 @@ int main(int ac, char *av[])
 	//	Prepare the simulation with cell linked list, configuration
 	//	and case specified initial condition if necessary.
 	//----------------------------------------------------------------------
-	sph_system.initializeSystemCellLinkedLists();
-	sph_system.initializeSystemConfigurations();
-	wall_boundary_normal_direction.parallel_exec();
-	//----------------------------------------------------------------------
-	//	Load restart file if necessary.
-	//----------------------------------------------------------------------
-	if (sph_system.RestartStep() != 0)
+	if (sph_system.RestartStep() != 0) // load restart file if necessary.
 	{
 		GlobalStaticVariables::physical_time_ = restart_io.readRestartFiles(sph_system.RestartStep());
-		water_block.updateCellLinkedList();
-		water_block_complex.updateConfiguration();
-		fluid_observer_contact.updateConfiguration();
 	}
+	wall_boundary_normal_direction.parallel_exec();
+	sph_system.updateSystemCellLinkedLists();
+	sph_system.updateSystemConfigurations();
 	//----------------------------------------------------------------------
 	//	Setup for time-stepping control
 	//----------------------------------------------------------------------
@@ -196,9 +191,8 @@ int main(int ac, char *av[])
 
 			/** Update cell linked list and configuration. */
 			time_instance = tick_count::now();
-			water_block.updateCellLinkedListWithParticleSort(100);
-			water_block_complex.updateConfiguration();
-			fluid_observer_contact.updateConfiguration();
+			sph_system.updateSystemCellLinkedLists();
+			sph_system.updateSystemConfigurations();
 			interval_updating_configuration += tick_count::now() - time_instance;
 		}
 

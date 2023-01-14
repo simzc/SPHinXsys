@@ -31,11 +31,13 @@ namespace SPH
 		return *this;
 	}
 	//=================================================================================================//
-	BaseInnerRelation &BaseInnerRelation::setParticleSortInterval(size_t interval)
+	void BaseInnerRelation::setUpdateCellLinkedList()
 	{
-		real_body_.setParticleSortInterval(interval);
-		return *this;
-	};
+		if (!is_total_lagrangian_)
+		{
+			real_body_->setToUpdateCellLinkedList();
+		}
+	}
 	//=================================================================================================//
 	void BaseInnerRelation::updateConfigurationMemories()
 	{
@@ -68,6 +70,18 @@ namespace SPH
 		is_total_lagrangian_ = true;
 		return *this;
 	};
+	//=================================================================================================//
+	void BaseContactRelation::setUpdateCellLinkedList()
+	{
+		if (!is_total_lagrangian_)
+		{
+			for (auto &real_body : contact_bodies_)
+			{
+
+				real_body->setToUpdateCellLinkedList();
+			}
+		}
+	}
 	//=================================================================================================//
 	void BaseContactRelation::updateConfigurationMemories()
 	{

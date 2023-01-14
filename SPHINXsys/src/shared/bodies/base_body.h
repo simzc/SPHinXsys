@@ -106,10 +106,7 @@ namespace SPH
 		void setNewlyUpdated() { newly_updated_ = true; };
 		void setNotNewlyUpdated() { newly_updated_ = false; };
 		bool checkNewlyUpdated() { return newly_updated_; };
-
 		void setNewlyMoved() { newly_moved_ = true; };
-		void setNotNewlyMoved() { newly_moved_ = false; };
-		bool checkNewlyMoved() { return newly_moved_; };
 		//----------------------------------------------------------------------
 		//		Object factory template functions
 		//----------------------------------------------------------------------
@@ -220,7 +217,7 @@ namespace SPH
 		size_t iteration_count_; /**< control the frequency of particle sorting  */
 		bool cell_linked_list_created_;
 		bool to_update_cell_linked_list_;
-		int sorting_interval_;
+		size_t sorting_interval_;
 
 	public:
 		template <typename... ConstructorArgs>
@@ -246,9 +243,6 @@ namespace SPH
 		//		access the updating statues of the cell linked list
 		//----------------------------------------------------------------------
 		void setToUpdateCellLinkedList() { to_update_cell_linked_list_ = true; };
-		void setNotToUpdateCellLinkedList() { to_update_cell_linked_list_ = false; };
-		bool checkToUpdateCellLinkedList() { return to_update_cell_linked_list_; };
-
 		void setParticleSortInterval(size_t interval) { sorting_interval_ = interval; };
 		/** create a inner relation centered at this body */
 		template <class InnerRelationType, typename... ConstructorArgs>

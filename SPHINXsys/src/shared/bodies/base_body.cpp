@@ -110,6 +110,9 @@ namespace SPH
 			iteration_count_++;
 			getCellLinkedList().UpdateCellLists(*base_particles_);
 			base_particles_->total_ghost_particles_ = 0;
+
+			newly_moved_ = false;
+			to_update_cell_linked_list_ = false;
 		}
 	}
 	//=================================================================================================//

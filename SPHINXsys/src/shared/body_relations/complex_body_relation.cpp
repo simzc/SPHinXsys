@@ -27,4 +27,10 @@ namespace SPH
 		contact_relation_.updateConfiguration();
 	}
 	//=================================================================================================//
+	void ComplexRelation::setUpdateCellLinkedList()
+	{
+		inner_relation_.setUpdateCellLinkedList();
+		contact_relation_.setUpdateCellLinkedList();
+	}
+	//=================================================================================================//
 }
