@@ -114,8 +114,11 @@ int main(int ac, char *av[])
 	//	Basically the the range of bodies to build neighbor particle lists.
 	//	Note that the same relation should be defined only once.
 	//----------------------------------------------------------------------
-	ComplexRelation water_block_complex(water_block, {&cylinder});
+	InnerRelation water_block_inner(water_block);
+	ContactRelation water_block_contact(water_block, {&cylinder});
 	ContactRelation cylinder_contact(cylinder, {&water_block});
+
+	ComplexRelation water_block_complex(water_block_inner, water_block_contact);
 	//----------------------------------------------------------------------
 	//	Run particle relaxation for body-fitted distribution if chosen.
 	//----------------------------------------------------------------------
@@ -138,8 +141,15 @@ int main(int ac, char *av[])
 		random_water_body_particles.parallel_exec(0.25);
 		relaxation_step_inner.SurfaceBounding().parallel_exec();
 		relaxation_step_complex.SurfaceBounding().parallel_exec();
+		sph_system.updateSystemCellLinkedLists();
+		sph_system.updateSystemConfigurations();
+		//----------------------------------------------------------------------
+		//	First output before the main loop.
+		//----------------------------------------------------------------------
 		write_real_body_states.writeToFile(0);
-
+		//----------------------------------------------------------------------
+		//	Particle relaxation loop starts here.
+		//----------------------------------------------------------------------
 		int ite_p = 0;
 		while (ite_p < 1000)
 		{
@@ -151,6 +161,8 @@ int main(int ac, char *av[])
 				cout << fixed << setprecision(9) << "Relaxation steps N = " << ite_p << "\n";
 				write_real_body_states.writeToFile(ite_p);
 			}
+			sph_system.updateSystemCellLinkedLists();
+			sph_system.updateSystemConfigurations();
 		}
 		std::cout << "The physics relaxation process finish !" << std::endl;
 
@@ -188,8 +200,8 @@ int main(int ac, char *av[])
 	//	Prepare the simulation with cell linked list, configuration
 	//	and case specified initial condition if necessary.
 	//----------------------------------------------------------------------
-	sph_system.initializeSystemCellLinkedLists();
-	sph_system.initializeSystemConfigurations();
+	sph_system.updateSystemCellLinkedLists();
+	sph_system.updateSystemConfigurations();
 	cylinder_normal_direction.parallel_exec();
 	surface_indicator.parallel_exec();
 	variable_reset_in_boundary_condition.parallel_exec();

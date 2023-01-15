@@ -94,20 +94,25 @@ int main(int ac, char *av[])
 	water_block.generateParticles<ParticleGeneratorSplitAndMerge>();
 	water_block.addBodyStateForRecording<Real>("SmoothingLengthRatio");
 	water_block.addBodyStateForRecording<Real>("VolumetricMeasure");
-	
+
 	SolidBody wall_boundary(sph_system, makeShared<WallBoundary>("WallBoundary"));
 	wall_boundary.defineParticlesAndMaterial<SolidParticles, Solid>();
 	wall_boundary.generateParticles<ParticleGeneratorLattice>();
 
 	ObserverBody fluid_observer(sph_system, "FluidObserver");
 	fluid_observer.generateParticles<ObserverParticleGenerator>(observation_location);
-
-	/** topology */
+	//----------------------------------------------------------------------
+	//	Define body relation map.
+	//	The contact map gives the topological connections between the bodies.
+	//	Basically the the range of bodies to build neighbor particle lists.
+	//----------------------------------------------------------------------
 	AdaptiveInnerRelation water_inner(water_block);
 	AdaptiveContactRelation water_contact(water_block, {&wall_boundary});
-	ComplexRelation water_complex(water_inner, water_contact);
 	AdaptiveContactRelation fluid_observer_contact(fluid_observer, {&water_block});
-
+	//----------------------------------------------------------------------
+	//	Combined relations.
+	//----------------------------------------------------------------------
+	ComplexRelation water_complex(water_inner, water_contact);
 	//----------------------------------------------------------------------
 	//	Define the main numerical methods used in the simulation.
 	//	Note that there may be data dependence on the constructors of these methods.
@@ -139,8 +144,8 @@ int main(int ac, char *av[])
 	//	Prepare the simulation with cell linked list, configuration
 	//	and case specified initial condition if necessary.
 	//----------------------------------------------------------------------
-	sph_system.initializeSystemCellLinkedLists();
-	sph_system.initializeSystemConfigurations();
+	sph_system.updateSystemCellLinkedLists();
+	sph_system.updateSystemConfigurations();
 	wall_boundary_normal_direction.parallel_exec();
 	//----------------------------------------------------------------------
 	//	Setup for time-stepping control
@@ -148,7 +153,6 @@ int main(int ac, char *av[])
 	size_t number_of_iterations = 0;
 	int screen_output_interval = 100;
 	int observation_sample_interval = screen_output_interval * 2;
-	int restart_output_interval = screen_output_interval * 10;
 	Real End_Time = 20.0; /**< End time. */
 	Real D_Time = 0.1;	  /**< Time stamps for output of body states. */
 	Real dt = 0.0;		  /**< Default acoustic time step sizes. */
@@ -221,9 +225,8 @@ int main(int ac, char *av[])
 			}
 			/** Update cell linked list and configuration. */
 			time_instance = tick_count::now();
-			water_block.updateCellLinkedListWithParticleSort(100);
-			water_complex.updateConfiguration();
-			fluid_observer_contact.updateConfiguration();
+			sph_system.updateSystemCellLinkedLists();
+			sph_system.updateSystemConfigurations();
 			interval_updating_configuration += tick_count::now() - time_instance;
 		}
 

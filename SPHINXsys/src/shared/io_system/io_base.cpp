@@ -35,7 +35,7 @@ namespace SPH
 		{
 			fs::create_directory(reload_folder_);
 		}
-		
+
 		if (sph_system.RestartStep() == 0)
 		{
 			fs::remove_all(restart_folder_);
@@ -61,45 +61,51 @@ namespace SPH
 		return padValueWithZeros(i_time);
 	}
 	//=============================================================================================//
-	void BodyStatesRecording::writeToFile()
+	void BodyStatesRecording::writeToFileByTime()
 	{
 		writeWithFileName(convertPhysicalTimeToString(GlobalStaticVariables::physical_time_));
 	}
 	//=============================================================================================//
-	void BodyStatesRecording::writeToFile(size_t iteration_step)
+	void BodyStatesRecording::writeToFileByStep()
 	{
-		writeWithFileName(padValueWithZeros(iteration_step));
+		writeWithFileName(padValueWithZeros(sph_system_.TotalSteps()));
 	};
 	//=============================================================================================//
-	RestartIO::RestartIO(IOEnvironment &io_environment, SPHBodyVector bodies)
+	RestartIO::RestartIO(IOEnvironment &io_environment,
+						 SPHBodyVector bodies, size_t restart_step_interval)
 		: BaseIO(io_environment), bodies_(bodies),
-		  overall_file_path_(io_environment.restart_folder_ + "/Restart_time_")
+		  overall_file_path_(io_environment.restart_folder_ + "/Restart_time_"),
+		  restart_step_interval_(restart_step_interval)
 	{
 		std::transform(bodies.begin(), bodies.end(), std::back_inserter(file_names_),
 					   [&](SPHBody *body) -> std::string
 					   { return io_environment.restart_folder_ + "/SPHBody_" + body->getName() + "_rst_"; });
 	}
 	//=============================================================================================//
-	void RestartIO::writeToFile(size_t iteration_step)
+	void RestartIO::writeToFileByStep()
 	{
-		std::string overall_filefullpath = overall_file_path_ + padValueWithZeros(iteration_step) + ".dat";
-		if (fs::exists(overall_filefullpath))
+		size_t iteration_step = sph_system_.TotalSteps();
+		if (iteration_step % restart_step_interval_ == 0)
 		{
-			fs::remove(overall_filefullpath);
-		}
-		std::ofstream out_file(overall_filefullpath.c_str(), std::ios::app);
-		out_file << std::fixed << std::setprecision(9) << GlobalStaticVariables::physical_time_ << "   \n";
-		out_file.close();
-
-		for (size_t i = 0; i < bodies_.size(); ++i)
-		{
-			std::string filefullpath = file_names_[i] + padValueWithZeros(iteration_step) + ".xml";
-
-			if (fs::exists(filefullpath))
+			std::string overall_filefullpath = overall_file_path_ + padValueWithZeros(iteration_step) + ".dat";
+			if (fs::exists(overall_filefullpath))
 			{
-				fs::remove(filefullpath);
+				fs::remove(overall_filefullpath);
 			}
-			bodies_[i]->writeParticlesToXmlForRestart(filefullpath);
+			std::ofstream out_file(overall_filefullpath.c_str(), std::ios::app);
+			out_file << std::fixed << std::setprecision(9) << GlobalStaticVariables::physical_time_ << "   \n";
+			out_file.close();
+
+			for (size_t i = 0; i < bodies_.size(); ++i)
+			{
+				std::string filefullpath = file_names_[i] + padValueWithZeros(iteration_step) + ".xml";
+
+				if (fs::exists(filefullpath))
+				{
+					fs::remove(filefullpath);
+				}
+				bodies_[i]->writeParticlesToXmlForRestart(filefullpath);
+			}
 		}
 	}
 	//=============================================================================================//
@@ -156,7 +162,7 @@ namespace SPH
 	ReloadParticleIO::ReloadParticleIO(IOEnvironment &io_environment, SPHBody &sph_body)
 		: ReloadParticleIO(io_environment, sph_body, sph_body.getName()) {}
 	//=============================================================================================//
-	void ReloadParticleIO::writeToFile(size_t iteration_step)
+	void ReloadParticleIO::writeToFileByStep()
 	{
 		for (size_t i = 0; i < bodies_.size(); ++i)
 		{
@@ -170,7 +176,7 @@ namespace SPH
 		}
 	}
 	//=============================================================================================//
-	void ReloadParticleIO::readFromFile(size_t restart_step)
+	void ReloadParticleIO::readFromFile()
 	{
 		std::cout << "\n Reloading particles from files." << std::endl;
 		for (size_t i = 0; i < bodies_.size(); ++i)
@@ -198,7 +204,7 @@ namespace SPH
 		ReloadMaterialParameterIO(IOEnvironment &io_environment, SPHBody &sph_body)
 		: ReloadMaterialParameterIO(io_environment, sph_body, sph_body.base_material_->LocalParametersName()) {}
 	//=================================================================================================//
-	void ReloadMaterialParameterIO::writeToFile(size_t iteration_step)
+	void ReloadMaterialParameterIO::writeToFileByStep()
 	{
 		std::string reload_material_folder = io_environment_.reload_folder_;
 		if (!fs::exists(reload_material_folder))
@@ -212,7 +218,7 @@ namespace SPH
 		}
 	}
 	//=================================================================================================//
-	void ReloadMaterialParameterIO::readFromFile(size_t restart_step)
+	void ReloadMaterialParameterIO::readFromFile()
 	{
 		for (size_t i = 0; i < materials_.size(); ++i)
 		{

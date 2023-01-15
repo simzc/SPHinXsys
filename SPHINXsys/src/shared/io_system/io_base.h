@@ -72,14 +72,15 @@ namespace SPH
 	{
 	public:
 		explicit BaseIO(IOEnvironment &io_environment)
-			: io_environment_(io_environment){};
+			: io_environment_(io_environment), sph_system_(io_environment.sph_system_){};
 		virtual ~BaseIO(){};
 
 		/** write with filename indicated by iteration step */
-		virtual void writeToFile(size_t iteration_step) = 0;
+		virtual void writeToFileByStep() = 0;
 
 	protected:
 		IOEnvironment &io_environment_;
+		SPHSystem &sph_system_;
 
 		std::string convertPhysicalTimeToString(Real physical_time);
 
@@ -105,8 +106,8 @@ namespace SPH
 			: BodyStatesRecording(io_environment, {&body}){};
 		virtual ~BodyStatesRecording(){};
 		/** write with filename indicated by physical time */
-		void writeToFile();
-		virtual void writeToFile(size_t iteration_step) override;
+		void writeToFileByTime();
+		virtual void writeToFileByStep() override;
 
 	protected:
 		SPHBodyVector bodies_;
@@ -124,15 +125,17 @@ namespace SPH
 		SPHBodyVector bodies_;
 		std::string overall_file_path_;
 		StdVec<std::string> file_names_;
+		size_t restart_step_interval_;
 
 		Real readRestartTime(size_t restart_step);
 
 	public:
-		RestartIO(IOEnvironment &io_environment, SPHBodyVector bodies);
+		RestartIO(IOEnvironment &io_environment,
+				  SPHBodyVector bodies, size_t restart_step_interval = 1000);
 		virtual ~RestartIO(){};
 
-		virtual void writeToFile(size_t iteration_step = 0) override;
-		virtual void readFromFile(size_t iteration_step = 0);
+		virtual void writeToFileByStep() override;
+		virtual void readFromFile(size_t restart_step);
 
 		virtual Real readRestartFiles(size_t restart_step)
 		{
@@ -140,7 +143,6 @@ namespace SPH
 			return readRestartTime(restart_step);
 		};
 	};
-
 
 	/**
 	 * @class ReloadParticleIO
@@ -158,8 +160,8 @@ namespace SPH
 		ReloadParticleIO(IOEnvironment &io_environment, SPHBody &sph_body, const std::string &given_body_name);
 		virtual ~ReloadParticleIO(){};
 
-		virtual void writeToFile(size_t iteration_step = 0) override;
-		virtual void readFromFile(size_t iteration_step = 0);
+		virtual void writeToFileByStep() override;
+		virtual void readFromFile();
 	};
 
 	/**
@@ -177,7 +179,7 @@ namespace SPH
 								  const std::string &given_parameters_name);
 		virtual ~ReloadMaterialParameterIO(){};
 
-		virtual void writeToFile(size_t iteration_step = 0) override;
-		virtual void readFromFile(size_t iteration_step = 0) override;
+		virtual void writeToFileByStep() override;
+		virtual void readFromFile() override;
 	};
 }

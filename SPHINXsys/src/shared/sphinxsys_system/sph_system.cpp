@@ -11,8 +11,14 @@ namespace SPH
 		: system_domain_bounds_(system_domain_bounds),
 		  resolution_ref_(resolution_ref),
 		  tbb_global_control_(tbb::global_control::max_allowed_parallelism, number_of_threads),
-		  io_environment_(nullptr), restart_step_(0), run_particle_relaxation_(false),
+		  io_environment_(nullptr), total_steps_(0), restart_step_(0), run_particle_relaxation_(false),
 		  reload_particles_(false), generate_regression_data_(false) {}
+	//=================================================================================================//
+	void SPHSystem::setRestartStep(size_t restart_step)
+	{
+		restart_step_ = restart_step;
+		total_steps_ = restart_step_;
+	}
 	//=================================================================================================//
 	void SPHSystem::updateSystemCellLinkedLists()
 	{

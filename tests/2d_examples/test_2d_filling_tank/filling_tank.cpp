@@ -73,7 +73,7 @@ public:
 class InletInflowCondition : public fluid_dynamics::EmitterInflowCondition
 {
 public:
-	InletInflowCondition(BodyAlignedBoxByParticle &aligned_box_part)
+	explicit InletInflowCondition(BodyAlignedBoxByParticle &aligned_box_part)
 		: EmitterInflowCondition(aligned_box_part) {}
 
 protected:
@@ -112,8 +112,11 @@ int main()
 	//	The contact map gives the topological connections between the bodies.
 	//	Basically the the range of bodies to build neighbor particle lists.
 	//----------------------------------------------------------------------
-	ComplexRelation water_body_complex(water_body, {&wall});
+	InnerRelation water_body_inner(water_body);
+	ContactRelation water_body_contact(water_body, {&wall});
 	ContactRelation fluid_observer_contact_relation(fluid_observer, {&water_body});
+
+	ComplexRelation water_body_complex(water_body_inner, water_body_contact);
 	//----------------------------------------------------------------------
 	//	Define all numerical methods which are used in this case.
 	//----------------------------------------------------------------------
@@ -148,8 +151,8 @@ int main()
 	//	Prepare the simulation with cell linked list, configuration
 	//	and case specified initial condition if necessary.
 	//----------------------------------------------------------------------
-	system.initializeSystemCellLinkedLists();
-	system.initializeSystemConfigurations();
+	system.updateSystemCellLinkedLists();
+	system.updateSystemConfigurations();
 	wall_normal_direction.parallel_exec();
 	indicate_free_surface.parallel_exec();
 	//----------------------------------------------------------------------
@@ -157,7 +160,6 @@ int main()
 	//----------------------------------------------------------------------
 	size_t number_of_iterations = system.RestartStep();
 	int screen_output_interval = 100;
-	int restart_output_interval = screen_output_interval * 10;
 	Real end_time = 30.0;
 	Real output_interval = 0.1;
 	Real dt = 0.0; /**< Default acoustic time step sizes. */
@@ -208,10 +210,8 @@ int main()
 			/** inflow emitter injection*/
 			emitter_injection.parallel_exec();
 			/** Update cell linked list and configuration. */
-
-			water_body.updateCellLinkedListWithParticleSort(100);
-			water_body_complex.updateConfiguration();
-			fluid_observer_contact_relation.updateConfiguration();
+			system.updateSystemCellLinkedLists();
+			system.updateSystemConfigurations();
 		}
 
 		tick_count t2 = tick_count::now();

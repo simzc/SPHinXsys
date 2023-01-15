@@ -45,7 +45,6 @@ namespace po = boost::program_options;
 #include <filesystem>
 namespace fs = std::filesystem;
 
-
 namespace SPH
 {
 	/**
@@ -70,7 +69,9 @@ namespace SPH
 		bool RunParticleRelaxation() { return run_particle_relaxation_; };
 		void setReloadParticles(bool reload_particles) { reload_particles_ = reload_particles; };
 		bool ReloadParticles() { return reload_particles_; };
-		void setRestartStep(size_t restart_step) { restart_step_ = restart_step; };
+		size_t TotalSteps() { return total_steps_; };
+		void accumulateTotalSteps() { total_steps_++; };
+		void setRestartStep(size_t restart_step);
 		size_t RestartStep() { return restart_step_; };
 		BoundingBox system_domain_bounds_;		 /**< Lower and Upper domain bounds. */
 		Real resolution_ref_;					 /**< reference resolution of the SPH system */
@@ -79,10 +80,10 @@ namespace SPH
 		IOEnvironment *io_environment_; /**< io_environment setup */
 		bool generate_regression_data_; /**< run and generate or enhance the regression test data set. */
 
-		SPHBodyVector sph_bodies_;		  		/**< All sph bodies. */
-		SPHBodyVector observation_bodies_; 		/**< The bodies without inner particle configuration. */
-		SPHBodyVector real_bodies_;		  		/**< The bodies with inner particle configuration. */
-		SolidBodyVector solid_bodies_;	  		/**< The bodies with inner particle configuration and acoustic time steps . */
+		SPHBodyVector sph_bodies_;		   /**< All sph bodies. */
+		SPHBodyVector observation_bodies_; /**< The bodies without inner particle configuration. */
+		SPHBodyVector real_bodies_;		   /**< The bodies with inner particle configuration. */
+		SolidBodyVector solid_bodies_;	   /**< The bodies with inner particle configuration and acoustic time steps . */
 		void updateSystemCellLinkedLists();
 		void updateSystemConfigurations();
 		/** get the min time step from all bodies. */
@@ -94,7 +95,8 @@ namespace SPH
 	protected:
 		bool run_particle_relaxation_; /**< run particle relaxation for body fitted particle distribution */
 		bool reload_particles_;		   /**< start the simulation with relaxed particles. */
-		size_t restart_step_;		   /**< restart step */
+		size_t total_steps_;
+		size_t restart_step_; /**< restart step */
 	};
 }
 #endif // SPH_SYSTEM_H

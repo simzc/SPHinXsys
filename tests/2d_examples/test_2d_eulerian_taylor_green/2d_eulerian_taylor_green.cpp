@@ -125,17 +125,16 @@ int main(int ac, char *av[])
 	//	Prepare the simulation with cell linked list, configuration
 	//	and case specified initial condition if necessary.
 	//----------------------------------------------------------------------
-	sph_system.initializeSystemCellLinkedLists();
+	sph_system.updateSystemCellLinkedLists();
 	periodic_condition_x.update_cell_linked_list_.parallel_exec();
 	periodic_condition_y.update_cell_linked_list_.parallel_exec();
-	sph_system.initializeSystemConfigurations();
+	sph_system.updateSystemConfigurations();
 	initial_condition.parallel_exec();
 	//----------------------------------------------------------------------
 	//	Setup for time-stepping control
 	//----------------------------------------------------------------------
 	size_t number_of_iterations = 0;
 	int screen_output_interval = 100;
-	int restart_output_interval = screen_output_interval * 10;
 	Real end_time = 5.0;
 	Real output_interval = 0.1; /**< Time stamps for output of body states. */
 	/** statistics for computing CPU time. */

@@ -148,6 +148,7 @@ int main()
 	FluidBody water_block(system, makeShared<WaterBlock>("WaterBlock"));
 	water_block.defineParticlesAndMaterial<FluidParticles, WeaklyCompressibleFluid>(rho0_f, c_f);
 	water_block.generateParticles<ParticleGeneratorLattice>();
+	water_block.setParticleSortInterval(100);
 
 	SolidBody wall_boundary(system, makeShared<WallBoundary>("WallBoundary"));
 	wall_boundary.defineParticlesAndMaterial<SolidParticles, Solid>();
@@ -166,10 +167,16 @@ int main()
 	//	The contact map gives the topological connections between the bodies.
 	//	Basically the the range of bodies to build neighbor particle lists.
 	//----------------------------------------------------------------------
-	ComplexRelation water_block_complex_relation(water_block, RealBodyVector{&wall_boundary, &gate});
+	InnerRelation water_block_inner(water_block);
 	InnerRelation gate_inner_relation(gate);
-	ContactRelation gate_water_contact_relation(gate, {&water_block});
-	ContactRelation gate_observer_contact_relation(gate_observer, {&gate});
+	gate_inner_relation.setTotalLagrangian();
+
+	ContactRelation water_block_contact(water_block, RealBodyVector{&wall_boundary, &gate});
+	ContactRelation gate_water_contact(gate, {&water_block});
+	ContactRelation gate_observer_contact(gate_observer, {&gate});
+	gate_observer_contact.setTotalLagrangian();
+
+	ComplexRelation water_block_complex_relation(water_block_inner, water_block_contact);
 	//----------------------------------------------------------------------
 	//	Define the main numerical methods used in the simulation.
 	//	Note that there may be data dependence on the constructors of these methods.
@@ -190,7 +197,7 @@ int main()
 	SimpleDynamics<NormalDirectionFromBodyShape> wall_boundary_normal_direction(wall_boundary);
 	SimpleDynamics<NormalDirectionFromBodyShape> gate_normal_direction(gate);
 	InteractionDynamics<solid_dynamics::CorrectConfiguration> gate_corrected_configuration(gate_inner_relation);
-	InteractionDynamics<solid_dynamics::FluidPressureForceOnSolidRiemann> fluid_pressure_force_on_gate(gate_water_contact_relation);
+	InteractionDynamics<solid_dynamics::FluidPressureForceOnSolidRiemann> fluid_pressure_force_on_gate(gate_water_contact);
 	solid_dynamics::AverageVelocityAndAcceleration average_velocity_and_acceleration(gate);
 	//----------------------------------------------------------------------
 	//	Algorithms of Elastic dynamics.
@@ -208,15 +215,15 @@ int main()
 	BodyStatesRecordingToPlt write_real_body_states_to_plt(io_environment, system.real_bodies_);
 	BodyStatesRecordingToVtp write_real_body_states_to_vtp(io_environment, system.real_bodies_);
 	RegressionTestDynamicTimeWarping<ObservedQuantityRecording<Vecd>>
-		write_beam_tip_displacement("Position", io_environment, gate_observer_contact_relation);
-	//TODO: observing position is not as good observing displacement. 
+		write_beam_tip_displacement("Position", io_environment, gate_observer_contact);
+	// TODO: observing position is not as good observing displacement.
 	//----------------------------------------------------------------------
 	//	Prepare the simulation with cell linked list, configuration
 	//	and case specified initial condition if necessary.
 	//----------------------------------------------------------------------
 	gate_offset_position.parallel_exec();
-	system.initializeSystemCellLinkedLists();
-	system.initializeSystemConfigurations();
+	system.updateSystemCellLinkedLists();
+	system.updateSystemConfigurations();
 	wall_boundary_normal_direction.parallel_exec();
 	gate_normal_direction.parallel_exec();
 	gate_corrected_configuration.parallel_exec();
@@ -227,8 +234,8 @@ int main()
 	int screen_output_interval = 100;
 	Real end_time = 400.0;
 	Real output_interval = end_time / 200.0;
-	Real dt = 0.0;					/**< Default acoustic time step sizes. */
-	Real dt_s = 0.0;				/**< Default acoustic time step sizes for solid. */
+	Real dt = 0.0;	 /**< Default acoustic time step sizes. */
+	Real dt_s = 0.0; /**< Default acoustic time step sizes for solid. */
 	tick_count t1 = tick_count::now();
 	tick_count::interval_t interval;
 	//----------------------------------------------------------------------
@@ -287,10 +294,8 @@ int main()
 			number_of_iterations++;
 
 			/** Update cell linked list and configuration. */
-			water_block.updateCellLinkedListWithParticleSort(100);
-			gate.updateCellLinkedList();
-			water_block_complex_relation.updateConfiguration();
-			gate_water_contact_relation.updateConfiguration();
+			system.updateSystemCellLinkedLists();
+			system.updateSystemConfigurations();
 			/** Output the observed data. */
 			write_beam_tip_displacement.writeToFile(number_of_iterations);
 		}

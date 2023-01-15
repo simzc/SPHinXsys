@@ -19,7 +19,7 @@ int main(int ac, char *av[])
 	sph_system.setRunParticleRelaxation(false);
 	/** Tag for computation start with relaxed body fitted particles distribution. */
 	sph_system.setReloadParticles(true);
-//handle command line arguments
+// handle command line arguments
 #ifdef BOOST_AVAILABLE
 	sph_system.handleCommandlineOptions(ac, av);
 #endif
@@ -43,14 +43,6 @@ int main(int ac, char *av[])
 	ObserverBody fluid_observer(sph_system, "FluidObserver");
 	fluid_observer.generateParticles<ObserverParticleGenerator>(observation_locations);
 	//----------------------------------------------------------------------
-	//	Define body relation map.
-	//	The contact map gives the topological connections between the bodies.
-	//	Basically the the range of bodies to build neighbor particle lists.
-	//----------------------------------------------------------------------
-	ComplexRelation water_block_complex(water_block, {&cylinder});
-	ContactRelation cylinder_contact(cylinder, {&water_block});
-	ContactRelation fluid_observer_contact(fluid_observer, {&water_block});
-	//----------------------------------------------------------------------
 	//	Run particle relaxation for body-fitted distribution if chosen.
 	//----------------------------------------------------------------------
 	if (sph_system.RunParticleRelaxation())
@@ -73,6 +65,11 @@ int main(int ac, char *av[])
 		//----------------------------------------------------------------------
 		random_inserted_body_particles.parallel_exec(0.25);
 		relaxation_step_inner.SurfaceBounding().parallel_exec();
+		sph_system.updateSystemCellLinkedLists();
+		sph_system.updateSystemConfigurations();
+		//----------------------------------------------------------------------
+		//	First output before the simulation.
+		//----------------------------------------------------------------------
 		write_inserted_body_to_vtp.writeToFile(0);
 
 		int ite_p = 0;
@@ -85,6 +82,8 @@ int main(int ac, char *av[])
 				std::cout << std::fixed << std::setprecision(9) << "Relaxation steps for the inserted body N = " << ite_p << "\n";
 				write_inserted_body_to_vtp.writeToFile(ite_p);
 			}
+			sph_system.updateSystemCellLinkedLists();
+			sph_system.updateSystemConfigurations();
 		}
 		std::cout << "The physics relaxation process of the cylinder finish !" << std::endl;
 
@@ -92,6 +91,17 @@ int main(int ac, char *av[])
 		write_particle_reload_files.writeToFile(0);
 		return 0;
 	}
+	//----------------------------------------------------------------------
+	//	Define body relation map.
+	//	The contact map gives the topological connections between the bodies.
+	//	Basically the the range of bodies to build neighbor particle lists.
+	//----------------------------------------------------------------------
+	InnerRelation water_block_inner(water_block);
+	ContactRelation water_block_contact(water_block, {&cylinder});
+	ContactRelation cylinder_contact(cylinder, {&water_block});
+	ContactRelation fluid_observer_contact(fluid_observer, {&water_block});
+
+	ComplexRelation water_block_complex(water_block_inner, water_block_contact);
 	//----------------------------------------------------------------------
 	//	Define the main numerical methods used in the simulation.
 	//	Note that there may be data dependence on the constructors of these methods.
@@ -144,13 +154,13 @@ int main(int ac, char *av[])
 	//	and case specified initial condition if necessary.
 	//----------------------------------------------------------------------
 	/** initialize cell linked lists for all bodies. */
-	sph_system.initializeSystemCellLinkedLists();
+	sph_system.updateSystemCellLinkedLists();
 	/** periodic condition applied after the mesh cell linked list build up
-	  * but before the configuration build up. */
+	 * but before the configuration build up. */
 	periodic_condition_x.update_cell_linked_list_.parallel_exec();
 	periodic_condition_y.update_cell_linked_list_.parallel_exec();
 	/** initialize configurations for all bodies. */
-	sph_system.initializeSystemConfigurations();
+	sph_system.updateSystemConfigurations();
 	/** initialize surface normal direction for the insert body. */
 	cylinder_normal_direction.parallel_exec();
 	//----------------------------------------------------------------------
@@ -158,7 +168,6 @@ int main(int ac, char *av[])
 	//----------------------------------------------------------------------
 	size_t number_of_iterations = 0;
 	int screen_output_interval = 100;
-	int restart_output_interval = screen_output_interval * 10;
 	Real end_time = 200.0;
 	Real output_interval = end_time / 200.0;
 	//----------------------------------------------------------------------
@@ -218,12 +227,11 @@ int main(int ac, char *av[])
 			/** Water block configuration and periodic condition. */
 			periodic_condition_x.bounding_.parallel_exec();
 			periodic_condition_y.bounding_.parallel_exec();
-			water_block.updateCellLinkedListWithParticleSort(100);
+			sph_system.updateSystemCellLinkedLists();
 			periodic_condition_x.update_cell_linked_list_.parallel_exec();
 			periodic_condition_y.update_cell_linked_list_.parallel_exec();
 			/** one need update configuration after periodic condition. */
-			water_block_complex.updateConfiguration();
-			cylinder_contact.updateConfiguration();
+			sph_system.updateSystemConfigurations();
 		}
 
 		tick_count t2 = tick_count::now();

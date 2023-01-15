@@ -117,8 +117,8 @@ int main()
 	//	Prepare the simulation with cell linked list, configuration
 	//	and case specified initial condition if necessary.
 	//----------------------------------------------------------------------
-	system.initializeSystemCellLinkedLists();
-	system.initializeSystemConfigurations();
+	system.updateSystemCellLinkedLists();
+	system.updateSystemConfigurations();
 	initialization.parallel_exec();
 	correct_configuration.parallel_exec();
 	//----------------------------------------------------------------------
