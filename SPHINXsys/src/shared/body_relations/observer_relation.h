@@ -42,9 +42,10 @@ namespace SPH
     public:
         ObserverRelation(ObserverBody &observer_body, RealBodyVector contact_bodies);
         virtual ~ObserverRelation(){};
-    protected:
-        bool is_configuration_updated_;
-    };
+        virtual void updateConfiguration() override;
+        virtual void updateRelation() override;
 
+    protected:
+    };
 }
 #endif // OBSERVER_RELATION_H

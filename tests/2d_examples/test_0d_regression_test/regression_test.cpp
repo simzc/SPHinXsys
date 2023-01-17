@@ -238,7 +238,7 @@ int main()
 	//	and case specified initial condition if necessary.
 	//----------------------------------------------------------------------
 	sph_system.updateSystemCellLinkedLists();
-	sph_system.updateSystemConfigurations();
+	sph_system.updateSystemRelations();
 	correct_configuration.parallel_exec();
 	setup_diffusion_initial_condition.parallel_exec();
 	left_boundary_condition.parallel_exec();

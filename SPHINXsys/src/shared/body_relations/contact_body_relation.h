@@ -86,17 +86,6 @@ namespace SPH
 	};
 
 	/**
-	 * @class ObserverRelation
-	 * @brief The relation between an observer body and observed bodies
-	 */
-	class ObserverRelation : public ContactRelation
-	{
-	public:
-		ObserverRelation(ObserverBody &observer_body, RealBodyVector contact_bodies);
-		virtual ~ObserverRelation(){};
-	};
-
-	/**
 	 * @class SurfaceContactRelation
 	 * @brief The relation between a solid body and its contact solid bodies
 	 */

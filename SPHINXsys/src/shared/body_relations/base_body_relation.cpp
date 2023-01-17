@@ -17,7 +17,7 @@ namespace SPH
 	//=================================================================================================//
 	SPHRelation::SPHRelation(SPHBody &sph_body)
 		: sph_body_(sph_body), base_particles_(sph_body.getBaseParticles()),
-		  is_total_lagrangian_(false), to_update_configuration_(true)
+		  is_configuration_updated_(false), to_update_configuration_(true)
 	{
 		sph_body_.AllRelations().push_back(this);
 	}
@@ -28,19 +28,11 @@ namespace SPH
 		updateConfigurationMemories();
 	}
 	//=================================================================================================//
-	BaseInnerRelation &BaseInnerRelation::setTotalLagrangian()
+	void BaseInnerRelation::updateRelation()
 	{
-		is_total_lagrangian_ = true;
-		return *this;
-	}
-	//=================================================================================================//
-	void BaseInnerRelation::setNextUpdate()
-	{
-		to_update_configuration_ = !is_total_lagrangian_;
-		if (!is_total_lagrangian_)
-		{
-			real_body_->setToUpdateCellLinkedList();
-		}
+		updateConfiguration();
+		is_configuration_updated_ = true;
+		real_body_->setToUpdateCellLinkedList();
 	}
 	//=================================================================================================//
 	void BaseInnerRelation::updateConfigurationMemories()
@@ -69,22 +61,14 @@ namespace SPH
 		updateConfigurationMemories();
 	}
 	//=================================================================================================//
-	BaseContactRelation &BaseContactRelation::setTotalLagrangian()
+	void BaseContactRelation::updateRelation()
 	{
-		is_total_lagrangian_ = true;
-		return *this;
-	};
-	//=================================================================================================//
-	void BaseContactRelation::setNextUpdate()
-	{
-		to_update_configuration_ = !is_total_lagrangian_;
-		if (!is_total_lagrangian_)
+		updateConfiguration();
+		is_configuration_updated_ = true;
+		for (auto &real_body : contact_bodies_)
 		{
-			for (auto &real_body : contact_bodies_)
-			{
 
-				real_body->setToUpdateCellLinkedList();
-			}
+			real_body->setToUpdateCellLinkedList();
 		}
 	}
 	//=================================================================================================//

@@ -119,7 +119,7 @@ int main(int ac, char *av[])
 	}
 	wall_boundary_normal_direction.parallel_exec();
 	sph_system.updateSystemCellLinkedLists();
-	sph_system.updateSystemConfigurations();
+	sph_system.updateSystemRelations();
 	//----------------------------------------------------------------------
 	//	Setup for time-stepping control
 	//----------------------------------------------------------------------
@@ -195,7 +195,7 @@ int main(int ac, char *av[])
 			/** Update cell linked list and configuration. */
 			time_instance = tick_count::now();
 			sph_system.updateSystemCellLinkedLists();
-			sph_system.updateSystemConfigurations();
+			sph_system.updateSystemRelations();
 			interval_updating_configuration += tick_count::now() - time_instance;
 		}
 

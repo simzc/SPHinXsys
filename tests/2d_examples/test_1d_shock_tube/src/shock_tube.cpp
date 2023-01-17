@@ -123,7 +123,7 @@ int main(int ac, char *av[])
 	waves_initial_condition.exec();
 	sph_system.updateSystemCellLinkedLists();
 	periodic_condition_y.update_cell_linked_list_.parallel_exec();
-	sph_system.updateSystemConfigurations();
+	sph_system.updateSystemRelations();
 	//----------------------------------------------------------------------
 	//	Setup for time-stepping control
 	//----------------------------------------------------------------------

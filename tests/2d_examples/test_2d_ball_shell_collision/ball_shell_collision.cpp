@@ -129,7 +129,7 @@ int main(int ac, char *av[])
 		wall_boundary_random_particles.parallel_exec(0.25);
 		relaxation_step_wall_boundary_inner.mid_surface_bounding_.parallel_exec();
 		sph_system.updateSystemCellLinkedLists();
-		sph_system.updateSystemConfigurations();
+		sph_system.updateSystemRelations();
 		//----------------------------------------------------------------------
 		//	First output before the simulation.
 		//----------------------------------------------------------------------
@@ -152,7 +152,7 @@ int main(int ac, char *av[])
 				write_relaxed_particles.writeToFile(ite);
 			}
 			sph_system.updateSystemCellLinkedLists();
-			sph_system.updateSystemConfigurations();
+			sph_system.updateSystemRelations();
 		}
 		std::cout << "The physics relaxation process of ball particles finish !" << std::endl;
 		shell_normal_prediction.exec();
@@ -197,7 +197,7 @@ int main(int ac, char *av[])
 	//	and case specified initial condition if necessary.
 	//----------------------------------------------------------------------
 	sph_system.updateSystemCellLinkedLists();
-	sph_system.updateSystemConfigurations();
+	sph_system.updateSystemRelations();
 	ball_corrected_configuration.parallel_exec();
 
 	/** Initial states output. */
@@ -238,7 +238,7 @@ int main(int ac, char *av[])
 				ball_stress_relaxation_second_half.parallel_exec(dt);
 
 				sph_system.updateSystemCellLinkedLists();
-				sph_system.updateSystemConfigurations();
+				sph_system.updateSystemRelations();
 
 				ite++;
 				Real dt_ball = ball_get_time_step_size.parallel_exec();

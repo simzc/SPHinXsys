@@ -110,14 +110,12 @@ namespace SPH
 		SPHBody &getDynamicsRange() { return sph_body_; };
 		explicit SPHRelation(SPHBody &sph_body);
 		virtual ~SPHRelation(){};
-		bool setUpdateConfiguration() { return to_update_configuration_ = !is_total_lagrangian_; };
-		bool checkUpdateConfiguration() { return to_update_configuration_; };
 		virtual void updateConfigurationMemories() = 0;
 		virtual void updateConfiguration() = 0;
-		virtual void setNextUpdate() = 0;
+		virtual void updateRelation() = 0;
 
 	protected:
-		bool is_total_lagrangian_;
+		bool is_configuration_updated_;
 		bool to_update_configuration_;
 	};
 
@@ -133,8 +131,7 @@ namespace SPH
 		explicit BaseInnerRelation(RealBody &real_body);
 		virtual ~BaseInnerRelation(){};
 		virtual void updateConfigurationMemories() override;
-		BaseInnerRelation &setTotalLagrangian();
-		virtual void setNextUpdate() override;
+		virtual void updateRelation() override;
 
 	protected:
 		virtual void resetNeighborhoodCurrentSize();
@@ -158,8 +155,25 @@ namespace SPH
 			: BaseContactRelation(sph_body, BodyPartsToRealBodies(contact_body_parts)){};
 		virtual ~BaseContactRelation(){};
 		virtual void updateConfigurationMemories() override;
-		BaseContactRelation &setTotalLagrangian();
-		virtual void setNextUpdate() override;
+		virtual void updateRelation() override;
+	};
+
+	template <class RelationType>
+	class TotalLagrangian : public RelationType
+	{
+	public:
+		template <typename... Args>
+		TotalLagrangian(Args &&...args)	: RelationType(std::forward<Args>(args)...){};
+		virtual ~TotalLagrangian(){};
+		virtual void updateRelation() override
+		{
+			if (this->to_update_configuration_)
+			{
+				RelationType::updateConfiguration();
+			}
+			this->is_configuration_updated_ = true;
+			this->to_update_configuration_ = false;
+		};
 	};
 
 	/**

@@ -142,7 +142,7 @@ int main(int ac, char *av[])
 		relaxation_step_inner.SurfaceBounding().parallel_exec();
 		relaxation_step_complex.SurfaceBounding().parallel_exec();
 		sph_system.updateSystemCellLinkedLists();
-		sph_system.updateSystemConfigurations();
+		sph_system.updateSystemRelations();
 		//----------------------------------------------------------------------
 		//	First output before the main loop.
 		//----------------------------------------------------------------------
@@ -162,7 +162,7 @@ int main(int ac, char *av[])
 				write_real_body_states.writeToFile(ite_p);
 			}
 			sph_system.updateSystemCellLinkedLists();
-			sph_system.updateSystemConfigurations();
+			sph_system.updateSystemRelations();
 		}
 		std::cout << "The physics relaxation process finish !" << std::endl;
 
@@ -201,7 +201,7 @@ int main(int ac, char *av[])
 	//	and case specified initial condition if necessary.
 	//----------------------------------------------------------------------
 	sph_system.updateSystemCellLinkedLists();
-	sph_system.updateSystemConfigurations();
+	sph_system.updateSystemRelations();
 	cylinder_normal_direction.parallel_exec();
 	surface_indicator.parallel_exec();
 	variable_reset_in_boundary_condition.parallel_exec();

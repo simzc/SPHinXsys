@@ -63,7 +63,7 @@ int main(int ac, char *av[])
 		random_inserted_body_particles.parallel_exec(0.25);
 		relaxation_step_inner.SurfaceBounding().parallel_exec();
 		sph_system.updateSystemCellLinkedLists();
-		sph_system.updateSystemConfigurations();
+		sph_system.updateSystemRelations();
 		write_inserted_body_to_vtp.writeToFile(0);
 		//----------------------------------------------------------------------
 		//	Relax particles of the insert body.
@@ -79,7 +79,7 @@ int main(int ac, char *av[])
 				write_inserted_body_to_vtp.writeToFile(ite_p);
 			}
 			sph_system.updateSystemCellLinkedLists();
-			sph_system.updateSystemConfigurations();
+			sph_system.updateSystemRelations();
 		}
 		std::cout << "The physics relaxation process of inserted body finish !" << std::endl;
 		/** Output results. */
@@ -162,7 +162,7 @@ int main(int ac, char *av[])
 	//----------------------------------------------------------------------
 	/** initialize cell linked lists and configurations for all bodies. */
 	sph_system.updateSystemCellLinkedLists();
-	sph_system.updateSystemConfigurations();
+	sph_system.updateSystemRelations();
 	/** computing surface normal direction for the insert body. */
 	cylinder_normal_direction.parallel_exec();
 	//----------------------------------------------------------------------
@@ -232,7 +232,7 @@ int main(int ac, char *av[])
 			disposer_outflow_deletion.parallel_exec();
 
 			sph_system.updateSystemCellLinkedLists();
-			sph_system.updateSystemConfigurations();
+			sph_system.updateSystemRelations();
 		}
 
 		tick_count t2 = tick_count::now();

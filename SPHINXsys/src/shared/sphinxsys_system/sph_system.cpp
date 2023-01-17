@@ -28,17 +28,13 @@ namespace SPH
 		}
 	}
 	//=================================================================================================//
-	void SPHSystem::updateSystemConfigurations()
+	void SPHSystem::updateSystemRelations()
 	{
 		for (auto &body : sph_bodies_)
 		{
 			for (auto &relation : body->AllRelations())
 			{
-				if (relation->checkUpdateConfiguration())
-				{
-					relation->updateConfiguration();
-					relation->setNextUpdate();
-				}
+				relation->updateRelation();
 			}
 		}
 	}

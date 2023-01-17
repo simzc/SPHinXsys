@@ -152,7 +152,7 @@ int main()
 	//	and case specified initial condition if necessary.
 	//----------------------------------------------------------------------
 	system.updateSystemCellLinkedLists();
-	system.updateSystemConfigurations();
+	system.updateSystemRelations();
 	wall_normal_direction.parallel_exec();
 	indicate_free_surface.parallel_exec();
 	//----------------------------------------------------------------------
@@ -211,7 +211,7 @@ int main()
 			emitter_injection.parallel_exec();
 			/** Update cell linked list and configuration. */
 			system.updateSystemCellLinkedLists();
-			system.updateSystemConfigurations();
+			system.updateSystemRelations();
 		}
 
 		tick_count t2 = tick_count::now();

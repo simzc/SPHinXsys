@@ -85,7 +85,7 @@ namespace SPH
 		SPHBodyVector real_bodies_;		   /**< The bodies with inner particle configuration. */
 		SolidBodyVector solid_bodies_;	   /**< The bodies with inner particle configuration and acoustic time steps . */
 		void updateSystemCellLinkedLists();
-		void updateSystemConfigurations();
+		void updateSystemRelations();
 		/** get the min time step from all bodies. */
 		Real getSmallestTimeStepAmongSolidBodies(Real CFL = 0.6);
 		/** Command line handle for ctest. */

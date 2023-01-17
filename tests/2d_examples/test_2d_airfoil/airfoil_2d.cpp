@@ -82,7 +82,7 @@ int main(int ac, char *av[])
 	relaxation_step_inner.SurfaceBounding().parallel_exec();
 	update_smoothing_length_ratio.parallel_exec();
 	system.updateSystemCellLinkedLists();
-	system.updateSystemConfigurations();
+	system.updateSystemRelations();
 	//----------------------------------------------------------------------
 	//	First output before the simulation.
 	//----------------------------------------------------------------------
@@ -103,7 +103,7 @@ int main(int ac, char *av[])
 			airfoil_recording_to_vtp.writeToFile(ite_p);
 		}
 		system.updateSystemCellLinkedLists();
-		system.updateSystemConfigurations();
+		system.updateSystemRelations();
 	}
 	std::cout << "The physics relaxation process finished !" << std::endl;
 

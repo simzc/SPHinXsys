@@ -139,7 +139,7 @@ int main(int ac, char *av[])
 		free_ball_random_particles.parallel_exec(0.25);
 		damping_ball_random_particles.parallel_exec(0.25);
 		sph_system.updateSystemCellLinkedLists();
-		sph_system.updateSystemConfigurations();
+		sph_system.updateSystemRelations();
 		//----------------------------------------------------------------------
 		//	First output before the simulation.
 		//----------------------------------------------------------------------
@@ -160,7 +160,7 @@ int main(int ac, char *av[])
 				write_ball_state.writeToFile(ite);
 			}
 			sph_system.updateSystemCellLinkedLists();
-			sph_system.updateSystemConfigurations();
+			sph_system.updateSystemRelations();
 		}
 		std::cout << "The physics relaxation process of ball particles finish !" << std::endl;
 		write_particle_reload_files.writeToFile(0);
@@ -218,7 +218,7 @@ int main(int ac, char *av[])
 	//	and case specified initial condition if necessary.
 	//----------------------------------------------------------------------
 	sph_system.updateSystemCellLinkedLists();
-	sph_system.updateSystemConfigurations();
+	sph_system.updateSystemRelations();
 	free_ball_corrected_configuration.parallel_exec();
 	damping_ball_corrected_configuration.parallel_exec();
 	//----------------------------------------------------------------------
@@ -271,7 +271,7 @@ int main(int ac, char *av[])
 				damping_ball_stress_relaxation_second_half.parallel_exec(dt);
 
 				sph_system.updateSystemCellLinkedLists();
-				sph_system.updateSystemConfigurations();
+				sph_system.updateSystemRelations();
 
 				ite++;
 				Real dt_free = free_ball_get_time_step_size.parallel_exec();

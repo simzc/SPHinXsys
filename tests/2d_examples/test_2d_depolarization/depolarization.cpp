@@ -118,7 +118,7 @@ int main()
 	//	and case specified initial condition if necessary.
 	//----------------------------------------------------------------------
 	system.updateSystemCellLinkedLists();
-	system.updateSystemConfigurations();
+	system.updateSystemRelations();
 	initialization.parallel_exec();
 	correct_configuration.parallel_exec();
 	//----------------------------------------------------------------------

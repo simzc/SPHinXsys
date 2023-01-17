@@ -223,7 +223,7 @@ int main()
 	//----------------------------------------------------------------------
 	gate_offset_position.parallel_exec();
 	system.updateSystemCellLinkedLists();
-	system.updateSystemConfigurations();
+	system.updateSystemRelations();
 	wall_boundary_normal_direction.parallel_exec();
 	gate_normal_direction.parallel_exec();
 	gate_corrected_configuration.parallel_exec();
@@ -295,7 +295,7 @@ int main()
 
 			/** Update cell linked list and configuration. */
 			system.updateSystemCellLinkedLists();
-			system.updateSystemConfigurations();
+			system.updateSystemRelations();
 			/** Output the observed data. */
 			write_beam_tip_displacement.writeToFile(number_of_iterations);
 		}

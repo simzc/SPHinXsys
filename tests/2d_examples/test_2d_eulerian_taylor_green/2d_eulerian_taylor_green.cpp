@@ -128,7 +128,7 @@ int main(int ac, char *av[])
 	sph_system.updateSystemCellLinkedLists();
 	periodic_condition_x.update_cell_linked_list_.parallel_exec();
 	periodic_condition_y.update_cell_linked_list_.parallel_exec();
-	sph_system.updateSystemConfigurations();
+	sph_system.updateSystemRelations();
 	initial_condition.parallel_exec();
 	//----------------------------------------------------------------------
 	//	Setup for time-stepping control

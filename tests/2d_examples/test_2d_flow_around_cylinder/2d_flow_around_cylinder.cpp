@@ -66,7 +66,7 @@ int main(int ac, char *av[])
 		random_inserted_body_particles.parallel_exec(0.25);
 		relaxation_step_inner.SurfaceBounding().parallel_exec();
 		sph_system.updateSystemCellLinkedLists();
-		sph_system.updateSystemConfigurations();
+		sph_system.updateSystemRelations();
 		//----------------------------------------------------------------------
 		//	First output before the simulation.
 		//----------------------------------------------------------------------
@@ -83,7 +83,7 @@ int main(int ac, char *av[])
 				write_inserted_body_to_vtp.writeToFile(ite_p);
 			}
 			sph_system.updateSystemCellLinkedLists();
-			sph_system.updateSystemConfigurations();
+			sph_system.updateSystemRelations();
 		}
 		std::cout << "The physics relaxation process of the cylinder finish !" << std::endl;
 
@@ -160,7 +160,7 @@ int main(int ac, char *av[])
 	periodic_condition_x.update_cell_linked_list_.parallel_exec();
 	periodic_condition_y.update_cell_linked_list_.parallel_exec();
 	/** initialize configurations for all bodies. */
-	sph_system.updateSystemConfigurations();
+	sph_system.updateSystemRelations();
 	/** initialize surface normal direction for the insert body. */
 	cylinder_normal_direction.parallel_exec();
 	//----------------------------------------------------------------------
@@ -231,7 +231,7 @@ int main(int ac, char *av[])
 			periodic_condition_x.update_cell_linked_list_.parallel_exec();
 			periodic_condition_y.update_cell_linked_list_.parallel_exec();
 			/** one need update configuration after periodic condition. */
-			sph_system.updateSystemConfigurations();
+			sph_system.updateSystemRelations();
 		}
 
 		tick_count t2 = tick_count::now();
