@@ -21,19 +21,30 @@
  *                                                                          *
  * ------------------------------------------------------------------------*/
 /**
- * @file 	all_body_relations.h
- * @brief 	This is the header file that user code should include to pick up all 
- *          body relation used in SPHinXsys. 
- * @author	Chi ZHang and Xiangyu Hu
+ * @file 	observer_relation.h
+ * @brief 	relation for observing.
+ * @author	Xiangyu Hu
  */
-#ifndef ALL_BODY_RELATIONS_H
-#define ALL_BODY_RELATIONS_H
 
-#pragma once
+#ifndef OBSERVER_RELATION_H
+#define OBSERVER_RELATION_H
 
-#include "base_body_relation.h"
-#include "inner_body_relation.h"
 #include "contact_body_relation.h"
-#include "observer_relation.h"
+#include "observer_body.h"
+namespace SPH
+{
+    /**
+     * @class ObserverRelation
+     * @brief The relation between an observer body and observed bodies
+     */
+    class ObserverRelation : public ContactRelation
+    {
+    public:
+        ObserverRelation(ObserverBody &observer_body, RealBodyVector contact_bodies);
+        virtual ~ObserverRelation(){};
+    protected:
+        bool is_configuration_updated_;
+    };
 
-#endif //ALL_BODY_RELATIONS_H
+}
+#endif // OBSERVER_RELATION_H

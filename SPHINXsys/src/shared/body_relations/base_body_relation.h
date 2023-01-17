@@ -114,7 +114,7 @@ namespace SPH
 		bool checkUpdateConfiguration() { return to_update_configuration_; };
 		virtual void updateConfigurationMemories() = 0;
 		virtual void updateConfiguration() = 0;
-		virtual void setUpdate() = 0;
+		virtual void setNextUpdate() = 0;
 
 	protected:
 		bool is_total_lagrangian_;
@@ -134,7 +134,7 @@ namespace SPH
 		virtual ~BaseInnerRelation(){};
 		virtual void updateConfigurationMemories() override;
 		BaseInnerRelation &setTotalLagrangian();
-		virtual void setUpdate() override;
+		virtual void setNextUpdate() override;
 
 	protected:
 		virtual void resetNeighborhoodCurrentSize();
@@ -159,7 +159,7 @@ namespace SPH
 		virtual ~BaseContactRelation(){};
 		virtual void updateConfigurationMemories() override;
 		BaseContactRelation &setTotalLagrangian();
-		virtual void setUpdate() override;
+		virtual void setNextUpdate() override;
 	};
 
 	/**

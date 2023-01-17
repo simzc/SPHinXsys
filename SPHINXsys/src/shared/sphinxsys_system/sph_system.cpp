@@ -37,7 +37,7 @@ namespace SPH
 				if (relation->checkUpdateConfiguration())
 				{
 					relation->updateConfiguration();
-					relation->setUpdate();
+					relation->setNextUpdate();
 				}
 			}
 		}

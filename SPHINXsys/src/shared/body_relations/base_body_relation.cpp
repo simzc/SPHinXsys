@@ -34,7 +34,7 @@ namespace SPH
 		return *this;
 	}
 	//=================================================================================================//
-	void BaseInnerRelation::setUpdate()
+	void BaseInnerRelation::setNextUpdate()
 	{
 		to_update_configuration_ = !is_total_lagrangian_;
 		if (!is_total_lagrangian_)
@@ -75,7 +75,7 @@ namespace SPH
 		return *this;
 	};
 	//=================================================================================================//
-	void BaseContactRelation::setUpdate()
+	void BaseContactRelation::setNextUpdate()
 	{
 		to_update_configuration_ = !is_total_lagrangian_;
 		if (!is_total_lagrangian_)
