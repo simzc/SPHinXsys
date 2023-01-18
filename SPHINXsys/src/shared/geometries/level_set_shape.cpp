@@ -28,7 +28,7 @@ namespace SPH
 	void LevelSetShape::writeLevelSet(IOEnvironment &io_environment)
 	{
 		MeshRecordingToPlt write_level_set_to_plt(io_environment, level_set_);
-		write_level_set_to_plt.writeToFile(0);
+		write_level_set_to_plt.writeToFileByStep();
 	}
 	//=================================================================================================//
 	LevelSetShape *LevelSetShape::cleanLevelSet(Real small_shift_factor)

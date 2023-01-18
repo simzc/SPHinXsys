@@ -79,6 +79,6 @@ namespace SPH
 	public:
 		MeshRecordingToPlt(IOEnvironment &io_environment, BaseMeshField &mesh_field);
 		virtual ~MeshRecordingToPlt(){};
-		virtual void writeToFile(size_t iteration_step = 0) override;
+		virtual void writeToFileByStep() override;
 	};
 }

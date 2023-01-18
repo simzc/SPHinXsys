@@ -82,7 +82,7 @@ int main(int ac, char *av[])
 	//----------------------------------------------------------------------
 	InnerRelation water_block_inner(water_block);
 	ContactRelation water_block_contact(water_block, RealBodyVector{&wall_boundary});
-	ContactRelation fluid_observer_contact(fluid_observer, RealBodyVector{&water_block});
+	ObserverRelation fluid_observer_contact(fluid_observer, RealBodyVector{&water_block});
 	//----------------------------------------------------------------------
 	//	Combined relations.
 	//----------------------------------------------------------------------
@@ -123,12 +123,9 @@ int main(int ac, char *av[])
 	//----------------------------------------------------------------------
 	//	Setup for time-stepping control
 	//----------------------------------------------------------------------
-	size_t number_of_iterations = sph_system.RestartStep();
-	int screen_output_interval = 100;
-	int observation_sample_interval = screen_output_interval * 2;
-	int restart_output_interval = screen_output_interval * 10;
 	Real end_time = 20.0;
 	Real output_interval = 0.1;
+	int screen_output_interval = 100;
 	//----------------------------------------------------------------------
 	//	Statistics for CPU time
 	//----------------------------------------------------------------------
@@ -141,9 +138,9 @@ int main(int ac, char *av[])
 	//----------------------------------------------------------------------
 	//	First output before the main loop.
 	//----------------------------------------------------------------------
-	body_states_recording.writeToFile();
-	write_water_mechanical_energy.writeToFile(number_of_iterations);
-	write_recorded_water_pressure.writeToFile(number_of_iterations);
+	body_states_recording.writeToFileByTime();
+	write_water_mechanical_energy.writeToFileByStep();
+	write_recorded_water_pressure.writeToFileByStep();
 	//----------------------------------------------------------------------
 	//	Main loop starts here.
 	//----------------------------------------------------------------------
@@ -173,24 +170,21 @@ int main(int ac, char *av[])
 				integration_time += acoustic_dt;
 				GlobalStaticVariables::physical_time_ += acoustic_dt;
 			}
+			sph_system.accumulateTotalSteps();
 			interval_computing_fluid_pressure_relaxation += tick_count::now() - time_instance;
 
 			/** screen output, write body reduced values and restart files  */
-			if (number_of_iterations % screen_output_interval == 0)
+			size_t iteration_steps = sph_system.TotalSteps();
+			if (iteration_steps % screen_output_interval == 0)
 			{
-				std::cout << std::fixed << std::setprecision(9) << "N=" << number_of_iterations << "	Time = "
+				std::cout << std::fixed << std::setprecision(9) << "N=" << iteration_steps << "	Time = "
 						  << GlobalStaticVariables::physical_time_
 						  << "	advection_dt = " << advection_dt << "	acoustic_dt = " << acoustic_dt << "\n";
-
-				if (number_of_iterations % observation_sample_interval == 0 && number_of_iterations != sph_system.RestartStep())
-				{
-					write_water_mechanical_energy.writeToFile(number_of_iterations);
-					write_recorded_water_pressure.writeToFile(number_of_iterations);
-				}
-				if (number_of_iterations % restart_output_interval == 0)
-					restart_io.writeToFile(number_of_iterations);
 			}
-			number_of_iterations++;
+
+			restart_io.writeToFileByStep();
+			write_water_mechanical_energy.writeToFileByStep();
+			write_recorded_water_pressure.writeToFileByStep();
 
 			/** Update cell linked list and configuration. */
 			time_instance = tick_count::now();
@@ -199,7 +193,7 @@ int main(int ac, char *av[])
 			interval_updating_configuration += tick_count::now() - time_instance;
 		}
 
-		body_states_recording.writeToFile();
+		body_states_recording.writeToFileByTime();
 		tick_count t2 = tick_count::now();
 		tick_count t3 = tick_count::now();
 		interval += t3 - t2;

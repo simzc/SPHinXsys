@@ -59,7 +59,7 @@ namespace SPH
 		: BaseIO(io_environment), mesh_field_(mesh_field),
 		  filefullpath_(io_environment_.output_folder_ + "/" + mesh_field.Name() + ".dat") {}
 	//=============================================================================================//
-	void MeshRecordingToPlt::writeToFile(size_t iteration_step)
+	void MeshRecordingToPlt::writeToFileByStep()
 	{
 		std::ofstream out_file(filefullpath_.c_str(), std::ios::app);
 		mesh_field_.writeMeshFieldToPlt(out_file);

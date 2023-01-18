@@ -110,6 +110,7 @@ namespace SPH
 		SPHBody &getDynamicsRange() { return sph_body_; };
 		explicit SPHRelation(SPHBody &sph_body);
 		virtual ~SPHRelation(){};
+		bool checkConfigurationUpdated() { return to_update_configuration_; };
 		virtual void updateConfigurationMemories() = 0;
 		virtual void updateConfiguration() = 0;
 		virtual void updateRelation() = 0;
@@ -163,7 +164,7 @@ namespace SPH
 	{
 	public:
 		template <typename... Args>
-		TotalLagrangian(Args &&...args)	: RelationType(std::forward<Args>(args)...){};
+		TotalLagrangian(Args &&...args) : RelationType(std::forward<Args>(args)...){};
 		virtual ~TotalLagrangian(){};
 		virtual void updateRelation() override
 		{

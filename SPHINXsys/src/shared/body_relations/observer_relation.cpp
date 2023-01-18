@@ -1,4 +1,5 @@
 #include "observer_relation.h"
+#include "base_particle_dynamics.h"
 
 namespace SPH
 {

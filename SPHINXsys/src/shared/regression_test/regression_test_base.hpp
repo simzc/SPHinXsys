@@ -30,13 +30,14 @@
 
 #include "regression_test_base.h"
 
- //=================================================================================================//
+//=================================================================================================//
 namespace SPH
 {
 	//=================================================================================================//
 	template <class ObserveMethodType>
-	void RegressionTestBase<ObserveMethodType>::writeToXml(ObservedQuantityRecording<VariableType>* observe_method, size_t iteration)
+	void RegressionTestBase<ObserveMethodType>::writeToXml(ObservedQuantityRecording<VariableType> *observe_method, size_t iteration)
 	{
+		this->updateObserverRelation();
 		this->parallel_exec();
 		std::string element_name_ = "Snapshot_" + std::to_string(iteration);
 		SimTK::Xml::Element &element_ = observe_xml_engine_.root_element_;
@@ -44,28 +45,28 @@ namespace SPH
 		for (size_t i = 0; i != this->base_particles_.total_real_particles_; ++i)
 		{
 			xmlmemory_io_.writeDataToXmlMemory(observe_xml_engine_, element_,
-				element_name_, i, (*this->interpolated_quantities_)[i], this->quantity_name_);
+											   element_name_, i, (*this->interpolated_quantities_)[i], this->quantity_name_);
 		};
 	};
 	//=================================================================================================//
 	template <class ObserveMethodType>
 	template <typename ReduceType>
-	void RegressionTestBase<ObserveMethodType>::writeToXml(ReducedQuantityRecording<ReduceType>* reduce_method, size_t iteration)
+	void RegressionTestBase<ObserveMethodType>::writeToXml(ReducedQuantityRecording<ReduceType> *reduce_method, size_t iteration)
 	{
 		std::string element_name_ = "Snapshot_" + std::to_string(iteration);
 		SimTK::Xml::Element &element_ = observe_xml_engine_.root_element_;
 		observe_xml_engine_.addElementToXmlDoc(element_name_);
 		xmlmemory_io_.writeDataToXmlMemory(observe_xml_engine_, element_,
-			element_name_, 0, this->reduce_method_.parallel_exec(), this->quantity_name_);
+										   element_name_, 0, this->reduce_method_.parallel_exec(), this->quantity_name_);
 	};
 	//=================================================================================================//
 	template <class ObserveMethodType>
-	void RegressionTestBase<ObserveMethodType>::readFromXml(ObservedQuantityRecording<VariableType>* observe_method)
+	void RegressionTestBase<ObserveMethodType>::readFromXml(ObservedQuantityRecording<VariableType> *observe_method)
 	{
 		observe_xml_engine_.loadXmlFile(in_output_filefullpath_);
 		size_t number_of_particle_ = this->base_particles_.total_real_particles_;
 		size_t number_of_snapshot_ = std::distance(observe_xml_engine_.root_element_.element_begin(),
-			observe_xml_engine_.root_element_.element_end());
+												   observe_xml_engine_.root_element_.element_end());
 		DoubleVec<VariableType> current_result_temp_(number_of_snapshot_, StdVec<VariableType>(number_of_particle_));
 		StdVec<std::string> element_tag_temp_(number_of_snapshot_);
 		current_result_ = current_result_temp_;
@@ -80,12 +81,12 @@ namespace SPH
 	//=================================================================================================//
 	template <class ObserveMethodType>
 	template <typename ReduceType>
-	void RegressionTestBase<ObserveMethodType>::readFromXml(ReducedQuantityRecording<ReduceType>* reduce_method)
+	void RegressionTestBase<ObserveMethodType>::readFromXml(ReducedQuantityRecording<ReduceType> *reduce_method)
 	{
 		observe_xml_engine_.loadXmlFile(in_output_filefullpath_);
 		size_t number_of_particle_ = 1;
 		size_t number_of_snapshot_ = std::distance(observe_xml_engine_.root_element_.element_begin(),
-			observe_xml_engine_.root_element_.element_end());
+												   observe_xml_engine_.root_element_.element_end());
 		DoubleVec<VariableType> current_result_temp_(number_of_snapshot_, StdVec<VariableType>(number_of_particle_));
 		StdVec<std::string> element_tag_temp_(number_of_snapshot_);
 		current_result_ = current_result_temp_;
@@ -98,7 +99,7 @@ namespace SPH
 		}
 	};
 	//=================================================================================================//
-	template<class ObserveMethodType>
+	template <class ObserveMethodType>
 	void RegressionTestBase<ObserveMethodType>::transposeTheIndex()
 	{
 		int number_of_snapshot = this->current_result_.size();
@@ -110,7 +111,7 @@ namespace SPH
 				current_result_trans_[observation_index][snapshot_index] = this->current_result_[snapshot_index][observation_index];
 	};
 	//=================================================================================================//
-	template<class ObserveMethodType>
+	template <class ObserveMethodType>
 	void RegressionTestBase<ObserveMethodType>::readResultFromXml()
 	{
 		if (number_of_run_ > 1) /*only read the result from the 2nd run, because the 1st run doesn't have previous results. */
@@ -132,7 +133,7 @@ namespace SPH
 		}
 	};
 	//=================================================================================================//
-	template<class ObserveMethodType>
+	template <class ObserveMethodType>
 	void RegressionTestBase<ObserveMethodType>::writeResultToXml()
 	{
 		for (int run_index_ = 0; run_index_ != number_of_run_; ++run_index_)
@@ -142,18 +143,18 @@ namespace SPH
 			SimTK::Xml::Element father_element_ =
 				result_xml_engine_out_.getChildElement(node_name_);
 			xmlmemory_io_.writeDataToXmlMemory(result_xml_engine_out_, father_element_, result_[run_index_],
-				SMIN(snapshot_, number_of_snapshot_old_), observation_, this->quantity_name_, this->element_tag_);
+											   SMIN(snapshot_, number_of_snapshot_old_), observation_, this->quantity_name_, this->element_tag_);
 		}
 		result_xml_engine_out_.writeToXmlFile(result_filefullpath_);
 	};
 	//=================================================================================================//
-	template<class ObserveMethodType>
+	template <class ObserveMethodType>
 	void RegressionTestBase<ObserveMethodType>::readResultFromXml(int index_of_run_)
 	{
 		if (number_of_run_ > 1) /*only read the result from the 2nd run, because the 1st run doesn't have previous results. */
 		{
 			result_filefullpath_ = input_folder_path_ + "/" + this->dynamics_range_name_ + "_" + this->quantity_name_ +
-				"_Run_" + std::to_string(index_of_run_) + "_result.xml";
+								   "_Run_" + std::to_string(index_of_run_) + "_result.xml";
 
 			/* To identify the database generation or new result test. */
 			if (converged == "false")
@@ -189,14 +190,14 @@ namespace SPH
 		}
 	};
 	//=================================================================================================//
-	template<class ObserveMethodType>
+	template <class ObserveMethodType>
 	void RegressionTestBase<ObserveMethodType>::writeResultToXml(int index_of_run_)
 	{
-		/** write result to .xml (with different data structure to Base), here is 
-		    observation * snapshot, which can be used for TA and DTW methods. */
+		/** write result to .xml (with different data structure to Base), here is
+			observation * snapshot, which can be used for TA and DTW methods. */
 		int total_snapshot_ = current_result_trans_[0].size();
 		result_filefullpath_ = input_folder_path_ + "/" + this->dynamics_range_name_ + "_" + this->quantity_name_ +
-			"_Run_" + std::to_string(index_of_run_) + "_result.xml";
+							   "_Run_" + std::to_string(index_of_run_) + "_result.xml";
 		result_xml_engine_out_.addElementToXmlDoc("Snapshot_Element");
 		SimTK::Xml::Element snapshot_element_ = result_xml_engine_out_.getChildElement("Snapshot_Element");
 		result_xml_engine_out_.addChildToElement(snapshot_element_, "Snapshot");
@@ -219,7 +220,7 @@ namespace SPH
 		result_xml_engine_out_.writeToXmlFile(result_filefullpath_);
 	};
 	//=================================================================================================//
-	template<class ObserveMethodType>
+	template <class ObserveMethodType>
 	RegressionTestBase<ObserveMethodType>::~RegressionTestBase()
 	{
 		if (converged == "false")

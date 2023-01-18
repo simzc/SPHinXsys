@@ -42,11 +42,12 @@ namespace SPH
 	{
 	protected:
 		SPHBody &observer_;
+		ObserverRelation &observer_relation_;
 		PltEngine plt_engine_;
 		BaseParticles &base_particles_;
 		std::string dynamics_range_name_;
 		const std::string quantity_name_;
-		size_t observation_step_interval_;
+		size_t step_interval_;
 		std::string filefullpath_output_;
 
 	public:
@@ -54,14 +55,15 @@ namespace SPH
 
 	public:
 		ObservedQuantityRecording(const std::string &quantity_name, IOEnvironment &io_environment,
-								  ObservationRelation &observation_relation)
-			: BodyStatesRecording(io_environment, observation_relation.sph_body_),
-			  ObservingAQuantity<VariableType>(observation_relation, quantity_name),
-			  observer_(observation_relation.sph_body_), plt_engine_(),
-			  base_particles_(observer_.getBaseParticles()),
-			  dynamics_range_name_(observation_relation.sph_body_.getName()),
+								  ObserverRelation &observer_relation)
+			: BodyStatesRecording(io_environment, observer_relation.sph_body_),
+			  ObservingAQuantity<VariableType>(observer_relation, quantity_name),
+			  observer_(observer_relation.sph_body_),
+			  observer_relation_(observer_relation),
+			  plt_engine_(), base_particles_(observer_.getBaseParticles()),
+			  dynamics_range_name_(observer_relation.sph_body_.getName()),
 			  quantity_name_(quantity_name),
-			  observation_step_interval_(100)
+			  step_interval_(100)
 		{
 			/** Output for .dat file. */
 			filefullpath_output_ = io_environment_.output_folder_ + "/" + dynamics_range_name_ + "_" + quantity_name + ".dat";
@@ -78,22 +80,33 @@ namespace SPH
 		};
 		virtual ~ObservedQuantityRecording(){};
 
-		void setObservationStepInterval(size_t interval) { observation_step_interval_ = interval; };
+		void setObservationStepInterval(size_t interval) { step_interval_ = interval; };
+		void updateObserverRelation()
+		{
+			observer_relation_.updateConfiguration();
+		};
 
 		virtual void writeToFileByStep() override
 		{
-			if (sph_system_.TotalSteps() % observation_step_interval_ == 0)
+			size_t total_steps = this->sph_system_.TotalSteps();
+			if (total_steps % step_interval_ == 0)
 			{
-				this->parallel_exec();
-				std::ofstream out_file(filefullpath_output_.c_str(), std::ios::app);
-				out_file << GlobalStaticVariables::physical_time_ << "   ";
-				for (size_t i = 0; i != base_particles_.total_real_particles_; ++i)
-				{
-					plt_engine_.writeAQuantity(out_file, (*this->interpolated_quantities_)[i]);
-				}
-				out_file << "\n";
-				out_file.close();
+				writeWithFileName(padValueWithZeros(total_steps));
 			}
+		}
+
+		virtual void writeWithFileName(const std::string &sequence) override
+		{
+			updateObserverRelation();
+			this->parallel_exec();
+			std::ofstream out_file(filefullpath_output_.c_str(), std::ios::app);
+			out_file << GlobalStaticVariables::physical_time_ << "   ";
+			for (size_t i = 0; i != base_particles_.total_real_particles_; ++i)
+			{
+				plt_engine_.writeAQuantity(out_file, (*this->interpolated_quantities_)[i]);
+			}
+			out_file << "\n";
+			out_file.close();
 		};
 
 		StdLargeVec<VariableType> *getObservedQuantity()
@@ -111,11 +124,12 @@ namespace SPH
 	{
 	protected:
 		IOEnvironment &io_environment_;
+		SPHSystem &sph_system_;
 		PltEngine plt_engine_;
 		ReduceMethodType reduce_method_;
 		std::string dynamics_range_name_;
 		const std::string quantity_name_;
-		size_t recording_step_interval_;
+		size_t step_interval_;
 		std::string filefullpath_output_;
 
 	public:
@@ -126,10 +140,11 @@ namespace SPH
 	public:
 		template <typename... ConstructorArgs>
 		ReducedQuantityRecording(IOEnvironment &io_environment, ConstructorArgs &&...args)
-			: io_environment_(io_environment), plt_engine_(), reduce_method_(std::forward<ConstructorArgs>(args)...),
+			: io_environment_(io_environment), sph_system_(io_environment.sph_system_),
+			  plt_engine_(), reduce_method_(std::forward<ConstructorArgs>(args)...),
 			  dynamics_range_name_(reduce_method_.DynamicsRangeName()),
 			  quantity_name_(reduce_method_.QuantityName()),
-			  recording_step_interval_(100)
+			  step_interval_(100)
 		{
 			/** output for .dat file. */
 			filefullpath_output_ = io_environment_.output_folder_ + "/" + dynamics_range_name_ + "_" + quantity_name_ + ".dat";
@@ -142,11 +157,11 @@ namespace SPH
 		};
 		virtual ~ReducedQuantityRecording(){};
 
-		void setRecordingStepInterval(size_t interval) { recording_step_interval_ = interval; };
+		void setRecordingStepInterval(size_t interval) { step_interval_ = interval; };
 
 		virtual void writeToFileByStep()
 		{
-			if (sph_system_.TotalSteps() % recording_step_interval_ == 0)
+			if (sph_system_.TotalSteps() % step_interval_ == 0)
 			{
 				std::ofstream out_file(filefullpath_output_.c_str(), std::ios::app);
 				out_file << GlobalStaticVariables::physical_time_ << "   ";
