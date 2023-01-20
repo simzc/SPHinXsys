@@ -2,7 +2,7 @@
  * @file 	ball_shell_collision.cpp
  * @brief 	an elastic ball bouncing within a confined shell boundary
  * @details This is a case to test elasticSolid -> shell impact/collision.
- * @author 	Massoud Rezavand, Virtonomy GmbH
+ * @author 	Massoud Rezavand, Virtonomy GmbH and Xiangyu Hu
  */
 #include "sphinxsys.h" //SPHinXsys Library.
 using namespace SPH;   // Namespace cite here.
@@ -133,31 +133,32 @@ int main(int ac, char *av[])
 		//----------------------------------------------------------------------
 		//	First output before the simulation.
 		//----------------------------------------------------------------------
-		write_relaxed_particles.writeToFile(0);
-		write_mesh_cell_linked_list.writeToFile(0);
+		write_relaxed_particles.writeToFileByStep();
+		write_mesh_cell_linked_list.writeToFileByStep();
 		//----------------------------------------------------------------------
 		//	From here iteration for particle relaxation begins.
 		//----------------------------------------------------------------------
-		int ite = 0;
 		int relax_step = 1000;
-		while (ite < relax_step)
+		while (sph_system.TotalSteps() < relax_step)
 		{
 			ball_relaxation_step_inner.parallel_exec();
 			for (int k = 0; k < 2; ++k)
 				relaxation_step_wall_boundary_inner.parallel_exec();
-			ite += 1;
-			if (ite % 100 == 0)
+			sph_system.accumulateTotalSteps();
+
+			size_t iteration_steps = sph_system.TotalSteps();
+			if (iteration_steps % 100 == 0)
 			{
-				std::cout << std::fixed << std::setprecision(9) << "Relaxation steps N = " << ite << "\n";
-				write_relaxed_particles.writeToFile(ite);
+				std::cout << std::fixed << std::setprecision(9) << "Relaxation steps N = " << iteration_steps << "\n";
+				write_relaxed_particles.writeToFileByStep();
 			}
 			sph_system.updateSystemCellLinkedLists();
 			sph_system.updateSystemRelations();
 		}
 		std::cout << "The physics relaxation process of ball particles finish !" << std::endl;
 		shell_normal_prediction.exec();
-		write_relaxed_particles.writeToFile(ite);
-		write_particle_reload.writeToFile(0);
+		write_relaxed_particles.writeToFileByStep();
+		write_particle_reload.writeToFileByStep();
 		return 0;
 	}
 	//----------------------------------------------------------------------
@@ -165,17 +166,15 @@ int main(int ac, char *av[])
 	//	The contact map gives the topological connections between the bodies.
 	//	Basically the the range of bodies to build neighbor particle lists.
 	//----------------------------------------------------------------------
-	InnerRelation ball_inner(ball);
-	ball_inner.setTotalLagrangian();
+	TotalLagrangian<InnerRelation> ball_inner(ball);
 	SurfaceContactRelation ball_contact(ball, {&wall_boundary});
-	ContactRelation ball_observer_contact(ball_observer, {&ball});
-	ball_observer_contact.setTotalLagrangian();
+	TotalLagrangian<ObserverRelation> ball_observer_contact(ball_observer, RealBodyVector{&ball});
 	//----------------------------------------------------------------------
 	//	Define the main numerical methods used in the simulation.
 	//	Note that there may be data dependence on the constructors of these methods.
 	//----------------------------------------------------------------------
 	/** Define external force.*/
-	SimpleDynamics<TimeStepInitialization> ball_initialize_timestep(ball, makeShared<Gravity>(Vecd(0.0, -gravity_g)));
+	SimpleDynamics<TimeStepInitialization> ball_step_initialize(ball, makeShared<Gravity>(Vecd(0.0, -gravity_g)));
 	InteractionDynamics<solid_dynamics::CorrectConfiguration> ball_corrected_configuration(ball_inner);
 	ReduceDynamics<solid_dynamics::AcousticTimeStepSize> ball_get_time_step_size(ball);
 	/** stress relaxation for the balls. */
@@ -199,21 +198,23 @@ int main(int ac, char *av[])
 	sph_system.updateSystemCellLinkedLists();
 	sph_system.updateSystemRelations();
 	ball_corrected_configuration.parallel_exec();
-
-	/** Initial states output. */
-	body_states_recording.writeToFile(0);
-	/** Main loop. */
-	int ite = 0;
+	//----------------------------------------------------------------------
+	//	Setup for time-stepping control
+	//----------------------------------------------------------------------
 	Real T0 = 10.0;
 	Real end_time = T0;
 	Real output_interval = 0.01 * T0;
 	Real Dt = 0.1 * output_interval;
-	Real dt = 0.0;
+	int screen_output_interval = 100;
 	//----------------------------------------------------------------------
 	//	Statistics for CPU time
 	//----------------------------------------------------------------------
 	tick_count t1 = tick_count::now();
 	tick_count::interval_t interval;
+	//----------------------------------------------------------------------
+	//	First output before the main loop.
+	//----------------------------------------------------------------------
+	body_states_recording.writeToFileByTime();
 	//----------------------------------------------------------------------
 	//	Main loop starts here.
 	//----------------------------------------------------------------------
@@ -225,33 +226,33 @@ int main(int ac, char *av[])
 			Real relaxation_time = 0.0;
 			while (relaxation_time < Dt)
 			{
-				ball_initialize_timestep.parallel_exec();
-				if (ite % 100 == 0)
-				{
-					std::cout << "N=" << ite << " Time: "
-							  << GlobalStaticVariables::physical_time_ << "	dt: " << dt << "\n";
-				}
+				Real dt = ball_get_time_step_size.parallel_exec();
+				ball_step_initialize.parallel_exec();
 				ball_update_contact_density.parallel_exec();
 				ball_compute_solid_contact_forces.parallel_exec();
 				ball_stress_relaxation_first_half.parallel_exec(dt);
 				// ball_friction.parallel_exec(dt);
 				ball_stress_relaxation_second_half.parallel_exec(dt);
 
-				sph_system.updateSystemCellLinkedLists();
-				sph_system.updateSystemRelations();
-
-				ite++;
-				Real dt_ball = ball_get_time_step_size.parallel_exec();
-				dt = dt_ball;
+				sph_system.accumulateTotalSteps();
 				relaxation_time += dt;
 				integration_time += dt;
 				GlobalStaticVariables::physical_time_ += dt;
-			}
 
-			write_ball_center_displacement.writeToFile(ite);
+				size_t iteration_steps = sph_system.TotalSteps();
+				if (iteration_steps % screen_output_interval == 0)
+				{
+					std::cout << "N=" << iteration_steps << " Time: "
+							  << GlobalStaticVariables::physical_time_ << "	dt: " << dt << "\n";
+				}
+				write_ball_center_displacement.writeToFileByStep();
+
+				sph_system.updateSystemCellLinkedLists();
+				sph_system.updateSystemRelations();
+			}
 		}
 		tick_count t2 = tick_count::now();
-		body_states_recording.writeToFile(ite);
+		body_states_recording.writeToFileByTime();
 		tick_count t3 = tick_count::now();
 		interval += t3 - t2;
 	}

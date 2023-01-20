@@ -143,27 +143,29 @@ int main(int ac, char *av[])
 		//----------------------------------------------------------------------
 		//	First output before the simulation.
 		//----------------------------------------------------------------------
-		write_ball_state.writeToFile(0);
+		write_ball_state.writeToFileByStep();
 		//----------------------------------------------------------------------
 		//	From here iteration for particle relaxation begins.
 		//----------------------------------------------------------------------
-		int ite = 0;
 		int relax_step = 1000;
-		while (ite < relax_step)
+		while (sph_system.TotalSteps() < relax_step)
 		{
 			free_ball_relaxation_step_inner.exec();
 			damping_ball_relaxation_step_inner.exec();
-			ite += 1;
-			if (ite % 100 == 0)
+			sph_system.accumulateTotalSteps();
+
+			size_t iteration_steps = sph_system.TotalSteps();
+			if (iteration_steps % 100 == 0)
 			{
-				std::cout << std::fixed << std::setprecision(9) << "Relaxation steps N = " << ite << "\n";
-				write_ball_state.writeToFile(ite);
+				std::cout << std::fixed << std::setprecision(9) << "Relaxation steps N = " << iteration_steps << "\n";
+				write_ball_state.writeToFileByStep();
 			}
+
 			sph_system.updateSystemCellLinkedLists();
 			sph_system.updateSystemRelations();
 		}
 		std::cout << "The physics relaxation process of ball particles finish !" << std::endl;
-		write_particle_reload_files.writeToFile(0);
+		write_particle_reload_files.writeToFileByStep();
 		return 0;
 	}
 	//----------------------------------------------------------------------
@@ -171,23 +173,20 @@ int main(int ac, char *av[])
 	//	The contact map gives the topological connections between the bodies.
 	//	Basically the the range of bodies to build neighbor particle lists.
 	//----------------------------------------------------------------------
-	InnerRelation free_ball_inner(free_ball);
-	free_ball_inner.setTotalLagrangian();
+	TotalLagrangian<InnerRelation> free_ball_inner(free_ball);
 	SurfaceContactRelation free_ball_contact(free_ball, {&wall_boundary});
-	InnerRelation damping_ball_inner(damping_ball);
-	damping_ball_inner.setTotalLagrangian();
+	TotalLagrangian<InnerRelation> damping_ball_inner(damping_ball);
 	SurfaceContactRelation damping_ball_contact(damping_ball, {&wall_boundary});
-	ContactRelation free_ball_observer_contact(free_ball_observer, {&free_ball});
-	free_ball_observer_contact.setTotalLagrangian();
-	ContactRelation damping_all_observer_contact(damping_ball_observer, {&damping_ball});
-	damping_all_observer_contact.setTotalLagrangian();
+
+	TotalLagrangian<ObserverRelation> free_ball_observer_contact(free_ball_observer, RealBodyVector{&free_ball});
+	TotalLagrangian<ObserverRelation> damping_all_observer_contact(damping_ball_observer, RealBodyVector{&damping_ball});
 	//----------------------------------------------------------------------
 	//	Define the main numerical methods used in the simulation.
 	//	Note that there may be data dependence on the constructors of these methods.
 	//----------------------------------------------------------------------
 	SharedPtr<Gravity> gravity_ptr = makeShared<Gravity>(Vecd(0.0, -gravity_g));
-	SimpleDynamics<TimeStepInitialization> free_ball_initialize_timestep(free_ball, gravity_ptr);
-	SimpleDynamics<TimeStepInitialization> damping_ball_initialize_timestep(damping_ball, gravity_ptr);
+	SimpleDynamics<TimeStepInitialization> free_ball_step_initialize(free_ball, gravity_ptr);
+	SimpleDynamics<TimeStepInitialization> damping_ball_step_initialize(damping_ball, gravity_ptr);
 	InteractionDynamics<solid_dynamics::CorrectConfiguration> free_ball_corrected_configuration(free_ball_inner);
 	InteractionDynamics<solid_dynamics::CorrectConfiguration> damping_ball_corrected_configuration(damping_ball_inner);
 	ReduceDynamics<solid_dynamics::AcousticTimeStepSize> free_ball_get_time_step_size(free_ball);
@@ -224,18 +223,16 @@ int main(int ac, char *av[])
 	//----------------------------------------------------------------------
 	//	Initial states output.
 	//----------------------------------------------------------------------
-	body_states_recording.writeToFile(0);
-	free_ball_displacement_recording.writeToFile(0);
-	damping_ball_displacement_recording.writeToFile(0);
+	body_states_recording.writeToFileByTime();
+	free_ball_displacement_recording.writeToFileByStep();
+	damping_ball_displacement_recording.writeToFileByStep();
 	//----------------------------------------------------------------------
 	//	Setup for time-stepping control
 	//----------------------------------------------------------------------
-	int ite = 0;
 	Real T0 = 10.0;
 	Real end_time = T0;
 	Real output_interval = 0.01 * T0;
 	Real Dt = 0.1 * output_interval;
-	Real dt = 0.0;
 	//----------------------------------------------------------------------
 	//	Statistics for CPU time
 	//----------------------------------------------------------------------
@@ -252,13 +249,12 @@ int main(int ac, char *av[])
 			Real relaxation_time = 0.0;
 			while (relaxation_time < Dt)
 			{
-				free_ball_initialize_timestep.parallel_exec();
-				damping_ball_initialize_timestep.parallel_exec();
-				if (ite % 100 == 0)
-				{
-					std::cout << "N=" << ite << " Time: "
-							  << GlobalStaticVariables::physical_time_ << "	dt: " << dt << "\n";
-				}
+				Real dt_free = free_ball_get_time_step_size.parallel_exec();
+				Real dt_damping = damping_ball_get_time_step_size.parallel_exec();
+				Real dt = SMIN(dt_free, dt_damping);
+				free_ball_step_initialize.parallel_exec();
+				damping_ball_step_initialize.parallel_exec();
+
 				free_ball_update_contact_density.parallel_exec();
 				free_ball_compute_solid_contact_forces.parallel_exec();
 				free_ball_stress_relaxation_first_half.parallel_exec(dt);
@@ -270,23 +266,27 @@ int main(int ac, char *av[])
 				damping.parallel_exec(dt);
 				damping_ball_stress_relaxation_second_half.parallel_exec(dt);
 
-				sph_system.updateSystemCellLinkedLists();
-				sph_system.updateSystemRelations();
-
-				ite++;
-				Real dt_free = free_ball_get_time_step_size.parallel_exec();
-				Real dt_damping = damping_ball_get_time_step_size.parallel_exec();
-				dt = SMIN(dt_free, dt_damping);
+				sph_system.accumulateTotalSteps();
 				relaxation_time += dt;
 				integration_time += dt;
 				GlobalStaticVariables::physical_time_ += dt;
 
-				free_ball_displacement_recording.writeToFile(ite);
-				damping_ball_displacement_recording.writeToFile(ite);
+				size_t iteration_steps = sph_system.TotalSteps();
+				if (iteration_steps % screen_output_interval == 0)
+				{
+					std::cout << "N=" << ite << " Time: "
+							  << GlobalStaticVariables::physical_time_ << "	dt: " << dt << "\n";
+				}
+
+				free_ball_displacement_recording.writeToFileByStep();
+				damping_ball_displacement_recording.writeToFileByStep();
+
+				sph_system.updateSystemCellLinkedLists();
+				sph_system.updateSystemRelations();
 			}
 		}
 		tick_count t2 = tick_count::now();
-		body_states_recording.writeToFile(ite);
+		body_states_recording.writeToFileByTime();
 		tick_count t3 = tick_count::now();
 		interval += t3 - t2;
 	}

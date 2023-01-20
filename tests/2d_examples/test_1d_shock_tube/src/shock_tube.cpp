@@ -14,12 +14,13 @@ Real particle_spacing_ref = 1.0 / 200.0; /**< Initial reference particle spacing
 Real DH = particle_spacing_ref * 4;		 /**< Tube height. */
 /** Domain bounds of the system. */
 BoundingBox system_domain_bounds(Vec2d(-2.0 / 5.0 * DL, 0.0), Vec2d(3.0 / 5.0 * DL, DH));
-Real rho0_l = 1.0;	  /**< initial density of left state. */
-Real rho0_r = 0.125;  /**< initial density of right state. */
+Real rho0_l = 1.0;				/**< initial density of left state. */
+Real rho0_r = 0.125;			/**< initial density of right state. */
 Vecd velocity_l = Vecd::Zero(); /**< initial velocity of left state. */
-Vecd velocity_r = Vecd::Zero();; /**< initial velocity of right state. */
-Real p_l = 1.0;		  /**< initial pressure of left state. */
-Real p_r = 0.1;		  /**< initial pressure of right state. */
+Vecd velocity_r = Vecd::Zero();
+;				/**< initial velocity of right state. */
+Real p_l = 1.0; /**< initial pressure of left state. */
+Real p_r = 0.1; /**< initial pressure of right state. */
 //----------------------------------------------------------------------
 //	Global parameters on material properties
 //----------------------------------------------------------------------
@@ -127,14 +128,13 @@ int main(int ac, char *av[])
 	//----------------------------------------------------------------------
 	//	Setup for time-stepping control
 	//----------------------------------------------------------------------
-	size_t number_of_iterations = 0;
-	int screen_output_interval = 100;
 	Real end_time = 0.2;
-	Real output_interval = 0.01;	 /**< Time stamps for output of body states. */
+	Real output_interval = 0.01; /**< Time stamps for output of body states. */
+	int screen_output_interval = 100;
 	//----------------------------------------------------------------------
 	// Output the start states of bodies.
 	//----------------------------------------------------------------------
-	body_states_recording.writeToFile(0);
+	body_states_recording.writeToFileByTime();
 	//----------------------------------------------------------------------
 	//	Statistics for computing CPU time.
 	//----------------------------------------------------------------------
@@ -146,28 +146,29 @@ int main(int ac, char *av[])
 	while (GlobalStaticVariables::physical_time_ < end_time)
 	{
 		Real integration_time = 0.0;
-		//	Integrate time (loop) until the next output time.
 		while (integration_time < output_interval)
 		{
 			initialize_wave_step.parallel_exec();
 			Real dt = get_wave_time_step_size.parallel_exec();
 			// Dynamics including pressure and density and energy relaxation.
-			integration_time += dt;
 			pressure_relaxation.parallel_exec(dt);
 			density_and_energy_relaxation.parallel_exec(dt);
+
+			sph_system.accumulateTotalSteps();
+			integration_time += dt;
 			GlobalStaticVariables::physical_time_ += dt;
 
-			if (number_of_iterations % screen_output_interval == 0)
+			size_t iteration_steps = sph_system.TotalSteps();
+			if (iteration_steps % screen_output_interval == 0)
 			{
-				std::cout << std::fixed << std::setprecision(9) << "N=" << number_of_iterations << "	Time = "
+				std::cout << std::fixed << std::setprecision(9) << "N=" << iteration_steps << "	Time = "
 						  << GlobalStaticVariables::physical_time_
 						  << "	dt = " << dt << "\n";
 			}
-			number_of_iterations++;
 		}
 
 		tick_count t2 = tick_count::now();
-		body_states_recording.writeToFile();
+		body_states_recording.writeToFileByTime();
 		tick_count t3 = tick_count::now();
 		interval += t3 - t2;
 	}

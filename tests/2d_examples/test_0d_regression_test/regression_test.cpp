@@ -208,15 +208,15 @@ int main()
 	//	The contact map gives the topological connections between the bodies.
 	//	Basically the the range of bodies to build neighbor particle lists.
 	//----------------------------------------------------------------------
-	InnerRelation diffusion_body_inner_relation(diffusion_body);
-	ContactRelation temperature_observer_contact(temperature_observer, {&diffusion_body});
+	InnerRelation diffusion_body_inner(diffusion_body);
+	ObserverRelation observer_contact(temperature_observer, {&diffusion_body});
 	//----------------------------------------------------------------------
 	//	Define the main numerical methods used in the simulation.
 	//	Note that there may be data dependence on the constructors of these methods.
 	//----------------------------------------------------------------------
-	DiffusionBodyRelaxation diffusion_relaxation(diffusion_body_inner_relation);
+	DiffusionBodyRelaxation diffusion_relaxation(diffusion_body_inner);
 	SimpleDynamics<DiffusionInitialCondition> setup_diffusion_initial_condition(diffusion_body);
-	InteractionDynamics<solid_dynamics::CorrectConfiguration> correct_configuration(diffusion_body_inner_relation);
+	InteractionDynamics<solid_dynamics::CorrectConfiguration> correct_configuration(diffusion_body_inner);
 	GetDiffusionTimeStepSize<SolidParticles, Solid> get_time_step_size(diffusion_body);
 	BodyRegionByParticle left_boundary(diffusion_body, makeShared<MultiPolygonShape>(createLeftSideBoundary()));
 	SimpleDynamics<ConstantTemperatureConstraint, BodyRegionByParticle> left_boundary_condition(left_boundary, "Phi", high_temperature);
@@ -228,11 +228,11 @@ int main()
 	//----------------------------------------------------------------------
 	BodyStatesRecordingToVtp write_states(io_environment, sph_system.real_bodies_);
 	RegressionTestEnsembleAveraged<ObservedQuantityRecording<Real>>
-		write_solid_temperature("Phi", io_environment, temperature_observer_contact);
+		observing_temperature("Phi", io_environment, observer_contact);
 	BodyRegionByParticle inner_domain(diffusion_body, makeShared<MultiPolygonShape>(createInnerDomain(), "InnerDomain"));
 	RegressionTestDynamicTimeWarping<ReducedQuantityRecording<
 		ReduceAverage<DiffusionReactionSpeciesSummation<SolidParticles, Solid>, BodyRegionByParticle>>>
-		write_solid_average_temperature_part(io_environment, inner_domain, "Phi");
+		recording_average_temperature(io_environment, inner_domain, "Phi");
 	//----------------------------------------------------------------------
 	//	Prepare the simulation with cell linked list, configuration
 	//	and case specified initial condition if necessary.
@@ -243,18 +243,20 @@ int main()
 	setup_diffusion_initial_condition.parallel_exec();
 	left_boundary_condition.parallel_exec();
 	other_boundary_condition.parallel_exec();
-	/** Output global basic parameters. */
-	write_states.writeToFile(0);
-	write_solid_temperature.writeToFile(0);
+	//----------------------------------------------------------------------
+	//	First output before the main loop.
+	//----------------------------------------------------------------------
+	observing_temperature.writeToFileByStep();
+	recording_average_temperature.writeToFileByStep();
+	write_states.writeToFileByTime();
 	//----------------------------------------------------------------------
 	//	Setup for time-stepping control
 	//----------------------------------------------------------------------
-	int ite = 0;
 	Real T0 = 20.0;
 	Real end_time = T0;
 	Real Output_Time = 0.1 * end_time;
 	Real Observe_time = 0.1 * Output_Time;
-	Real dt = 0.0;
+	int screen_output_interval = 100;
 	//----------------------------------------------------------------------
 	//	Statistics for CPU time
 	//----------------------------------------------------------------------
@@ -271,29 +273,28 @@ int main()
 			Real relaxation_time = 0.0;
 			while (relaxation_time < Observe_time)
 			{
-				if (ite % 1 == 0)
-				{
-					std::cout << "N=" << ite << " Time: "
-							  << GlobalStaticVariables::physical_time_ << "	dt: "
-							  << dt << "\n";
-				}
-
+				Real dt = get_time_step_size.parallel_exec();
 				diffusion_relaxation.parallel_exec(dt);
 				left_boundary_condition.parallel_exec();
 				other_boundary_condition.parallel_exec();
-				ite++;
-				dt = get_time_step_size.parallel_exec();
+
+				sph_system.accumulateTotalSteps();
 				relaxation_time += dt;
 				integration_time += dt;
 				GlobalStaticVariables::physical_time_ += dt;
 
-				if (ite % 100 == 0)
+				observing_temperature.writeToFileByStep();
+				recording_average_temperature.writeToFileByStep();
+
+				size_t iteration_steps = sph_system.TotalSteps();
+				if (iteration_steps % screen_output_interval == 0)
 				{
-					write_solid_temperature.writeToFile(ite);
-					write_solid_average_temperature_part.writeToFile(ite);
-					write_states.writeToFile(ite);
+					std::cout << "N=" << iteration_steps << " Time: "
+							  << GlobalStaticVariables::physical_time_ << "	dt: "
+							  << dt << "\n";
 				}
 			}
+			write_states.writeToFileByTime();
 		}
 
 		tick_count t2 = tick_count::now();
@@ -309,12 +310,12 @@ int main()
 	//	The first argument is the threshold of meanvalue convergence.
 	//	The second argument is the threshold of variance convergence.
 	//----------------------------------------------------------------------
-	write_solid_temperature.generateDataBase(0.001, 0.001);
+	observing_temperature.generateDataBase(0.001, 0.001);
 	//----------------------------------------------------------------------
 	//	@dynamic_time_warping_method.
 	//	The value is the threshold of dynamic time warping (dtw) distance.
 	//----------------------------------------------------------------------
-	write_solid_average_temperature_part.generateDataBase(0.001);
+	recording_average_temperature.generateDataBase(0.001);
 
 	return 0;
 }

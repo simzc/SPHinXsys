@@ -86,22 +86,24 @@ int main(int ac, char *av[])
 	//----------------------------------------------------------------------
 	//	First output before the simulation.
 	//----------------------------------------------------------------------
-	airfoil_recording_to_vtp.writeToFile(0);
-	cell_linked_list_recording.writeToFile(0);
+	airfoil_recording_to_vtp.writeToFileByStep();
+	cell_linked_list_recording.writeToFileByStep();
 	//----------------------------------------------------------------------
 	//	Particle relaxation time stepping start here.
 	//----------------------------------------------------------------------
-	int ite_p = 0;
-	while (ite_p < 2000)
+	while (system.TotalSteps() < 2000)
 	{
 		update_smoothing_length_ratio.parallel_exec();
 		relaxation_step_inner.parallel_exec();
-		ite_p += 1;
-		if (ite_p % 100 == 0)
+		system.accumulateTotalSteps();
+
+		size_t iteration_steps = system.TotalSteps();
+		if (iteration_steps % 100 == 0)
 		{
-			std::cout << std::fixed << std::setprecision(9) << "Relaxation steps N = " << ite_p << "\n";
-			airfoil_recording_to_vtp.writeToFile(ite_p);
+			std::cout << std::fixed << std::setprecision(9) << "Relaxation steps N = " << iteration_steps << "\n";
+			airfoil_recording_to_vtp.writeToFileByStep();
 		}
+
 		system.updateSystemCellLinkedLists();
 		system.updateSystemRelations();
 	}
