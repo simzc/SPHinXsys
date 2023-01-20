@@ -182,7 +182,7 @@ namespace SPH
 			  pos_(particles_->pos_),
 			  MBsystem_(MBsystem), mobod_(mobod), force_on_bodies_(force_on_bodies), integ_(integ)
 		{
-			quantity_name_ = "TotalForceForSimBody";
+			reduced_quantity_name_ = "TotalForceForSimBody";
 		}
 		//=================================================================================================//
 		TotalForceForSimBody::TotalForceForSimBody(BodyPartByParticle &body_part,

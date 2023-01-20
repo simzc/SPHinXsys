@@ -136,7 +136,7 @@ namespace SPH
 				: LocalDynamicsReduce<Real, ReduceMax>(body_part.getSPHBody(), Real(MinRealNumber)),
 				  FluidDataSimple(sph_body_), pos_(particles_->pos_)
 			{
-				quantity_name_ = "FreeSurfaceHeight";
+				reduced_quantity_name_ = "FreeSurfaceHeight";
 			}
 			virtual ~FreeSurfaceHeight(){};
 

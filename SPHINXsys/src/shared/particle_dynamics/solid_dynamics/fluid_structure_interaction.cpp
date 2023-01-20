@@ -85,7 +85,7 @@ namespace SPH
 			  SolidDataSimple(sph_body),
 			  viscous_force_from_fluid_(*particles_->getVariableByName<Vecd>("ViscousForceFromFluid"))
 		{
-			quantity_name_ = "TotalViscousForceOnSolid";
+			reduced_quantity_name_ = "TotalViscousForceOnSolid";
 		}
 		//=================================================================================================//
 		Vecd TotalViscousForceOnSolid::reduce(size_t index_i, Real dt)
@@ -98,7 +98,7 @@ namespace SPH
 			  SolidDataSimple(sph_body),
 			  force_from_fluid_(*particles_->getVariableByName<Vecd>("ForceFromFluid"))
 		{
-			quantity_name_ = "TotalForceOnSolid";
+			reduced_quantity_name_ = "TotalForceOnSolid";
 		}
 		//=================================================================================================//
 		Vecd TotalForceOnSolid::reduce(size_t index_i, Real dt)

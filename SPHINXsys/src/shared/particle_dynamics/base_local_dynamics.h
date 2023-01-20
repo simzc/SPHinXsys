@@ -132,19 +132,19 @@ namespace SPH
 	public:
 		LocalDynamicsReduce(SPHBody &sph_body, ReturnType reference)
 			: LocalDynamics(sph_body), reference_(reference),
-			  quantity_name_("ReducedQuantity"){};
+			  reduced_quantity_name_("ReducedQuantity"){};
 		virtual ~LocalDynamicsReduce(){};
 
 		using ReduceReturnType = ReturnType;
 		ReturnType Reference() { return reference_; };
-		std::string QuantityName() { return quantity_name_; };
+		std::string ReducedQuantityName() { return reduced_quantity_name_; };
 		Operation &getOperation() { return operation_; };
 		virtual ReturnType outputResult(ReturnType reduced_value) { return reduced_value; }
 
 	protected:
 		ReturnType reference_;
 		Operation operation_;
-		std::string quantity_name_;
+		std::string reduced_quantity_name_;
 	};
 }
 #endif // BASE_LOCAL_DYNAMICS_H

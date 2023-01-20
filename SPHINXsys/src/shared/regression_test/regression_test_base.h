@@ -54,10 +54,6 @@ namespace SPH
 		std::string runtimes_filefullpath_;	 /*< the file path for run times information. (.dat)*/
 		std::string converged;				 /*< the tag for result converged, default false. */
 
-		XmlMemoryIO xmlmemory_io_; /*< xml memory in_output operator, which has defined several
-									  methods to read and write data from and into xml memory,
-									  including one by one, or all result in the same time. */
-
 		XmlEngine observe_xml_engine_;	  /*< xml engine for current result io_environment. */
 		XmlEngine result_xml_engine_in_;  /*< xml engine for input result. */
 		XmlEngine result_xml_engine_out_; /*< xml engine for output result. */
@@ -79,12 +75,27 @@ namespace SPH
 		int label_for_repeat_;		 /*< the label used stable convergence (several convergence). */
 		int number_of_snapshot_old_; /*< the snapshot size of last trimmed result. */
 
+		template <typename T>
+		void writeDataToXmlMemory(XmlEngine &xml_engine, SimTK::Xml::Element &element, const DoubleVec<T> &quantity,
+								  int snapshot_, int observation_, const std::string &quantity_name, StdVec<std::string> &element_tag);
+
+		template <typename T>
+		void writeDataToXmlMemory(XmlEngine &xml_engine, SimTK::Xml::Element &element,
+								  std::string element_name, int observation_index, const T &quantity, const std::string &quantity_name);
+
+		template <typename T>
+		void readDataFromXmlMemory(XmlEngine &xml_engine, SimTK::Xml::Element &element,
+								   int observation_index, DoubleVec<T> &result_container, const std::string &quantity_name);
+
+		void readTagFromXmlMemory(SimTK::Xml::Element &element, StdVec<std::string> &element_tag);
+
 	public:
 		template <typename... ConstructorArgs>
-		explicit RegressionTestBase(ConstructorArgs &&...args) : ObserveMethodType(std::forward<ConstructorArgs>(args)...), xmlmemory_io_(),
-																 observe_xml_engine_("xml_observe_reduce", this->quantity_name_),
-																 result_xml_engine_in_("result_xml_engine_in", "result"),
-																 result_xml_engine_out_("result_xml_engine_out", "result")
+		explicit RegressionTestBase(ConstructorArgs &&...args)
+			: ObserveMethodType(std::forward<ConstructorArgs>(args)...),
+			  observe_xml_engine_("xml_observe_reduce", this->quantity_name_),
+			  result_xml_engine_in_("result_xml_engine_in", "result"),
+			  result_xml_engine_out_("result_xml_engine_out", "result")
 		{
 			input_folder_path_ = this->io_environment_.input_folder_;
 			in_output_filefullpath_ = input_folder_path_ + "/" + this->dynamics_range_name_ + "_" + this->quantity_name_ + ".xml";
@@ -126,10 +137,9 @@ namespace SPH
 		void writeToFileByStep() override
 		{
 			ObserveMethodType::writeToFileByStep(); /* used for visualization (.dat)*/
-			size_t total_steps = this->sph_system_.TotalSteps();
-			if (total_steps % this->step_interval_ == 0)
+			if (this->checkToRecord())
 			{
-				writeToXml(this, total_steps); /* used for regression test. (.xml) */
+				writeToXml(this, this->sph_system_.TotalSteps()); /* used for regression test. (.xml) */
 			}
 		};
 

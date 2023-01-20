@@ -41,7 +41,7 @@ namespace SPH
 		  GeneralDataDelegateSimple(sph_body),
 		  pos_(particles_->pos_)
 	{
-		quantity_name_ = "UpperFrontInXDirection";
+		reduced_quantity_name_ = "UpperFrontInXDirection";
 	}
 	//=================================================================================================//
 	Real UpperFrontInXDirection::reduce(size_t index_i, Real dt)
@@ -54,7 +54,7 @@ namespace SPH
 		  GeneralDataDelegateSimple(sph_body),
 		  vel_(particles_->vel_)
 	{
-		quantity_name_ = "MaximumSpeed";
+		reduced_quantity_name_ = "MaximumSpeed";
 	}
 	//=================================================================================================//
 	Real MaximumSpeed::reduce(size_t index_i, Real dt)
@@ -67,7 +67,7 @@ namespace SPH
 		  GeneralDataDelegateSimple(sph_body),
 		  pos_(particles_->pos_)
 	{
-		quantity_name_ = "PositionLowerBound";
+		reduced_quantity_name_ = "PositionLowerBound";
 	}
 	//=================================================================================================//
 	Vecd PositionLowerBound::reduce(size_t index_i, Real dt)
@@ -80,7 +80,7 @@ namespace SPH
 		  GeneralDataDelegateSimple(sph_body),
 		  pos_(particles_->pos_)
 	{
-		quantity_name_ = "PositionUpperBound";
+		reduced_quantity_name_ = "PositionUpperBound";
 	}
 	//=================================================================================================//
 	Vecd PositionUpperBound::reduce(size_t index_i, Real dt)
@@ -94,7 +94,7 @@ namespace SPH
 		  vel_(particles_->vel_), pos_(particles_->pos_),
 		  gravity_(gravity_ptr_keeper_.assignPtr(gravity_ptr))
 	{
-		quantity_name_ = "TotalMechanicalEnergy";
+		reduced_quantity_name_ = "TotalMechanicalEnergy";
 	}
 	//=================================================================================================//
 	Real TotalMechanicalEnergy::reduce(size_t index_i, Real dt)

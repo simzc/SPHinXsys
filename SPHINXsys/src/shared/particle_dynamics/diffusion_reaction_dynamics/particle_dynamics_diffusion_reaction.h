@@ -352,7 +352,7 @@ namespace SPH
 			  species_n_(this->particles_->species_n_),
 			  phi_(diffusion_reaction_material_.SpeciesIndexMap()[species_name])
 		{
-			quantity_name_ = "DiffusionReactionSpeciesAverage";
+			reduced_quantity_name_ = "DiffusionReactionSpeciesAverage";
 		};
 		DiffusionReactionSpeciesSummation(BodyPartByParticle &body_part, const std::string &species_name)
 			: DiffusionReactionSpeciesSummation(body_part.getSPHBody(), species_name){};

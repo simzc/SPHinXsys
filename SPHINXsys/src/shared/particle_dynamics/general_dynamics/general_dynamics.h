@@ -247,7 +247,7 @@ namespace SPH
 			  GeneralDataDelegateSimple(sph_body),
 			  variable_(*this->particles_->template getVariableByName<VariableType>(variable_name))
 		{
-			this->quantity_name_ = variable_name + "Summation";
+			this->reduced_quantity_name_ = variable_name + "Summation";
 		};
 		virtual ~QuantitySummation(){};
 
@@ -272,7 +272,7 @@ namespace SPH
 			: QuantitySummation<VariableType>(sph_body, variable_name),
 			  mass_(this->particles_->mass_)
 		{
-			this->quantity_name_ = variable_name + "Moment";
+			this->reduced_quantity_name_ = variable_name + "Moment";
 		};
 		virtual ~QuantityMoment(){};
 

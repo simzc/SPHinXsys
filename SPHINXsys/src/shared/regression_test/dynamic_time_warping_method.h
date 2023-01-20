@@ -66,7 +66,7 @@ namespace SPH
 			dtw_distance_xml_engine_out_("dtw_distance_xml_engine_out", "dtw_distance")
 		{
 			dtw_distance_filefullpath_ = this->input_folder_path_ + "/" + this->dynamics_range_name_ + "_"
-				+ this->quantity_name_ + "_dtwdistance.xml";
+				+ ObserveMethodType::quantity_name_ + "_dtwdistance.xml";
 		};
 		virtual ~RegressionTestDynamicTimeWarping() {};
 

@@ -151,7 +151,7 @@ namespace SPH
 		virtual ~ReduceDynamics(){};
 
 		using ReduceReturnType = ReturnType;
-		std::string QuantityName() { return this->quantity_name_; };
+		std::string ReducedQuantityName() { return this->reduced_quantity_name_; };
 		std::string DynamicsRangeName() { return dynamics_range_.getName(); };
 		/** The sequential function for executing the reduce operations on particles. */
 		virtual ReturnType exec(Real dt = 0.0) override

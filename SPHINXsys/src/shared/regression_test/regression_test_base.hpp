@@ -35,17 +35,75 @@ namespace SPH
 {
 	//=================================================================================================//
 	template <class ObserveMethodType>
+	template <typename T>
+	void RegressionTestBase<ObserveMethodType>::
+		writeDataToXmlMemory(XmlEngine &xml_engine, SimTK::Xml::Element &element, const DoubleVec<T> &quantity,
+							 int snapshot_, int observation_, const std::string &quantity_name, StdVec<std::string> &element_tag)
+	{
+		for (int snapshot_index = 0; snapshot_index != snapshot_; ++snapshot_index)
+		{
+			std::string element_name = element_tag[snapshot_index];
+			xml_engine.addChildToElement(element, element_name);
+			for (int observation_index = 0; observation_index != observation_; ++observation_index)
+			{
+				SimTK::Xml::element_iterator ele_ite = element.element_begin(element_name);
+				std::string attribute_name_ = quantity_name + "_" + std::to_string(observation_index);
+				xml_engine.setAttributeToElement(ele_ite, attribute_name_, quantity[snapshot_index][observation_index]);
+			}
+		}
+	}
+	//=================================================================================================//
+	template <class ObserveMethodType>
+	template <typename T>
+	void RegressionTestBase<ObserveMethodType>::
+		writeDataToXmlMemory(XmlEngine &xml_engine, SimTK::Xml::Element &element,
+							 std::string element_name, int observation_index, const T &quantity, const std::string &quantity_name)
+	{
+		SimTK::Xml::element_iterator ele_ite = element.element_begin(element_name);
+		std::string attribute_name_ = quantity_name + "_" + std::to_string(observation_index);
+		xml_engine.setAttributeToElement(ele_ite, attribute_name_, quantity);
+	}
+	//=================================================================================================//
+	template <class ObserveMethodType>
+	template <typename T>
+	void RegressionTestBase<ObserveMethodType>::
+		readDataFromXmlMemory(XmlEngine &xml_engine, SimTK::Xml::Element &element,
+							  int observation_index, DoubleVec<T> &result_container, const std::string &quantity_name)
+	{
+		int snapshot_index = 0;
+		SimTK::Xml::element_iterator ele_ite = element.element_begin();
+		for (; ele_ite != element.element_end(); ++ele_ite)
+		{
+			std::string attribute_name_ = quantity_name + "_" + std::to_string(observation_index);
+			xml_engine.getRequiredAttributeValue(ele_ite, attribute_name_, result_container[snapshot_index][observation_index]);
+			snapshot_index++;
+		}
+	}
+	//=================================================================================================//
+	template <class ObserveMethodType>
+	void RegressionTestBase<ObserveMethodType>::
+		readTagFromXmlMemory(SimTK::Xml::Element &element, StdVec<std::string> &element_tag)
+	{
+		size_t snapshot_index = 0;
+		SimTK::Xml::element_iterator ele_ite = element.element_begin();
+		for (; ele_ite != element.element_end(); ++ele_ite)
+		{
+			element_tag[snapshot_index] = ele_ite->getElementTag();
+			snapshot_index++;
+		}
+	}
+	//=================================================================================================//
+	template <class ObserveMethodType>
 	void RegressionTestBase<ObserveMethodType>::writeToXml(ObservedQuantityRecording<VariableType> *observe_method, size_t iteration)
 	{
-		this->updateObserverRelation();
 		this->parallel_exec();
 		std::string element_name_ = "Snapshot_" + std::to_string(iteration);
 		SimTK::Xml::Element &element_ = observe_xml_engine_.root_element_;
 		observe_xml_engine_.addElementToXmlDoc(element_name_);
 		for (size_t i = 0; i != this->base_particles_.total_real_particles_; ++i)
 		{
-			xmlmemory_io_.writeDataToXmlMemory(observe_xml_engine_, element_,
-											   element_name_, i, (*this->interpolated_quantities_)[i], this->quantity_name_);
+			writeDataToXmlMemory(observe_xml_engine_, element_,
+								 element_name_, i, (*this->interpolated_quantities_)[i], this->quantity_name_);
 		};
 	};
 	//=================================================================================================//
@@ -56,8 +114,8 @@ namespace SPH
 		std::string element_name_ = "Snapshot_" + std::to_string(iteration);
 		SimTK::Xml::Element &element_ = observe_xml_engine_.root_element_;
 		observe_xml_engine_.addElementToXmlDoc(element_name_);
-		xmlmemory_io_.writeDataToXmlMemory(observe_xml_engine_, element_,
-										   element_name_, 0, this->reduce_method_.parallel_exec(), this->quantity_name_);
+		writeDataToXmlMemory(observe_xml_engine_, element_,
+							 element_name_, 0, this->parallel_exec(), this->quantity_name_);
 	};
 	//=================================================================================================//
 	template <class ObserveMethodType>
@@ -74,8 +132,8 @@ namespace SPH
 		SimTK::Xml::Element &element_ = observe_xml_engine_.root_element_;
 		for (size_t j = 0; j != number_of_particle_; ++j)
 		{
-			xmlmemory_io_.readDataFromXmlMemory(observe_xml_engine_, element_, j, current_result_, this->quantity_name_);
-			xmlmemory_io_.readTagFromXmlMemory(element_, element_tag_);
+			readDataFromXmlMemory(observe_xml_engine_, element_, j, current_result_, this->quantity_name_);
+			readTagFromXmlMemory(element_, element_tag_);
 		}
 	};
 	//=================================================================================================//
@@ -94,8 +152,8 @@ namespace SPH
 		SimTK::Xml::Element &element_ = observe_xml_engine_.root_element_;
 		for (size_t j = 0; j != number_of_particle_; ++j)
 		{
-			xmlmemory_io_.readDataFromXmlMemory(observe_xml_engine_, element_, j, current_result_, this->quantity_name_);
-			xmlmemory_io_.readTagFromXmlMemory(element_, element_tag_);
+			readDataFromXmlMemory(observe_xml_engine_, element_, j, current_result_, this->quantity_name_);
+			readTagFromXmlMemory(element_, element_tag_);
 		}
 	};
 	//=================================================================================================//
@@ -123,7 +181,7 @@ namespace SPH
 				std::string node_name_ = "Round_" + std::to_string(run_index_);
 				SimTK::Xml::Element father_element_ = result_xml_engine_in_.getChildElement(node_name_);
 				for (int observation_index_ = 0; observation_index_ != observation_; ++observation_index_)
-					xmlmemory_io_.readDataFromXmlMemory(result_xml_engine_in_, father_element_, observation_index_, result_in_, this->quantity_name_);
+					readDataFromXmlMemory(result_xml_engine_in_, father_element_, observation_index_, result_in_, this->quantity_name_);
 				DoubleVec<VariableType> result_temp_ = result_in_;
 				for (int delete_ = 0; delete_ != difference_; ++delete_)
 					result_temp_.pop_back(); /* trim the new reading result to unify the length of all results. (number of snapshots) */
@@ -142,8 +200,8 @@ namespace SPH
 			result_xml_engine_out_.addElementToXmlDoc(node_name_);
 			SimTK::Xml::Element father_element_ =
 				result_xml_engine_out_.getChildElement(node_name_);
-			xmlmemory_io_.writeDataToXmlMemory(result_xml_engine_out_, father_element_, result_[run_index_],
-											   SMIN(snapshot_, number_of_snapshot_old_), observation_, this->quantity_name_, this->element_tag_);
+			writeDataToXmlMemory(result_xml_engine_out_, father_element_, result_[run_index_],
+								 SMIN(snapshot_, number_of_snapshot_old_), observation_, this->quantity_name_, this->element_tag_);
 		}
 		result_xml_engine_out_.writeToXmlFile(result_filefullpath_);
 	};
