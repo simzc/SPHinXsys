@@ -106,7 +106,7 @@ namespace SPH
 			: BaseIO(io_environment), plt_engine_(), dynamics_range_name_(dynamics_range_name),
 			  quantity_name_(quantity_name), step_interval_(100)
 		{
-			filefullpath_output_ = io_environment_.output_folder_ + "/" + dynamics_range_name_ + "_" + +".dat";
+			filefullpath_output_ = io_environment_.output_folder_ + "/" + dynamics_range_name_ + "_" + quantity_name_ + ".dat";
 		};
 
 		void setStepInterval(size_t interval) { step_interval_ = interval; };

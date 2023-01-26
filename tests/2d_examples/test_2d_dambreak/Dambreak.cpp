@@ -173,15 +173,8 @@ int main(int ac, char *av[])
 			sph_system.accumulateTotalSteps();
 			interval_computing_fluid_pressure_relaxation += tick_count::now() - time_instance;
 
-			/** screen output, write body reduced values and restart files  */
-			size_t iteration_steps = sph_system.TotalSteps();
-			if (iteration_steps % screen_output_interval == 0)
-			{
-				std::cout << std::fixed << std::setprecision(9) << "N=" << iteration_steps << "	Time = "
-						  << GlobalStaticVariables::physical_time_
-						  << "	advection_dt = " << advection_dt << "	acoustic_dt = " << acoustic_dt << "\n";
-			}
-
+			sph_system.monitorSteps("Time", GlobalStaticVariables::physical_time_,
+									"advection_dt", advection_dt, "acoustic_dt", acoustic_dt);
 			restart_io.writeToFileByStep();
 			write_water_mechanical_energy.writeToFileByStep();
 			write_recorded_water_pressure.writeToFileByStep();
@@ -202,14 +195,14 @@ int main(int ac, char *av[])
 
 	tick_count::interval_t tt;
 	tt = t4 - t1 - interval;
-	std::cout << "Total wall time for computation: " << tt.seconds()
-			  << " seconds." << std::endl;
+	std::cout << std::fixed << std::setprecision(9) << "Total wall time for computation: "
+			  << tt.seconds() << " seconds." << std::endl;
 	std::cout << std::fixed << std::setprecision(9) << "interval_computing_time_step ="
-			  << interval_computing_time_step.seconds() << "\n";
+			  << interval_computing_time_step.seconds() << std::endl;
 	std::cout << std::fixed << std::setprecision(9) << "interval_computing_fluid_pressure_relaxation = "
-			  << interval_computing_fluid_pressure_relaxation.seconds() << "\n";
+			  << interval_computing_fluid_pressure_relaxation.seconds() << std::endl;
 	std::cout << std::fixed << std::setprecision(9) << "interval_updating_configuration = "
-			  << interval_updating_configuration.seconds() << "\n";
+			  << interval_updating_configuration.seconds() << std::endl;
 
 	if (sph_system.generate_regression_data_)
 	{

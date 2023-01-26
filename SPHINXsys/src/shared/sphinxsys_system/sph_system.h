@@ -43,6 +43,7 @@ namespace po = boost::program_options;
 #include <thread>
 #include <fstream>
 #include <filesystem>
+#include <type_traits>
 namespace fs = std::filesystem;
 
 namespace SPH
@@ -53,6 +54,26 @@ namespace SPH
 	class SPHBody;
 	class IOEnvironment;
 	class ComplexShape;
+
+	template <typename... Args>
+	void outputToScreen(Args &&...args);
+
+	template <typename FirstName, typename QuantityType>
+	void outputToScreen(FirstName &name, QuantityType &quantity)
+	{
+		std::cout << "    " << name << " = " << std::fixed << std::setprecision(9) << quantity;
+	};
+
+	template <>
+	inline void outputToScreen(){};
+
+	template <typename FirstName, typename FistQuantity, typename... OtherNameQuantities>
+	void outputToScreen(FirstName &first_name, FistQuantity &first_quantity,
+						OtherNameQuantities &&...other_name_quantities)
+	{
+		outputToScreen(first_name, first_quantity);
+		outputToScreen(std::forward<OtherNameQuantities>(other_name_quantities)...);
+	};
 
 	/**
 	 * @class SPHSystem
@@ -72,6 +93,7 @@ namespace SPH
 		size_t TotalSteps() { return total_steps_; };
 		void accumulateTotalSteps() { total_steps_++; };
 		void setRestartStep(size_t restart_step);
+		void setScreenOutputInterval(size_t interval) { screen_out_interval_ = interval; };
 		size_t RestartStep() { return restart_step_; };
 		BoundingBox system_domain_bounds_;		 /**< Lower and Upper domain bounds. */
 		Real resolution_ref_;					 /**< reference resolution of the SPH system */
@@ -86,6 +108,18 @@ namespace SPH
 		SolidBodyVector solid_bodies_;	   /**< The bodies with inner particle configuration and acoustic time steps . */
 		void updateSystemCellLinkedLists();
 		void updateSystemRelations();
+
+		template <typename FistQuantity, typename... OtherNameQuantities>
+		void monitorSteps(const std::string &first_name, const FistQuantity &first_quantity,
+						  OtherNameQuantities &&...other_name_quantities)
+		{
+			if (total_steps_ % screen_out_interval_ == 0)
+			{
+				std::cout << std::fixed << std::setprecision(9) << "N = " << total_steps_;
+				outputToScreen(first_name, first_quantity, std::forward<OtherNameQuantities>(other_name_quantities)...);
+				std::cout << std::endl;
+			}
+		};
 		/** get the min time step from all bodies. */
 		Real getSmallestTimeStepAmongSolidBodies(Real CFL = 0.6);
 		/** Command line handle for ctest. */
@@ -97,6 +131,7 @@ namespace SPH
 		bool reload_particles_;		   /**< start the simulation with relaxed particles. */
 		size_t total_steps_;
 		size_t restart_step_; /**< restart step */
+		size_t screen_out_interval_;
 	};
 }
 #endif // SPH_SYSTEM_H
