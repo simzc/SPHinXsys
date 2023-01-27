@@ -92,24 +92,16 @@ namespace SPH
 		PltEngine plt_engine_;
 		std::string dynamics_range_name_;
 		const std::string quantity_name_;
-		size_t step_interval_;
 		std::string filefullpath_output_;
-
-		bool checkToRecord()
-		{
-			return sph_system_.TotalSteps() % step_interval_ == 0;
-		};
 
 	public:
 		BaseObservation(IOEnvironment &io_environment, const std::string &dynamics_range_name,
 						const std::string &quantity_name)
 			: BaseIO(io_environment), plt_engine_(), dynamics_range_name_(dynamics_range_name),
-			  quantity_name_(quantity_name), step_interval_(100)
+			  quantity_name_(quantity_name)
 		{
 			filefullpath_output_ = io_environment_.output_folder_ + "/" + dynamics_range_name_ + "_" + quantity_name_ + ".dat";
 		};
-
-		void setStepInterval(size_t interval) { step_interval_ = interval; };
 	};
 
 	/**

@@ -81,7 +81,7 @@ int main(int ac, char *av[])
 	//----------------------------------------------------------------------
 	SPHSystem sph_system(system_domain_bounds, resolution_ref);
 	/** Tag for running particle relaxation for the initially body-fitted distribution */
-	sph_system.setRunParticleRelaxation(false);
+	sph_system.setRunParticleRelaxation(true);
 	/** Tag for starting with relaxed body-fitted particles distribution */
 	sph_system.setReloadParticles(true);
 	sph_system.handleCommandlineOptions(ac, av);
@@ -131,6 +131,10 @@ int main(int ac, char *av[])
 		//----------------------------------------------------------------------
 		//	Output for particle relaxation.
 		//----------------------------------------------------------------------
+		ReducedQuantityRecording<ReduceDynamics<QuantitySummation<Vecd>>> 
+			free_ball_residue_force_recording(io_environment, free_ball, "Acceleration");
+		ReducedQuantityRecording<ReduceDynamics<QuantitySummation<Vecd>>>
+			damping_ball_residue_force_recording(io_environment, damping_ball, "Acceleration");
 		BodyStatesRecordingToVtp write_ball_state(io_environment, sph_system.real_bodies_);
 		ReloadParticleIO write_particle_reload_files(io_environment, {&free_ball, &damping_ball});
 		//----------------------------------------------------------------------
@@ -154,12 +158,12 @@ int main(int ac, char *av[])
 			damping_ball_relaxation_step_inner.exec();
 			sph_system.accumulateTotalSteps();
 
-			size_t iteration_steps = sph_system.TotalSteps();
-			if (iteration_steps % 100 == 0)
-			{
-				std::cout << std::fixed << std::setprecision(9) << "Relaxation steps N = " << iteration_steps << "\n";
-				write_ball_state.writeToFileByStep();
-			}
+			free_ball_residue_force_recording.writeToFileByStep();
+			damping_ball_residue_force_recording.writeToFileByStep();
+			write_ball_state.writeToFileByStep();
+
+			sph_system.monitorSteps("FreeBallResidueForce", free_ball_residue_force_recording.ResultValue().norm(),
+									"DampingBallResidueForce", damping_ball_residue_force_recording.ResultValue().norm());
 
 			sph_system.updateSystemCellLinkedLists();
 			sph_system.updateSystemRelations();
@@ -271,16 +275,12 @@ int main(int ac, char *av[])
 				integration_time += dt;
 				GlobalStaticVariables::physical_time_ += dt;
 
-				size_t iteration_steps = sph_system.TotalSteps();
-				if (iteration_steps % screen_output_interval == 0)
-				{
-					std::cout << "N=" << ite << " Time: "
-							  << GlobalStaticVariables::physical_time_ << "	dt: " << dt << "\n";
-				}
+				sph_system.monitorSteps("Time", GlobalStaticVariables::physical_time_, "elastic_dynamics_dt", dt);
 
 				free_ball_displacement_recording.writeToFileByStep();
 				damping_ball_displacement_recording.writeToFileByStep();
 
+				/** Update cell linked list and configuration. */
 				sph_system.updateSystemCellLinkedLists();
 				sph_system.updateSystemRelations();
 			}

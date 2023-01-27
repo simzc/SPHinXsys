@@ -205,7 +205,6 @@ int main(int ac, char *av[])
 	Real end_time = T0;
 	Real output_interval = 0.01 * T0;
 	Real Dt = 0.1 * output_interval;
-	int screen_output_interval = 100;
 	//----------------------------------------------------------------------
 	//	Statistics for CPU time
 	//----------------------------------------------------------------------
@@ -239,14 +238,11 @@ int main(int ac, char *av[])
 				integration_time += dt;
 				GlobalStaticVariables::physical_time_ += dt;
 
-				size_t iteration_steps = sph_system.TotalSteps();
-				if (iteration_steps % screen_output_interval == 0)
-				{
-					std::cout << "N=" << iteration_steps << " Time: "
-							  << GlobalStaticVariables::physical_time_ << "	dt: " << dt << "\n";
-				}
+				sph_system.monitorSteps("Time", GlobalStaticVariables::physical_time_, "elastic_dynamics_dt", dt);
+
 				write_ball_center_displacement.writeToFileByStep();
 
+				/** Update cell linked list and configuration. */
 				sph_system.updateSystemCellLinkedLists();
 				sph_system.updateSystemRelations();
 			}

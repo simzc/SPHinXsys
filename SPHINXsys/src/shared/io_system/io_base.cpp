@@ -68,8 +68,11 @@ namespace SPH
 	//=============================================================================================//
 	void BodyStatesRecording::writeToFileByStep()
 	{
-		writeWithFileName(padValueWithZeros(sph_system_.TotalSteps()));
-	};
+		if (checkToRecord())
+		{
+			writeWithFileName(padValueWithZeros(sph_system_.TotalSteps()));
+		}
+	}
 	//=============================================================================================//
 	RestartIO::RestartIO(IOEnvironment &io_environment,
 						 SPHBodyVector bodies, size_t restart_step_interval)

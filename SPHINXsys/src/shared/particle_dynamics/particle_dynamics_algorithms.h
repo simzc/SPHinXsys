@@ -135,20 +135,20 @@ namespace SPH
 	 */
 	template <class LocalDynamicsType, class DynamicsRange = SPHBody>
 	class ReduceDynamics : public LocalDynamicsType,
-						   public BaseDynamics<typename LocalDynamicsType::ReduceReturnType>
+		public BaseDynamics<typename LocalDynamicsType::ReduceReturnType>
 
 	{
 		using ReturnType = typename LocalDynamicsType::ReduceReturnType;
 
 	protected:
-		DynamicsRange &dynamics_range_;
+		DynamicsRange& dynamics_range_;
 
 	public:
 		template <class DerivedDynamicsRange, typename... Args>
-		ReduceDynamics(DerivedDynamicsRange &derived_dynamics_range, Args &&...args)
+		ReduceDynamics(DerivedDynamicsRange& derived_dynamics_range, Args &&...args)
 			: LocalDynamicsType(derived_dynamics_range, std::forward<Args>(args)...),
-			  BaseDynamics<ReturnType>(), dynamics_range_(derived_dynamics_range){};
-		virtual ~ReduceDynamics(){};
+			BaseDynamics<ReturnType>(), dynamics_range_(derived_dynamics_range) {};
+		virtual ~ReduceDynamics() {};
 
 		using ReduceReturnType = ReturnType;
 		std::string ReducedQuantityName() { return this->reduced_quantity_name_; };
@@ -161,7 +161,8 @@ namespace SPH
 				dynamics_range_.LoopRange(), this->Reference(), this->getOperation(),
 				[&](size_t i) -> ReturnType
 				{ return this->reduce(i, dt); });
-			return this->outputResult(temp);
+			this->result_value_ = this->outputResult(temp);
+			return this->result_value_;
 		};
 		/** The parallel function for executing the reduce operations on particles. */
 		virtual ReturnType parallel_exec(Real dt = 0.0) override
@@ -171,7 +172,8 @@ namespace SPH
 				dynamics_range_.LoopRange(), this->Reference(), this->getOperation(),
 				[&](size_t i) -> ReturnType
 				{ return this->reduce(i, dt); });
-			return this->outputResult(temp);
+			this->result_value_ = this->outputResult(temp);
+			return this->result_value_;
 		};
 	};
 
@@ -197,13 +199,15 @@ namespace SPH
 		virtual ReturnType exec(Real dt = 0.0) override
 		{
 			ReturnType sum = ReduceDynamics<LocalDynamicsType, DynamicsRange>::exec(dt);
-			return outputAverage(sum, this->dynamics_range_.SizeOfLoopRange());
+			this->result_value_ = outputAverage(sum, this->dynamics_range_.SizeOfLoopRange());
+			return this->result_value_;
 		};
 		/** The parallel function for executing the average operations on particles. */
 		virtual ReturnType parallel_exec(Real dt = 0.0) override
 		{
 			ReturnType sum = ReduceDynamics<LocalDynamicsType, DynamicsRange>::parallel_exec(dt);
-			return outputAverage(sum, this->dynamics_range_.SizeOfLoopRange());
+			this->result_value_ = outputAverage(sum, this->dynamics_range_.SizeOfLoopRange());
+			return this->result_value_;
 		};
 	};
 

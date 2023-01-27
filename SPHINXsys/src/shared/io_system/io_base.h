@@ -72,8 +72,11 @@ namespace SPH
 	{
 	public:
 		explicit BaseIO(IOEnvironment &io_environment)
-			: io_environment_(io_environment), sph_system_(io_environment.sph_system_){};
+			: io_environment_(io_environment), sph_system_(io_environment.sph_system_),
+			step_interval_(100)	{};
 		virtual ~BaseIO(){};
+
+		void setStepInterval(size_t interval) { step_interval_ = interval; };
 
 		/** write with filename indicated by iteration step */
 		virtual void writeToFileByStep() = 0;
@@ -81,6 +84,7 @@ namespace SPH
 	protected:
 		IOEnvironment &io_environment_;
 		SPHSystem &sph_system_;
+		size_t step_interval_;
 
 		std::string convertPhysicalTimeToString(Real physical_time);
 
@@ -91,6 +95,12 @@ namespace SPH
 			s_time << std::setw(max_string_width) << std::setfill('0') << value;
 			return s_time.str();
 		}
+
+		bool checkToRecord()
+		{
+			return sph_system_.TotalSteps() % step_interval_ == 0;
+		};
+
 	};
 
 	/**
@@ -111,7 +121,7 @@ namespace SPH
 
 	protected:
 		SPHBodyVector bodies_;
-
+		
 		virtual void writeWithFileName(const std::string &sequence) = 0;
 	};
 
