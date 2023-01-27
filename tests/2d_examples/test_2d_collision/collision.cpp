@@ -131,7 +131,7 @@ int main(int ac, char *av[])
 		//----------------------------------------------------------------------
 		//	Output for particle relaxation.
 		//----------------------------------------------------------------------
-		ReducedQuantityRecording<ReduceDynamics<QuantitySummation<Vecd>>> 
+		ReducedQuantityRecording<ReduceDynamics<QuantitySummation<Vecd>>>
 			free_ball_residue_force_recording(io_environment, free_ball, "Acceleration");
 		ReducedQuantityRecording<ReduceDynamics<QuantitySummation<Vecd>>>
 			damping_ball_residue_force_recording(io_environment, damping_ball, "Acceleration");
@@ -296,8 +296,16 @@ int main(int ac, char *av[])
 	tt = t4 - t1 - interval;
 	std::cout << "Total wall time for computation: " << tt.seconds() << " seconds." << std::endl;
 
-	free_ball_displacement_recording.newResultTest();
-	damping_ball_displacement_recording.newResultTest();
+	if (sph_system.generate_regression_data_)
+	{
+		free_ball_displacement_recording.generateDataBase(1.0e-2);
+		damping_ball_displacement_recording.generateDataBase(1.0e-2);
+	}
+	else
+	{
+		free_ball_displacement_recording.newResultTest();
+		damping_ball_displacement_recording.newResultTest();
+	}
 
 	return 0;
 }

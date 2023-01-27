@@ -59,7 +59,7 @@ namespace SPH
 	void outputToScreen(Args &&...args);
 
 	template <typename FirstName, typename QuantityType>
-	void outputToScreen(FirstName &name, QuantityType &quantity)
+	void outputToScreen(FirstName name, QuantityType quantity)
 	{
 		std::cout << "    " << name << " = " << std::fixed << std::setprecision(9) << quantity;
 	};
@@ -68,7 +68,7 @@ namespace SPH
 	inline void outputToScreen(){};
 
 	template <typename FirstName, typename FistQuantity, typename... OtherNameQuantities>
-	void outputToScreen(FirstName &first_name, FistQuantity &first_quantity,
+	void outputToScreen(FirstName first_name, FistQuantity first_quantity,
 						OtherNameQuantities &&...other_name_quantities)
 	{
 		outputToScreen(first_name, first_quantity);
