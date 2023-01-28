@@ -13,8 +13,7 @@ set(BUILD_INPUT_PATH "${EXECUTABLE_OUTPUT_PATH}/input")
 set(BUILD_RELOAD_PATH "${EXECUTABLE_OUTPUT_PATH}/reload")
 
 file(MAKE_DIRECTORY ${BUILD_INPUT_PATH})
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/regression_test_tool/regression_test_tool.py
-        DESTINATION ${BUILD_INPUT_PATH})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/generate_regression_data.py DESTINATION ${EXECUTABLE_OUTPUT_PATH})
 
 aux_source_directory(. DIR_SRCS)
 add_executable(${PROJECT_NAME} ${DIR_SRCS})
@@ -23,5 +22,5 @@ set_target_properties(${PROJECT_NAME} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "
 target_link_libraries(${PROJECT_NAME} sphinxsys_2d)
 
 add_test(NAME ${PROJECT_NAME} 
-  COMMAND ${Python3_EXECUTABLE} "${EXECUTABLE_OUTPUT_PATH}/input/regression_test_tool.py"
+  COMMAND ${Python3_EXECUTABLE} "${EXECUTABLE_OUTPUT_PATH}/generate_regression_data.py"
   WORKING_DIRECTORY "${EXECUTABLE_OUTPUT_PATH}")
