@@ -4,7 +4,7 @@ import sys
 
 path = os.path.abspath('../../../../../PythonScriptStore/RegressionTest')
 sys.path.append(path)
-from regression_test_base_tool import SphinxsysRegressionTestByCTest
+from regression_test_base_tool import SphinxsysRegressionTest
 
 """
 case name: test_2d_collision
@@ -18,8 +18,8 @@ parameter_name_1 = "Position"
 
 number_of_run_times = 0
 converged = 0
-sphinxsys = SphinxsysRegressionTestByCTest(case_name, body_name, parameter_name)
-sphinxsys_1 = SphinxsysRegressionTestByCTest(case_name, body_name_1, parameter_name_1)
+sphinxsys = SphinxsysRegressionTest(case_name, body_name, parameter_name)
+sphinxsys_1 = SphinxsysRegressionTest(case_name, body_name_1, parameter_name_1)
 
 
 while True:
