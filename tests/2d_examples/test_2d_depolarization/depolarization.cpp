@@ -173,9 +173,7 @@ int main(int ac, char *av[])
 	tt = t4 - t1 - interval;
 	std::cout << "Total wall time for computation: " << tt.seconds() << " seconds." << std::endl;
 
-	write_recorded_voltage.generateDataBase(1.0e-3, 1.0e-3);
-
-/*	if (system.generate_regression_data_)
+	if (system.generate_regression_data_)
 	{
 		write_recorded_voltage.generateDataBase(1.0e-3, 1.0e-3);
 	}
@@ -183,6 +181,6 @@ int main(int ac, char *av[])
 	{
 		write_recorded_voltage.newResultTest();
 	}
-*/
+
 	return 0;
 }
