@@ -70,12 +70,13 @@ public:
 //----------------------------------------------------------------------
 //	Main program starts here.
 //----------------------------------------------------------------------
-int main()
+int main(int ac, char *av[])
 {
 	//----------------------------------------------------------------------
 	//	Build up the environment of a SPHSystem.
 	//----------------------------------------------------------------------
 	SPHSystem system(system_domain_bounds, resolution_ref);
+	system.handleCommandlineOptions(ac, av);
 	IOEnvironment io_environment(system);
 	//----------------------------------------------------------------------
 	//	Creating body, materials and particles.
@@ -94,7 +95,7 @@ int main()
 	//	Basically the the range of bodies to build neighbor particle lists.
 	//----------------------------------------------------------------------
 	InnerRelation muscle_body_inner_relation(muscle_body);
-	ContactRelation voltage_observer_contact_relation(voltage_observer, {&muscle_body});
+	ObservingRelation voltage_observer_contact_relation(voltage_observer, {&muscle_body});
 	//----------------------------------------------------------------------
 	//	Define the main numerical methods used in the simulation.
 	//	Note that there may be data dependence on the constructors of these methods.
@@ -124,17 +125,13 @@ int main()
 	//----------------------------------------------------------------------
 	//	Initial states output.
 	//----------------------------------------------------------------------
-	write_states.writeToFile(0);
-	write_recorded_voltage.writeToFile(0);
+	write_states.writeToFileByTime();
+	write_recorded_voltage.writeToFileByStep();
 	//----------------------------------------------------------------------
 	//	Setup for time-stepping control
 	//----------------------------------------------------------------------
-	int ite = 0;
-	Real T0 = 16.0;
-	Real end_time = T0;
-	Real output_interval = 0.5;		 /**< Time period for output */
-	Real Dt = 0.01 * output_interval; /**< Time period for data observing */
-	Real dt = 0.0;
+	Real end_time = 16.0;
+	Real output_interval = 0.5; /**< Time period for output */
 	//----------------------------------------------------------------------
 	//	Statistics for CPU time
 	//----------------------------------------------------------------------
@@ -143,36 +140,30 @@ int main()
 	//----------------------------------------------------------------------
 	//	Main loop starts here.
 	//----------------------------------------------------------------------
+	system.setScreenOutputInterval(1000);
+	write_recorded_voltage.setStepInterval(1000);
 	while (GlobalStaticVariables::physical_time_ < end_time)
 	{
 		Real integration_time = 0.0;
 		while (integration_time < output_interval)
 		{
-			Real relaxation_time = 0.0;
-			while (relaxation_time < Dt)
-			{
-				if (ite % 1000 == 0)
-				{
-					std::cout << "N=" << ite << " Time: "
-							  << GlobalStaticVariables::physical_time_ << "	dt: "
-							  << dt << "\n";
-				}
-				/**Strang splitting method. */
-				reaction_relaxation_forward.parallel_exec(0.5 * dt);
-				diffusion_relaxation.parallel_exec(dt);
-				reaction_relaxation_backward.parallel_exec(0.5 * dt);
+			Real dt = get_time_step_size.parallel_exec();
+			/**Strang splitting method. */
+			reaction_relaxation_forward.parallel_exec(0.5 * dt);
+			diffusion_relaxation.parallel_exec(dt);
+			reaction_relaxation_backward.parallel_exec(0.5 * dt);
+			system.accumulateTotalSteps();
 
-				ite++;
-				dt = get_time_step_size.parallel_exec();
-				relaxation_time += dt;
-				integration_time += dt;
-				GlobalStaticVariables::physical_time_ += dt;
-			}
-			write_recorded_voltage.writeToFile(ite);
+			system.monitorSteps("Time", GlobalStaticVariables::physical_time_,
+								"diffusion_reaction_dt", dt);
+			write_recorded_voltage.writeToFileByStep();
+
+			integration_time += dt;
+			GlobalStaticVariables::physical_time_ += dt;
 		}
 
 		tick_count t2 = tick_count::now();
-		write_states.writeToFile();
+		write_states.writeToFileByTime();
 		tick_count t3 = tick_count::now();
 		interval += t3 - t2;
 	}
@@ -182,7 +173,16 @@ int main()
 	tt = t4 - t1 - interval;
 	std::cout << "Total wall time for computation: " << tt.seconds() << " seconds." << std::endl;
 
-	write_recorded_voltage.newResultTest();
+	write_recorded_voltage.generateDataBase(1.0e-3, 1.0e-3);
 
+/*	if (system.generate_regression_data_)
+	{
+		write_recorded_voltage.generateDataBase(1.0e-3, 1.0e-3);
+	}
+	else
+	{
+		write_recorded_voltage.newResultTest();
+	}
+*/
 	return 0;
 }

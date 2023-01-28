@@ -34,6 +34,5 @@
 #include "base_body_relation.h"
 #include "inner_body_relation.h"
 #include "contact_body_relation.h"
-#include "observer_relation.h"
 
 #endif //ALL_BODY_RELATIONS_H

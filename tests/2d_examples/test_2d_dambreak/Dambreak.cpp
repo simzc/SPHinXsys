@@ -82,7 +82,7 @@ int main(int ac, char *av[])
 	//----------------------------------------------------------------------
 	InnerRelation water_block_inner(water_block);
 	ContactRelation water_block_contact(water_block, RealBodyVector{&wall_boundary});
-	ObserverRelation fluid_observer_contact(fluid_observer, RealBodyVector{&water_block});
+	ObservingRelation fluid_observer_contact(fluid_observer, RealBodyVector{&water_block});
 	//----------------------------------------------------------------------
 	//	Combined relations.
 	//----------------------------------------------------------------------

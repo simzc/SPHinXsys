@@ -209,7 +209,7 @@ int main()
 	//	Basically the the range of bodies to build neighbor particle lists.
 	//----------------------------------------------------------------------
 	InnerRelation diffusion_body_inner(diffusion_body);
-	ObserverRelation observer_contact(temperature_observer, {&diffusion_body});
+	ObservingRelation observer_contact(temperature_observer, {&diffusion_body});
 	//----------------------------------------------------------------------
 	//	Define the main numerical methods used in the simulation.
 	//	Note that there may be data dependence on the constructors of these methods.

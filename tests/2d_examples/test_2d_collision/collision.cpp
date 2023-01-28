@@ -182,8 +182,8 @@ int main(int ac, char *av[])
 	TotalLagrangian<InnerRelation> damping_ball_inner(damping_ball);
 	SurfaceContactRelation damping_ball_contact(damping_ball, {&wall_boundary});
 
-	TotalLagrangian<ObserverRelation> free_ball_observer_contact(free_ball_observer, RealBodyVector{&free_ball});
-	TotalLagrangian<ObserverRelation> damping_all_observer_contact(damping_ball_observer, RealBodyVector{&damping_ball});
+	TotalLagrangian<ObservingRelation> free_ball_observer_contact(free_ball_observer, RealBodyVector{&free_ball});
+	TotalLagrangian<ObservingRelation> damping_all_observer_contact(damping_ball_observer, RealBodyVector{&damping_ball});
 	//----------------------------------------------------------------------
 	//	Define the main numerical methods used in the simulation.
 	//	Note that there may be data dependence on the constructors of these methods.

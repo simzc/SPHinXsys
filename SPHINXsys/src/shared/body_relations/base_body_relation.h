@@ -29,7 +29,7 @@
 #ifndef BASE_BODY_RELATION_H
 #define BASE_BODY_RELATION_H
 
-#include "complex_body.h"
+#include "all_bodies.h"
 #include "base_particles.h"
 #include "cell_linked_list.h"
 #include "neighborhood.h"
@@ -177,6 +177,33 @@ namespace SPH
 			}
 			this->is_configuration_updated_ = true;
 			this->to_update_configuration_ = false;
+		};
+	};
+
+	template <class ContactRelationType>
+	class ObservingContact : public ContactRelationType
+	{
+	public:
+		ObservingContact(ObserverBody &observer_body, RealBodyVector contact_bodies)
+			: ContactRelationType(observer_body, contact_bodies)
+		{
+			this->to_update_configuration_ = false;
+			this->is_configuration_updated_ = false;
+		};
+		virtual ~ObservingContact(){};
+
+		virtual void updateConfiguration() override
+		{
+			if (!this->is_configuration_updated_)
+			{
+				ContactRelationType::updateConfiguration();
+			}
+			this->is_configuration_updated_ = true;
+		};
+
+		virtual void updateRelation() override
+		{
+			this->is_configuration_updated_ = false;
 		};
 	};
 

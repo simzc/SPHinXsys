@@ -42,9 +42,10 @@ namespace SPH
 	class ObservingQuantity : public InteractionDynamics<BaseInterpolation<VariableType>>
 	{
 	public:
-		explicit ObservingQuantity(ObserverRelation &observer_relation, const std::string &variable_name)
-			: InteractionDynamics<BaseInterpolation<VariableType>>(observer_relation, variable_name),
-			  observer_relation_(observer_relation)
+		template <class ContactRelationType>
+		explicit ObservingQuantity(ObservingContact<ContactRelationType> &observing_relation, const std::string &variable_name)
+			: InteractionDynamics<BaseInterpolation<VariableType>>(observing_relation, variable_name),
+			  observing_relation_(observing_relation)
 		{
 			this->interpolated_quantities_ = registerObservedQuantity(variable_name);
 		};
@@ -53,19 +54,19 @@ namespace SPH
 		/** The sequential function for executing the average operations on particles and their neighbors. */
 		virtual void exec(Real dt = 0.0) override
 		{
-			observer_relation_.updateConfiguration();
+			observing_relation_.updateConfiguration();
 			InteractionDynamics<BaseInterpolation<VariableType>>::exec(dt);
 		};
 		/** The parallel function for executing the average operations on particles and their neighbors. */
 		virtual void parallel_exec(Real dt = 0.0) override
 		{
-			observer_relation_.updateConfiguration();
+			observing_relation_.updateConfiguration();
 			InteractionDynamics<BaseInterpolation<VariableType>>::parallel_exec(dt);
 		};
 
 	protected:
 		StdLargeVec<VariableType> observed_quantities_;
-		ObserverRelation &observer_relation_;
+		BaseContactRelation &observing_relation_;
 
 		/** Register the  observed variable if the variable name is new.
 		 * If the variable is registered already, the registered variable will be returned. */
@@ -119,11 +120,12 @@ namespace SPH
 	public:
 		VariableType type_indicator_; /*< this is an indicator to identify the variable type. */
 
+		template <class ContactRelationType>
 		ObservedQuantityRecording(const std::string &quantity_name, IOEnvironment &io_environment,
-								  ObserverRelation &observer_relation)
-			: ObservingQuantity<VariableType>(observer_relation, quantity_name),
-			  BaseObservation(io_environment, observer_relation.sph_body_.getName(), quantity_name),
-			  observer_(observer_relation.sph_body_), base_particles_(observer_.getBaseParticles())
+								  ObservingContact<ContactRelationType> &observing_relation)
+			: ObservingQuantity<VariableType>(observing_relation, quantity_name),
+			  BaseObservation(io_environment, observing_relation.sph_body_.getName(), quantity_name),
+			  observer_(observing_relation.sph_body_), base_particles_(observer_.getBaseParticles())
 		{
 			std::ofstream out_file(this->filefullpath_output_.c_str(), std::ios::app);
 			out_file << "run_time"

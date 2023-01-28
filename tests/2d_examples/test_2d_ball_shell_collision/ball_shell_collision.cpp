@@ -168,7 +168,7 @@ int main(int ac, char *av[])
 	//----------------------------------------------------------------------
 	TotalLagrangian<InnerRelation> ball_inner(ball);
 	SurfaceContactRelation ball_contact(ball, {&wall_boundary});
-	TotalLagrangian<ObserverRelation> ball_observer_contact(ball_observer, RealBodyVector{&ball});
+	TotalLagrangian<ObservingRelation> ball_observer_contact(ball_observer, RealBodyVector{&ball});
 	//----------------------------------------------------------------------
 	//	Define the main numerical methods used in the simulation.
 	//	Note that there may be data dependence on the constructors of these methods.

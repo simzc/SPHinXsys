@@ -108,7 +108,7 @@ int main(int ac, char *av[])
 	//----------------------------------------------------------------------
 	AdaptiveInnerRelation water_inner(water_block);
 	AdaptiveContactRelation water_contact(water_block, {&wall_boundary});
-	AdaptiveContactRelation fluid_observer_contact(fluid_observer, {&water_block});
+	AdaptiveObservingRelation fluid_observer_contact(fluid_observer, {&water_block});
 	//----------------------------------------------------------------------
 	//	Combined relations.
 	//----------------------------------------------------------------------
@@ -150,12 +150,8 @@ int main(int ac, char *av[])
 	//----------------------------------------------------------------------
 	//	Setup for time-stepping control
 	//----------------------------------------------------------------------
-	size_t number_of_iterations = 0;
-	int screen_output_interval = 100;
-	int observation_sample_interval = screen_output_interval * 2;
 	Real End_Time = 20.0; /**< End time. */
 	Real D_Time = 0.1;	  /**< Time stamps for output of body states. */
-	Real dt = 0.0;		  /**< Default acoustic time step sizes. */
 	int refinement_interval = 1;
 	//----------------------------------------------------------------------
 	//	Statistics for CPU time
@@ -169,9 +165,9 @@ int main(int ac, char *av[])
 	//----------------------------------------------------------------------
 	//	First output before the main loop.
 	//----------------------------------------------------------------------
-	body_states_recording.writeToFile();
-	write_water_mechanical_energy.writeToFile(number_of_iterations);
-	write_recorded_water_pressure.writeToFile(number_of_iterations);
+	body_states_recording.writeToFileByTime();
+	write_water_mechanical_energy.writeToFileByStep();
+	write_recorded_water_pressure.writeToFileByStep();
 	//----------------------------------------------------------------------
 	//	Main loop starts here.
 	//----------------------------------------------------------------------
@@ -190,6 +186,7 @@ int main(int ac, char *av[])
 
 			time_instance = tick_count::now();
 			Real relaxation_time = 0.0;
+			Real dt = 0.0;
 			while (relaxation_time < Dt)
 			{
 				/** inner loop for dual-time criteria time-stepping.  */
@@ -200,25 +197,16 @@ int main(int ac, char *av[])
 				integration_time += dt;
 				GlobalStaticVariables::physical_time_ += dt;
 			}
+			sph_system.accumulateTotalSteps();
 			interval_computing_fluid_pressure_relaxation += tick_count::now() - time_instance;
 
-			/** screen output, write body reduced values and restart files  */
-			if (number_of_iterations % screen_output_interval == 0)
-			{
-				std::cout << std::fixed << std::setprecision(9) << "N=" << number_of_iterations << "	Time = "
-						  << GlobalStaticVariables::physical_time_
-						  << "	Dt = " << Dt << "	dt = " << dt << "\n";
-
-				if (number_of_iterations % observation_sample_interval == 0 && number_of_iterations != 0)
-				{
-					write_water_mechanical_energy.writeToFile(number_of_iterations);
-					write_recorded_water_pressure.writeToFile(number_of_iterations);
-				}
-			}
-			number_of_iterations++;
+			sph_system.monitorSteps("Time", GlobalStaticVariables::physical_time_,
+									"advection_dt", Dt, "acoustic_dt", dt);
+			write_water_mechanical_energy.writeToFileByStep();
+			write_recorded_water_pressure.writeToFileByStep();
 
 			/** Particle Refinement */
-			if (number_of_iterations % refinement_interval == 0)
+			if (sph_system.TotalSteps() % refinement_interval == 0)
 			{
 				particle_split_.exec();
 				particle_merge_.exec();
@@ -231,7 +219,7 @@ int main(int ac, char *av[])
 		}
 
 		tick_count t2 = tick_count::now();
-		body_states_recording.writeToFile();
+		body_states_recording.writeToFileByTime();
 		tick_count t3 = tick_count::now();
 		interval += t3 - t2;
 	}
@@ -248,11 +236,16 @@ int main(int ac, char *av[])
 	std::cout << std::fixed << std::setprecision(9) << "interval_updating_configuration = "
 			  << interval_updating_configuration.seconds() << "\n";
 
-	/*	if (sph_system.RestartStep() == 0)
-		{
-			write_water_mechanical_energy.newResultTest();
-			write_recorded_water_pressure.newResultTest();
-		} */
+	if (sph_system.generate_regression_data_)
+	{
+		write_water_mechanical_energy.generateDataBase(1.0e-3);
+		write_recorded_water_pressure.generateDataBase(1.0e-3);
+	}
+	else
+	{
+		write_water_mechanical_energy.newResultTest();
+		write_recorded_water_pressure.newResultTest();
+	}
 
 	return 0;
 };

@@ -84,6 +84,7 @@ namespace SPH
 	protected:
 		StdVec<NeighborBuilderContact *> get_contact_neighbors_;
 	};
+	using ObservingRelation = ObservingContact<ContactRelation>;
 
 	/**
 	 * @class SurfaceContactRelation
@@ -153,5 +154,7 @@ namespace SPH
 
 		virtual void updateConfiguration() override;
 	};
+	using AdaptiveObservingRelation = ObservingContact<AdaptiveContactRelation>;
+
 }
 #endif // CONTACT_BODY_RELATION_H
