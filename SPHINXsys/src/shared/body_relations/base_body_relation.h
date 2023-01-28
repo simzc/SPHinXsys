@@ -164,7 +164,10 @@ namespace SPH
 	{
 	public:
 		template <typename... Args>
-		TotalLagrangian(Args &&...args) : RelationType(std::forward<Args>(args)...){};
+		TotalLagrangian(Args &&...args) : RelationType(std::forward<Args>(args)...)
+		{
+			this->to_update_configuration_ = true;
+		};
 		virtual ~TotalLagrangian(){};
 		virtual void updateRelation() override
 		{
