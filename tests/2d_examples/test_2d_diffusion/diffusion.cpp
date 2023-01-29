@@ -95,8 +95,8 @@ public:
 class TemperatureObserverParticleGenerator : public ObserverParticleGenerator
 {
 public:
-	explicit TemperatureObserverParticleGenerator(SPHBody &sph_body) 
-	: ObserverParticleGenerator(sph_body)
+	explicit TemperatureObserverParticleGenerator(SPHBody &sph_body)
+		: ObserverParticleGenerator(sph_body)
 	{
 		size_t number_of_observation_points = 11;
 		Real range_of_measure = 0.9 * L;
@@ -112,12 +112,13 @@ public:
 //----------------------------------------------------------------------
 //	Main program starts here.
 //----------------------------------------------------------------------
-int main()
+int main(int ac, char *av[])
 {
 	//----------------------------------------------------------------------
 	//	Build up the environment of a SPHSystem.
 	//----------------------------------------------------------------------
 	SPHSystem sph_system(system_domain_bounds, resolution_ref);
+	sph_system.handleCommandlineOptions(ac, av);
 	IOEnvironment io_environment(sph_system);
 	//----------------------------------------------------------------------
 	//	Creating body, materials and particles.
@@ -136,7 +137,7 @@ int main()
 	//	Basically the the range of bodies to build neighbor particle lists.
 	//----------------------------------------------------------------------
 	InnerRelation diffusion_body_inner_relation(diffusion_body);
-	ContactRelation temperature_observer_contact(temperature_observer, {&diffusion_body});
+	ObservingRelation temperature_observer_contact(temperature_observer, {&diffusion_body});
 	//----------------------------------------------------------------------
 	//	Define the main numerical methods used in the simulation.
 	//	Note that there may be data dependence on the constructors of these methods.
@@ -156,20 +157,16 @@ int main()
 	//	Prepare the simulation with cell linked list, configuration
 	//	and case specified initial condition if necessary.
 	//----------------------------------------------------------------------
-	sph_system.initializeSystemCellLinkedLists();
+	sph_system.updateSystemCellLinkedLists();
 	periodic_condition_y.update_cell_linked_list_.parallel_exec();
-	sph_system.initializeSystemConfigurations();
+	sph_system.updateSystemRelations();
 	correct_configuration.parallel_exec();
 	setup_diffusion_initial_condition.exec();
 	//----------------------------------------------------------------------
 	//	Setup for time-stepping control
 	//----------------------------------------------------------------------
-	int ite = 0;
-	Real T0 = 1.0;
-	Real end_time = T0;
+	Real end_time = 1.0;
 	Real Output_Time = 0.1 * end_time;
-	Real Observe_time = 0.1 * Output_Time;
-	Real dt = 0.0;
 	//----------------------------------------------------------------------
 	//	Statistics for CPU time
 	//----------------------------------------------------------------------
@@ -178,39 +175,32 @@ int main()
 	//----------------------------------------------------------------------
 	//	First output before the main loop.
 	//----------------------------------------------------------------------
-	write_states.writeToFile();
-	write_solid_temperature.writeToFile();
+	write_states.writeToFileByTime();
+	write_solid_temperature.writeToFileByStep();
 	//----------------------------------------------------------------------
 	//	Main loop starts here.
 	//----------------------------------------------------------------------
+	sph_system.setScreenOutputInterval(1);
+	write_solid_temperature.setStepInterval(1);
 	while (GlobalStaticVariables::physical_time_ < end_time)
 	{
 		Real integration_time = 0.0;
 		while (integration_time < Output_Time)
 		{
-			Real relaxation_time = 0.0;
-			while (relaxation_time < Observe_time)
-			{
-				if (ite % 1 == 0)
-				{
-					std::cout << "N=" << ite << " Time: "
-							  << GlobalStaticVariables::physical_time_ << "	dt: "
-							  << dt << "\n";
-				}
+			Real dt = get_time_step_size.parallel_exec();
+			diffusion_relaxation.parallel_exec(dt);
+			sph_system.accumulateTotalSteps();
 
-				diffusion_relaxation.parallel_exec(dt);
+			write_solid_temperature.writeToFileByStep();
+			sph_system.monitorSteps("Time", GlobalStaticVariables::physical_time_,
+									"diffusion_reaction_dt", dt);
 
-				ite++;
-				dt = get_time_step_size.parallel_exec();
-				relaxation_time += dt;
-				integration_time += dt;
-				GlobalStaticVariables::physical_time_ += dt;
-			}
+			integration_time += dt;
+			GlobalStaticVariables::physical_time_ += dt;
 		}
 
 		tick_count t2 = tick_count::now();
-		write_states.writeToFile();
-		write_solid_temperature.writeToFile(ite);
+		write_states.writeToFileByTime();
 		tick_count t3 = tick_count::now();
 		interval += t3 - t2;
 	}
@@ -220,7 +210,14 @@ int main()
 	tt = t4 - t1 - interval;
 	std::cout << "Total wall time for computation: " << tt.seconds() << " seconds." << std::endl;
 
-	write_solid_temperature.newResultTest();
+	if (sph_system.generate_regression_data_)
+	{
+		write_solid_temperature.generateDataBase(1.0e-3, 1.0e-3);
+	}
+	else
+	{
+		write_solid_temperature.newResultTest();
+	}
 
 	return 0;
 }

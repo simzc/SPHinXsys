@@ -99,6 +99,7 @@ int main(int ac, char *av[])
 		relaxation_step_inner.parallel_exec();
 		system.accumulateTotalSteps();
 
+		airfoil_recording_to_vtp.writeToFileByStep();
 		airfoil_residue_force_recording.writeToFileByStep();
 		system.monitorSteps("AirFoilResidueForce", airfoil_residue_force_recording.ResultValue());
 
