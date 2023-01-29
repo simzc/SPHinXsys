@@ -135,12 +135,13 @@ MultiPolygon createGateConstrainShape()
 //----------------------------------------------------------------------
 //	Main program starts here.
 //----------------------------------------------------------------------
-int main()
+int main(int ac, char *av[])
 {
 	//----------------------------------------------------------------------
 	//	Build up the environment of a SPHSystem.
 	//----------------------------------------------------------------------
 	SPHSystem system(system_domain_bounds, resolution_ref);
+	system.handleCommandlineOptions(ac, av);
 	IOEnvironment io_environment(system);
 	//----------------------------------------------------------------------
 	//	Creating body, materials and particles.
@@ -168,13 +169,11 @@ int main()
 	//	Basically the the range of bodies to build neighbor particle lists.
 	//----------------------------------------------------------------------
 	InnerRelation water_block_inner(water_block);
-	InnerRelation gate_inner_relation(gate);
-	gate_inner_relation.setTotalLagrangian();
+	TotalLagrangian<InnerRelation> gate_inner_relation(gate);
 
 	ContactRelation water_block_contact(water_block, RealBodyVector{&wall_boundary, &gate});
 	ContactRelation gate_water_contact(gate, {&water_block});
-	ContactRelation gate_observer_contact(gate_observer, {&gate});
-	gate_observer_contact.setTotalLagrangian();
+	TotalLagrangian<ObservingRelation> gate_observer_contact(gate_observer, RealBodyVector{&gate});
 
 	ComplexRelation water_block_complex_relation(water_block_inner, water_block_contact);
 	//----------------------------------------------------------------------
@@ -230,8 +229,6 @@ int main()
 	//----------------------------------------------------------------------
 	//	Setup for time-stepping control
 	//----------------------------------------------------------------------
-	int number_of_iterations = 0;
-	int screen_output_interval = 100;
 	Real end_time = 400.0;
 	Real output_interval = end_time / 200.0;
 	Real dt = 0.0;	 /**< Default acoustic time step sizes. */
@@ -241,8 +238,8 @@ int main()
 	//----------------------------------------------------------------------
 	//	First output before the main loop.
 	//----------------------------------------------------------------------
-	write_real_body_states_to_vtp.writeToFile();
-	write_beam_tip_displacement.writeToFile();
+	write_real_body_states_to_vtp.writeToFileByTime();
+	write_beam_tip_displacement.writeToFileByStep();
 	//----------------------------------------------------------------------
 	//	Main loop starts here.
 	//----------------------------------------------------------------------
@@ -284,23 +281,18 @@ int main()
 				integration_time += dt;
 				GlobalStaticVariables::physical_time_ += dt;
 			}
+			system.accumulateTotalSteps();
 
-			if (number_of_iterations % screen_output_interval == 0)
-			{
-				std::cout << std::fixed << std::setprecision(9) << "N=" << number_of_iterations << "	Time = "
-						  << GlobalStaticVariables::physical_time_
-						  << "	Dt = " << Dt << "	dt = " << dt << "	dt_s = " << dt_s << "\n";
-			}
-			number_of_iterations++;
+			write_beam_tip_displacement.writeToFileByStep();
+			system.monitorSteps("Time", GlobalStaticVariables::physical_time_,
+								"advection_dt", Dt, "acoustic_dt", dt, "solid_dynamics_dt", dt_s);
 
 			/** Update cell linked list and configuration. */
 			system.updateSystemCellLinkedLists();
 			system.updateSystemRelations();
-			/** Output the observed data. */
-			write_beam_tip_displacement.writeToFile(number_of_iterations);
 		}
 		tick_count t2 = tick_count::now();
-		write_real_body_states_to_vtp.writeToFile();
+		write_real_body_states_to_vtp.writeToFileByTime();
 		tick_count t3 = tick_count::now();
 		interval += t3 - t2;
 	}
@@ -309,7 +301,15 @@ int main()
 	tt = t4 - t1 - interval;
 	std::cout << "Total wall time for computation: " << tt.seconds() << " seconds." << std::endl;
 
-	write_beam_tip_displacement.newResultTest();
+	// regression test
+	if (system.generate_regression_data_)
+	{
+		write_beam_tip_displacement.generateDataBase(1.0e-2);
+	}
+	else
+	{
+		write_beam_tip_displacement.newResultTest();
+	}
 
 	return 0;
 }
