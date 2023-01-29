@@ -58,11 +58,6 @@ int main(int ac, char *av[])
 	airfoil.generateParticles<ParticleGeneratorMultiResolution>();
 	airfoil.addBodyStateForRecording<Real>("SmoothingLengthRatio");
 	//----------------------------------------------------------------------
-	//	Define outputs functions.
-	//----------------------------------------------------------------------
-	BodyStatesRecordingToVtp airfoil_recording_to_vtp(io_environment, {&airfoil});
-	MeshRecordingToPlt cell_linked_list_recording(io_environment, airfoil.getCellLinkedList());
-	//----------------------------------------------------------------------
 	//	Define body relation map.
 	//	The contact map gives the topological connections between the bodies,
 	//	basically, in the the range of bodies to build neighbor particle lists.
@@ -74,6 +69,13 @@ int main(int ac, char *av[])
 	SimpleDynamics<RandomizeParticlePosition> random_airfoil_particles(airfoil);
 	relax_dynamics::RelaxationStepInner relaxation_step_inner(airfoil_inner, true);
 	SimpleDynamics<relax_dynamics::UpdateSmoothingLengthRatioByShape> update_smoothing_length_ratio(airfoil);
+	//----------------------------------------------------------------------
+	//	Define outputs functions.
+	//----------------------------------------------------------------------
+	BodyStatesRecordingToVtp airfoil_recording_to_vtp(io_environment, {&airfoil});
+	MeshRecordingToPlt cell_linked_list_recording(io_environment, airfoil.getCellLinkedList());
+	RegressionTestDynamicTimeWarping<ReducedQuantityRecording<ReduceAverage<Summation2Norm<Vecd>>>>
+		airfoil_residue_force_recording(io_environment, airfoil, "Acceleration");
 	//----------------------------------------------------------------------
 	//	Prepare the simulation with cell linked list, configuration
 	//	and case specified initial condition if necessary.
@@ -97,17 +99,22 @@ int main(int ac, char *av[])
 		relaxation_step_inner.parallel_exec();
 		system.accumulateTotalSteps();
 
-		size_t iteration_steps = system.TotalSteps();
-		if (iteration_steps % 100 == 0)
-		{
-			std::cout << std::fixed << std::setprecision(9) << "Relaxation steps N = " << iteration_steps << "\n";
-			airfoil_recording_to_vtp.writeToFileByStep();
-		}
+		airfoil_residue_force_recording.writeToFileByStep();
+		system.monitorSteps("AirFoilResidueForce", airfoil_residue_force_recording.ResultValue());
 
 		system.updateSystemCellLinkedLists();
 		system.updateSystemRelations();
 	}
 	std::cout << "The physics relaxation process finished !" << std::endl;
+
+	if (system.generate_regression_data_)
+	{
+		airfoil_residue_force_recording.generateDataBase(1.0e-3);
+	}
+	else
+	{
+		airfoil_residue_force_recording.newResultTest();
+	}
 
 	return 0;
 }

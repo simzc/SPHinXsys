@@ -131,9 +131,9 @@ int main(int ac, char *av[])
 		//----------------------------------------------------------------------
 		//	Output for particle relaxation.
 		//----------------------------------------------------------------------
-		ReducedQuantityRecording<ReduceDynamics<QuantitySummation<Vecd>>>
+		ReducedQuantityRecording<ReduceAverage<Summation2Norm<Vecd>>>
 			free_ball_residue_force_recording(io_environment, free_ball, "Acceleration");
-		ReducedQuantityRecording<ReduceDynamics<QuantitySummation<Vecd>>>
+		ReducedQuantityRecording<ReduceAverage<Summation2Norm<Vecd>>>
 			damping_ball_residue_force_recording(io_environment, damping_ball, "Acceleration");
 		BodyStatesRecordingToVtp write_ball_state(io_environment, sph_system.real_bodies_);
 		ReloadParticleIO write_particle_reload_files(io_environment, {&free_ball, &damping_ball});
@@ -162,8 +162,8 @@ int main(int ac, char *av[])
 			damping_ball_residue_force_recording.writeToFileByStep();
 			write_ball_state.writeToFileByStep();
 
-			sph_system.monitorSteps("FreeBallResidueForce", free_ball_residue_force_recording.ResultValue().norm(),
-									"DampingBallResidueForce", damping_ball_residue_force_recording.ResultValue().norm());
+			sph_system.monitorSteps("FreeBallResidueForce", free_ball_residue_force_recording.ResultValue(),
+									"DampingBallResidueForce", damping_ball_residue_force_recording.ResultValue());
 
 			sph_system.updateSystemCellLinkedLists();
 			sph_system.updateSystemRelations();

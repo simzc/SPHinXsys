@@ -110,7 +110,7 @@ namespace SPH
 			: LocalDynamics(inner_relation.sph_body_), GeneralDataDelegateInner(inner_relation),
 			  W0_(sph_body_.sph_adaptation_->getKernel()->W0(zero_vec)),
 			  smoothed_(*particles_->template getVariableByName<VariableType>(variable_name))
-		{	
+		{
 			Vecd zero = Vecd::Zero();
 			particles_->registerVariable(temp_, variable_name + "_temp");
 		}
@@ -141,6 +141,49 @@ namespace SPH
 		StdLargeVec<VariableType> &smoothed_, temp_;
 	};
 
+	/**
+	 * @class MaximumNorm
+	 * @brief  obtained the maximum norm of a variable
+	 */
+	template <typename DataType>
+	class MaximumNorm : public LocalDynamicsReduce<Real, ReduceMax>,
+						public GeneralDataDelegateSimple
+	{
+	public:
+		MaximumNorm(SPHBody &sph_body, const std::string &variable_name)
+			: LocalDynamicsReduce<Real, ReduceMax>(sph_body, Real(0)),
+			  GeneralDataDelegateSimple(sph_body),
+			  variable_(*particles_->getVariableByName<DataType>(variable_name)){};
+		virtual ~MaximumNorm(){};
+
+		virtual Real outputResult(Real reduced_value) override { return std::sqrt(reduced_value); }
+		Real reduce(size_t index_i, Real dt = 0.0) { return getSquaredNorm(variable_[index_i]); };
+
+	protected:
+		StdLargeVec<DataType> &variable_;
+	};
+
+	/**
+	 * @class Summation2Norm
+	 * @brief  obtained the total 2-norm of a variable
+	 */
+	template <typename DataType>
+	class Summation2Norm : public LocalDynamicsReduce<Real, ReduceSum<Real>>,
+						public GeneralDataDelegateSimple
+	{
+	public:
+		Summation2Norm(SPHBody &sph_body, const std::string &variable_name)
+			: LocalDynamicsReduce<Real, ReduceSum<Real>>(sph_body, Real(0)),
+			  GeneralDataDelegateSimple(sph_body),
+			  variable_(*particles_->getVariableByName<DataType>(variable_name)){};
+		virtual ~Summation2Norm(){};
+
+		Real reduce(size_t index_i, Real dt = 0.0) { return getSquaredNorm(variable_[index_i]); };
+
+	protected:
+		StdLargeVec<DataType> &variable_;
+	};
+	
 	/**
 	 * @class VelocityBoundCheck
 	 * @brief  check whether particle velocity within a given bound
@@ -299,7 +342,7 @@ namespace SPH
 		Gravity *gravity_;
 
 	public:
-		TotalMechanicalEnergy(SPHBody &sph_body, SharedPtr<Gravity> = makeShared<Gravity>( Vecd::Zero() ));
+		TotalMechanicalEnergy(SPHBody &sph_body, SharedPtr<Gravity> = makeShared<Gravity>(Vecd::Zero()));
 		virtual ~TotalMechanicalEnergy(){};
 
 		Real reduce(size_t index_i, Real dt = 0.0);
