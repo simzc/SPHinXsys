@@ -124,8 +124,8 @@ namespace SPH
 		ObservedQuantityRecording(const std::string &quantity_name, IOEnvironment &io_environment,
 								  ObservingContact<ContactRelationType> &observing_relation)
 			: ObservingQuantity<VariableType>(observing_relation, quantity_name),
-			  BaseObservation(io_environment, observing_relation.sph_body_.getName(), quantity_name),
-			  observer_(observing_relation.sph_body_), base_particles_(observer_.getBaseParticles())
+			  BaseObservation(io_environment, observing_relation.getSPHBody().getName(), quantity_name),
+			  observer_(observing_relation.getSPHBody()), base_particles_(observer_.getBaseParticles())
 		{
 			std::ofstream out_file(this->filefullpath_output_.c_str(), std::ios::app);
 			out_file << "run_time"

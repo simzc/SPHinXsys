@@ -224,7 +224,8 @@ namespace SPH
 	public:
 		BaseInnerRelation &getInnerRelation() { return inner_relation_; };
 		BaseContactRelation &getContactRelation() { return contact_relation_; };
-		SPHBody &getDynamicsRange() { return inner_relation_.sph_body_; };
+		SPHBody &getSPHBody() { return inner_relation_.getSPHBody(); };
+		SPHBody &getDynamicsRange() { return inner_relation_.getSPHBody(); };
 		ComplexRelation(BaseInnerRelation &inner_relation, BaseContactRelation &contact_relation)
 			: inner_relation_(inner_relation),
 			  contact_relation_(contact_relation){};

@@ -9,9 +9,10 @@ namespace SPH
 	//=================================================================================================//
 	SPHBody::SPHBody(SPHSystem &sph_system, SharedPtr<Shape> shape_ptr, const std::string &body_name)
 		: sph_system_(sph_system), body_name_(body_name),
+		  base_particles_(nullptr), newly_updated_(true), newly_moved_(true),
 		  body_shape_(shape_ptr_keeper_.assignPtr(shape_ptr)),
 		  sph_adaptation_(sph_adaptation_ptr_keeper_.createPtr<SPHAdaptation>(*this)),
-		  base_material_(nullptr), base_particles_(nullptr), newly_updated_(true), newly_moved_(true)
+		  base_material_(nullptr)
 	{
 		sph_system_.sph_bodies_.push_back(this);
 	}

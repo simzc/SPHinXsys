@@ -8,12 +8,10 @@ namespace SPH
 {
 	//=================================================================================================//
 	SPHSystem::SPHSystem(BoundingBox system_domain_bounds, Real resolution_ref, size_t number_of_threads)
-		: system_domain_bounds_(system_domain_bounds),
-		  resolution_ref_(resolution_ref),
+		: system_domain_bounds_(system_domain_bounds), resolution_ref_(resolution_ref),
 		  tbb_global_control_(tbb::global_control::max_allowed_parallelism, number_of_threads),
-		  io_environment_(nullptr), total_steps_(0), restart_step_(0), run_particle_relaxation_(false),
-		  reload_particles_(false), generate_regression_data_(false), 
-		  screen_out_interval_(100) {}
+		  io_environment_(nullptr), generate_regression_data_(false), run_particle_relaxation_(false),
+		  reload_particles_(false), total_steps_(0), restart_step_(0), screen_out_interval_(100) {}
 	//=================================================================================================//
 	void SPHSystem::setRestartStep(size_t restart_step)
 	{

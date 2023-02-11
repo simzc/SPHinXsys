@@ -73,8 +73,8 @@ namespace SPH
 		UniquePtrKeepers<SPHRelation> sph_relation_ptr_keeper_;
 
 	protected:
-		std::string body_name_;
 		SPHSystem &sph_system_;
+		std::string body_name_;
 		BaseParticles *base_particles_;		  /**< Base particles for dynamic cast DataDelegate  */
 		StdVec<SPHRelation *> all_relations_; /**< all relations centered from this body **/
 		bool newly_updated_;				  /**< whether this body is in a newly updated state */

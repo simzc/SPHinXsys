@@ -196,7 +196,7 @@ namespace SPH
 				  force_from_fluid_dynamics_(force_from_fluid_dynamics),
 				  force_from_fluid_(force_from_fluid_dynamics.getForceFromFluid())
 			{
-				quantity_name_ = force_name;
+				reduced_quantity_name_ = force_name;
 			};
 
 			virtual ~TotalForceFromFluid(){};
