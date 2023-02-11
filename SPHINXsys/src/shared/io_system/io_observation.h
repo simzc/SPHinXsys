@@ -122,10 +122,20 @@ namespace SPH
 
 		template <class ContactRelationType>
 		ObservedQuantityRecording(const std::string &quantity_name, IOEnvironment &io_environment,
+<<<<<<< HEAD
 								  ObservingContact<ContactRelationType> &observing_relation)
 			: ObservingQuantity<VariableType>(observing_relation, quantity_name),
 			  BaseObservation(io_environment, observing_relation.sph_body_.getName(), quantity_name),
 			  observer_(observing_relation.sph_body_), base_particles_(observer_.getBaseParticles())
+=======
+								  BaseContactRelation &contact_relation)
+			: BodyStatesRecording(io_environment, contact_relation.getSPHBody()),
+			  ObservingAQuantity<VariableType>(contact_relation, quantity_name),
+			  observer_(contact_relation.getSPHBody()), plt_engine_(),
+			  base_particles_(observer_.getBaseParticles()), 
+			  dynamics_range_name_(contact_relation.getSPHBody().getName()),
+			  quantity_name_(quantity_name)
+>>>>>>> xiangyu/revise_base_dynamics
 		{
 			std::ofstream out_file(this->filefullpath_output_.c_str(), std::ios::app);
 			out_file << "run_time"

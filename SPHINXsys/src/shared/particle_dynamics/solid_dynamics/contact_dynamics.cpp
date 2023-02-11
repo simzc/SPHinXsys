@@ -12,12 +12,12 @@ namespace SPH
 		//=================================================================================================//
 		SelfContactDensitySummation::
 			SelfContactDensitySummation(SelfSurfaceContactRelation &self_contact_relation)
-			: LocalDynamics(self_contact_relation.sph_body_), SolidDataInner(self_contact_relation),
+			: LocalDynamics(self_contact_relation.getSPHBody()), SolidDataInner(self_contact_relation),
 			  mass_(particles_->mass_)
 		{
 			particles_->registerVariable(self_contact_density_, "SelfContactDensity");
-			Real dp_1 = self_contact_relation.sph_body_.sph_adaptation_->ReferenceSpacing();
-			offset_W_ij_ = self_contact_relation.sph_body_.sph_adaptation_->getKernel()->W(dp_1, zero_vec);
+			Real dp_1 = self_contact_relation.getSPHBody().sph_adaptation_->ReferenceSpacing();
+			offset_W_ij_ = self_contact_relation.getSPHBody().sph_adaptation_->getKernel()->W(dp_1, zero_vec);
 		}
 		//=================================================================================================//
 		void SelfContactDensitySummation::interaction(size_t index_i, Real dt)
@@ -34,7 +34,7 @@ namespace SPH
 		//=================================================================================================//
 		ContactDensitySummation::
 			ContactDensitySummation(SurfaceContactRelation &solid_body_contact_relation)
-			: LocalDynamics(solid_body_contact_relation.sph_body_),
+			: LocalDynamics(solid_body_contact_relation.getSPHBody()),
 			  ContactDynamicsData(solid_body_contact_relation), mass_(particles_->mass_),
 			  offset_W_ij_(StdVec<Real>(contact_configuration_.size(), 0.0))
 		{
@@ -48,13 +48,13 @@ namespace SPH
 			// subtract summation of the kernel function of 2 particles at 1 particle distance, and if the result is negative, we take 0
 			// different resolution: distance = 0.5 * dp1 + 0.5 * dp2
 			// dp1, dp2 half reference spacing
-			Real dp_1 = solid_body_contact_relation.sph_body_.sph_adaptation_->ReferenceSpacing();
+			Real dp_1 = solid_body_contact_relation.getSPHBody().sph_adaptation_->ReferenceSpacing();
 			// different resolution: distance = 0.5 * dp1 + 0.5 * dp2
 			for (size_t k = 0; k < contact_configuration_.size(); ++k)
 			{
 				Real dp_2 = solid_body_contact_relation.contact_bodies_[k]->sph_adaptation_->ReferenceSpacing();
 				Real distance = 0.5 * dp_1 + 0.5 * dp_2;
-				offset_W_ij_[k] = solid_body_contact_relation.sph_body_.sph_adaptation_->getKernel()->W(distance, zero_vec);
+				offset_W_ij_[k] = solid_body_contact_relation.getSPHBody().sph_adaptation_->getKernel()->W(distance, zero_vec);
 			}
 		}
 		//=================================================================================================//
@@ -77,20 +77,19 @@ namespace SPH
 		}
 		//=================================================================================================//
 		ShellContactDensity::ShellContactDensity(SurfaceContactRelation &solid_body_contact_relation)
-			: LocalDynamics(solid_body_contact_relation.sph_body_)
-			, ContactDynamicsData(solid_body_contact_relation)
-			, solid_(particles_->solid_)
-			, pos_(particles_->pos_)
-			, kernel_(solid_body_contact_relation.sph_body_.sph_adaptation_->getKernel())
-			, particle_spacing_(solid_body_contact_relation.sph_body_.sph_adaptation_->ReferenceSpacing())
-			, calibration_factor_(StdVec<Real>(contact_configuration_.size(), 0.0))
-			, contact_h_ratio_(StdVec<Real>(contact_configuration_.size(), 0.0))
-			, offset_W_ij_(StdVec<Real>(contact_configuration_.size(), 0.0))
-			, contact_particle_spacing_(StdVec<Real>(contact_configuration_.size(), 0.0))
+			: LocalDynamics(solid_body_contact_relation.getSPHBody()), 
+			ContactDynamicsData(solid_body_contact_relation), solid_(particles_->solid_),
+			kernel_(solid_body_contact_relation.getSPHBody().sph_adaptation_->getKernel()),
+			pos_(particles_->pos_), 
+			particle_spacing_(solid_body_contact_relation.getSPHBody().sph_adaptation_->ReferenceSpacing()), 
+			calibration_factor_(StdVec<Real>(contact_configuration_.size(), 0.0)), 
+			contact_h_ratio_(StdVec<Real>(contact_configuration_.size(), 0.0)), 
+			offset_W_ij_(StdVec<Real>(contact_configuration_.size(), 0.0)), 
+			contact_particle_spacing_(StdVec<Real>(contact_configuration_.size(), 0.0))
 		{
 			particles_->registerVariable(contact_density_, "ContactDensity");
 
-			Real dp_1 = solid_body_contact_relation.sph_body_.sph_adaptation_->ReferenceSpacing();
+			Real dp_1 = solid_body_contact_relation.getSPHBody().sph_adaptation_->ReferenceSpacing();
 			for (size_t k = 0; k != contact_particles_.size(); ++k)
 			{
 				Real dp_2 = solid_body_contact_relation.contact_bodies_[k]->sph_adaptation_->ReferenceSpacing();
@@ -104,10 +103,8 @@ namespace SPH
 			}
 
 			Real contact_max_;
-			Real contact_smoothing_length;
 			for (size_t k = 0; k < contact_configuration_.size(); ++k)
 			{
-				contact_smoothing_length = kernel_->SmoothingLength() / contact_h_ratio_[k];
 				for (int i = 0; i != 3; ++i)
 				{
 					if (Dimensions == 2)
@@ -133,13 +130,13 @@ namespace SPH
 		//=================================================================================================//
 		SelfContactForce::
 			SelfContactForce(SelfSurfaceContactRelation &self_contact_relation)
-			: LocalDynamics(self_contact_relation.sph_body_),
+			: LocalDynamics(self_contact_relation.getSPHBody()),
 			  SolidDataInner(self_contact_relation),
 			  solid_(particles_->solid_), mass_(particles_->mass_),
 			  self_contact_density_(*particles_->getVariableByName<Real>("SelfContactDensity")),
 			  Vol_(particles_->Vol_), acc_prior_(particles_->acc_prior_),
-			  contact_impedance_(solid_.ReferenceDensity() * sqrt(solid_.ContactStiffness())),
-			  vel_(particles_->vel_) {}
+			  vel_(particles_->vel_),
+			  contact_impedance_(solid_.ReferenceDensity() * sqrt(solid_.ContactStiffness())) {}
 		//=================================================================================================//
 		void SelfContactForce::interaction(size_t index_i, Real dt)
 		{
@@ -163,7 +160,7 @@ namespace SPH
 		}
 		//=================================================================================================//
 		ContactForce::ContactForce(SurfaceContactRelation &solid_body_contact_relation)
-			: LocalDynamics(solid_body_contact_relation.sph_body_),
+			: LocalDynamics(solid_body_contact_relation.getSPHBody()),
 			  ContactDynamicsData(solid_body_contact_relation),
 			  solid_(particles_->solid_),
 			  contact_density_(*particles_->getVariableByName<Real>("ContactDensity")),
@@ -203,7 +200,7 @@ namespace SPH
 		}
 		//=================================================================================================//
 		ContactForceFromWall::ContactForceFromWall(SurfaceContactRelation &solid_body_contact_relation)
-			: LocalDynamics(solid_body_contact_relation.sph_body_),
+			: LocalDynamics(solid_body_contact_relation.getSPHBody()),
 			  ContactWithWallData(solid_body_contact_relation), solid_(particles_->solid_),
 			  contact_density_(*particles_->getVariableByName<Real>("ContactDensity")),
 			  Vol_(particles_->Vol_), mass_(particles_->mass_),
@@ -220,7 +217,6 @@ namespace SPH
 				Neighborhood &contact_neighborhood = (*contact_configuration_[k])[index_i];
 				for (size_t n = 0; n != contact_neighborhood.current_size_; ++n)
 				{
-					size_t index_j = contact_neighborhood.j_[n];
 					Vecd e_ij = contact_neighborhood.e_ij_[n];
 
 					// force due to pressure
@@ -231,7 +227,7 @@ namespace SPH
 		}
 		//=================================================================================================//
 		ContactForceToWall::ContactForceToWall(SurfaceContactRelation &solid_body_contact_relation)
-			: LocalDynamics(solid_body_contact_relation.sph_body_),
+			: LocalDynamics(solid_body_contact_relation.getSPHBody()),
 			  ContactDynamicsData(solid_body_contact_relation),
 			  Vol_(particles_->Vol_), mass_(particles_->mass_),
 			  acc_prior_(particles_->acc_prior_)
@@ -269,7 +265,7 @@ namespace SPH
 		//=================================================================================================//
 		PairwiseFrictionFromWall::
 			PairwiseFrictionFromWall(BaseContactRelation &contact_relation, Real eta)
-			: LocalDynamics(contact_relation.sph_body_), ContactWithWallData(contact_relation),
+			: LocalDynamics(contact_relation.getSPHBody()), ContactWithWallData(contact_relation),
 			  eta_(eta), Vol_(particles_->Vol_), mass_(particles_->mass_),
 			  vel_(particles_->vel_)
 		{
@@ -325,7 +321,7 @@ namespace SPH
 		//=================================================================================================//
 		DynamicContactForceWithWall::
 			DynamicContactForceWithWall(SurfaceContactRelation &solid_body_contact_relation, Real penalty_strength)
-			: LocalDynamics(solid_body_contact_relation.sph_body_),
+			: LocalDynamics(solid_body_contact_relation.getSPHBody()),
 			  ContactDynamicsData(solid_body_contact_relation),
 			  solid_(particles_->solid_),
 			  Vol_(particles_->Vol_), mass_(particles_->mass_),

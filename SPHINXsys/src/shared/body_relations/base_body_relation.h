@@ -104,10 +104,13 @@ namespace SPH
 	 */
 	class SPHRelation
 	{
-	public:
+	protected:
 		SPHBody &sph_body_;
+
+	public:
 		BaseParticles &base_particles_;
 		SPHBody &getDynamicsRange() { return sph_body_; };
+		SPHBody &getSPHBody() { return sph_body_; };
 		explicit SPHRelation(SPHBody &sph_body);
 		virtual ~SPHRelation(){};
 		bool checkConfigurationUpdated() { return to_update_configuration_; };

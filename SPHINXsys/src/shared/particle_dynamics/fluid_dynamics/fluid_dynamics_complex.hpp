@@ -45,7 +45,7 @@ namespace SPH
 			: BaseIntegrationType(base_body_relation, std::forward<Args>(args)...),
 			  FluidWallData(wall_contact_relation)
 		{
-			if (&base_body_relation.sph_body_ != &wall_contact_relation.sph_body_)
+			if (&base_body_relation.getSPHBody() != &wall_contact_relation.getSPHBody())
 			{
 				std::cout << "\n Error: the two body_relations do not have the same source body!" << std::endl;
 				std::cout << __FILE__ << ':' << __LINE__ << std::endl;
@@ -132,9 +132,7 @@ namespace SPH
 			Real rho_dissipation(0);
 			for (size_t k = 0; k < FluidWallData::contact_configuration_.size(); ++k)
 			{
-				StdLargeVec<Vecd> &vel_ave_k = *(this->wall_vel_ave_[k]);
 				StdLargeVec<Vecd> &acc_ave_k = *(this->wall_acc_ave_[k]);
-				StdLargeVec<Vecd> &n_k = *(this->wall_n_[k]);
 				Neighborhood &wall_neighborhood = (*FluidWallData::contact_configuration_[k])[index_i];
 				for (size_t n = 0; n != wall_neighborhood.current_size_; ++n)
 				{
@@ -221,17 +219,12 @@ namespace SPH
 			Real density_change_rate = 0.0;
 			for (size_t k = 0; k < FluidWallData::contact_configuration_.size(); ++k)
 			{
-				Vecd &acc_prior_i = this->acc_prior_[index_i];
-
 				StdLargeVec<Vecd> &vel_ave_k = *(this->wall_vel_ave_[k]);
-				StdLargeVec<Vecd> &acc_ave_k = *(this->wall_acc_ave_[k]);
-				StdLargeVec<Vecd> &n_k = *(this->wall_n_[k]);
 				Neighborhood &wall_neighborhood = (*FluidWallData::contact_configuration_[k])[index_i];
 				for (size_t n = 0; n != wall_neighborhood.current_size_; ++n)
 				{
 					size_t index_j = wall_neighborhood.j_[n];
 					Vecd &e_ij = wall_neighborhood.e_ij_[n];
-					Real r_ij = wall_neighborhood.r_ij_[n];
 					Real dW_ijV_j = wall_neighborhood.dW_ijV_j_[n];
 
 					Vecd vel_in_wall = 2.0 * vel_ave_k[index_j] - this->vel_[index_i];

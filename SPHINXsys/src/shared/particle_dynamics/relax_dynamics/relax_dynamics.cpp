@@ -26,7 +26,7 @@ namespace SPH
 		}
 		//=================================================================================================//
 		RelaxationAccelerationInner::RelaxationAccelerationInner(BaseInnerRelation &inner_relation)
-			: LocalDynamics(inner_relation.sph_body_), RelaxDataDelegateInner(inner_relation),
+			: LocalDynamics(inner_relation.getSPHBody()), RelaxDataDelegateInner(inner_relation),
 			  acc_(particles_->acc_), pos_(particles_->pos_) {}
 		//=================================================================================================//
 		void RelaxationAccelerationInner::interaction(size_t index_i, Real dt)
@@ -35,7 +35,6 @@ namespace SPH
 			const Neighborhood &inner_neighborhood = inner_configuration_[index_i];
 			for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
 			{
-				size_t index_j = inner_neighborhood.j_[n];
 				acceleration -= 2.0 * inner_neighborhood.dW_ijV_j_[n] * inner_neighborhood.e_ij_[n];
 			}
 			acc_[index_i] = acceleration;
@@ -61,14 +60,9 @@ namespace SPH
 			  acc_(particles_->acc_) {}
 		//=================================================================================================//
 		void UpdateParticlePosition::setupDynamics(Real dt)
-		{
 			sph_body_.setNewlyMoved();
 		}
 		//=================================================================================================//
-		void UpdateParticlePosition::update(size_t index_i, Real dt_square)
-		{
-			pos_[index_i] += acc_[index_i] * dt_square * 0.5 / sph_adaptation_->SmoothingLengthRatio(index_i);
-		}
 		//=================================================================================================//
 		UpdateSmoothingLengthRatioByShape::
 			UpdateSmoothingLengthRatioByShape(SPHBody &sph_body, Shape &target_shape)
@@ -100,7 +94,6 @@ namespace SPH
 			Neighborhood &inner_neighborhood = inner_configuration_[index_i];
 			for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
 			{
-				size_t index_j = inner_neighborhood.j_[n];
 				acceleration -= 2.0 * inner_neighborhood.dW_ijV_j_[n] * inner_neighborhood.e_ij_[n];
 			}
 
@@ -110,8 +103,6 @@ namespace SPH
 				Neighborhood &contact_neighborhood = (*contact_configuration_[k])[index_i];
 				for (size_t n = 0; n != contact_neighborhood.current_size_; ++n)
 				{
-					size_t index_j = contact_neighborhood.j_[n];
-
 					acceleration -= 2.0 * contact_neighborhood.dW_ijV_j_[n] * contact_neighborhood.e_ij_[n];
 				}
 			}
@@ -139,7 +130,7 @@ namespace SPH
 		//=================================================================================================//
 		RelaxationStepInner::
 			RelaxationStepInner(BaseInnerRelation &inner_relation, bool level_set_correction)
-			: BaseDynamics<void>(), real_body_(inner_relation.real_body_),
+			: BaseDynamics<void>(inner_relation.getSPHBody()), real_body_(inner_relation.real_body_),
 			  inner_relation_(inner_relation), near_shape_surface_(*real_body_),
 			  get_time_step_square_(*real_body_), update_particle_position_(*real_body_),
 			  surface_bounding_(near_shape_surface_)
@@ -147,12 +138,12 @@ namespace SPH
 			if (!level_set_correction)
 			{
 				relaxation_acceleration_inner_ =
-					std::move(makeUnique<InteractionDynamics<RelaxationAccelerationInner>>(inner_relation));
+					makeUnique<InteractionDynamics<RelaxationAccelerationInner>>(inner_relation);
 			}
 			else
 			{
 				relaxation_acceleration_inner_ =
-					std::move(makeUnique<InteractionDynamics<RelaxationAccelerationInnerWithLevelSetCorrection>>(inner_relation));
+					makeUnique<InteractionDynamics<RelaxationAccelerationInnerWithLevelSetCorrection>>(inner_relation);
 			}
 		}
 		//=================================================================================================//
@@ -173,8 +164,8 @@ namespace SPH
 		}
 		//=================================================================================================//
 		RelaxationAccelerationComplexWithLevelSetCorrection::
-			RelaxationAccelerationComplexWithLevelSetCorrection(ComplexRelation &body_complex_relation, const std::string &shape_name)
-			: RelaxationAccelerationComplex(body_complex_relation),
+			RelaxationAccelerationComplexWithLevelSetCorrection(ComplexRelation &complex_relation, const std::string &shape_name)
+			: RelaxationAccelerationComplex(complex_relation),
 			  sph_adaptation_(sph_body_.sph_adaptation_)
 		{
 			ComplexShape &complex_shape = DynamicCast<ComplexShape>(this, *sph_body_.body_shape_);
@@ -189,11 +180,11 @@ namespace SPH
 									   pos_[index_i], sph_adaptation_->SmoothingLengthRatio(index_i));
 		}
 		//=================================================================================================//
-		RelaxationStepComplex::RelaxationStepComplex(ComplexRelation &body_complex_relation,
+		RelaxationStepComplex::RelaxationStepComplex(ComplexRelation &complex_relation,
 													 const std::string &shape_name, bool level_set_correction)
-			: BaseDynamics<void>(),
-			  real_body_(body_complex_relation.getInnerRelation().real_body_),
-			  complex_relation_(body_complex_relation),
+			: BaseDynamics<void>(complex_relation.getSPHBody()),
+			  real_body_(complex_relation.getInnerRelation().real_body_),
+			  complex_relation_(complex_relation),
 			  near_shape_surface_(*real_body_, shape_name),
 			  get_time_step_square_(*real_body_), update_particle_position_(*real_body_),
 			  surface_bounding_(near_shape_surface_)
@@ -201,12 +192,12 @@ namespace SPH
 			if (!level_set_correction)
 			{
 				relaxation_acceleration_complex_ =
-					std::move(makeUnique<InteractionDynamics<RelaxationAccelerationComplex>>(body_complex_relation));
+					makeUnique<InteractionDynamics<RelaxationAccelerationComplex>>(complex_relation);
 			}
 			else
 			{
 				relaxation_acceleration_complex_ =
-					std::move(makeUnique<InteractionDynamics<RelaxationAccelerationComplexWithLevelSetCorrection>>(body_complex_relation, shape_name));
+					makeUnique<InteractionDynamics<RelaxationAccelerationComplexWithLevelSetCorrection>>(complex_relation, shape_name);
 			}
 		}
 		//=================================================================================================//
@@ -246,13 +237,13 @@ namespace SPH
 		ShellNormalDirectionPrediction::
 			ShellNormalDirectionPrediction(BaseInnerRelation &inner_relation,
 										   Real thickness, Real consistency_criterion)
-			: BaseDynamics<void>(),
+			: BaseDynamics<void>(inner_relation.getSPHBody()),
 			  convergence_criterion_(cos(0.01 * Pi)),
 			  consistency_criterion_(consistency_criterion),
-			  normal_prediction_(inner_relation.sph_body_, thickness),
-			  normal_prediction_convergence_check_(inner_relation.sph_body_, convergence_criterion_),
+			  normal_prediction_(inner_relation.getSPHBody(), thickness),
+			  normal_prediction_convergence_check_(inner_relation.getSPHBody(), convergence_criterion_),
 			  consistency_correction_(inner_relation, consistency_criterion_),
-			  consistency_updated_check_(inner_relation.sph_body_),
+			  consistency_updated_check_(inner_relation.getSPHBody()),
 			  smoothing_normal_(inner_relation) {}
 		//=================================================================================================//
 		void ShellNormalDirectionPrediction::exec(Real dt)
@@ -331,7 +322,7 @@ namespace SPH
 		//=================================================================================================//
 		ShellNormalDirectionPrediction::ConsistencyCorrection::
 			ConsistencyCorrection(BaseInnerRelation &inner_relation, Real consistency_criterion)
-			: LocalDynamics(inner_relation.sph_body_), RelaxDataDelegateInner(inner_relation),
+			: LocalDynamics(inner_relation.getSPHBody()), RelaxDataDelegateInner(inner_relation),
 			  consistency_criterion_(consistency_criterion),
 			  n_(*particles_->getVariableByName<Vecd>("NormalDirection"))
 		{

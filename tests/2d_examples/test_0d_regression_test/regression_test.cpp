@@ -157,8 +157,8 @@ class DiffusionBodyRelaxation
 		  RelaxationOfAllDiffusionSpeciesInner<SolidParticles, Solid>>
 {
 public:
-	explicit DiffusionBodyRelaxation(InnerRelation &body_inner_relation)
-		: RelaxationOfAllDiffusionSpeciesRK2(body_inner_relation){};
+	explicit DiffusionBodyRelaxation(InnerRelation &inner_relation)
+		: RelaxationOfAllDiffusionSpeciesRK2(inner_relation){};
 	virtual ~DiffusionBodyRelaxation(){};
 };
 //----------------------------------------------------------------------
@@ -219,9 +219,9 @@ int main()
 	InteractionDynamics<solid_dynamics::CorrectConfiguration> correct_configuration(diffusion_body_inner);
 	GetDiffusionTimeStepSize<SolidParticles, Solid> get_time_step_size(diffusion_body);
 	BodyRegionByParticle left_boundary(diffusion_body, makeShared<MultiPolygonShape>(createLeftSideBoundary()));
-	SimpleDynamics<ConstantTemperatureConstraint, BodyRegionByParticle> left_boundary_condition(left_boundary, "Phi", high_temperature);
+	SimpleDynamics<ConstantTemperatureConstraint, BodyPartByParticle> left_boundary_condition(left_boundary, "Phi", high_temperature);
 	BodyRegionByParticle other_boundary(diffusion_body, makeShared<MultiPolygonShape>(createOtherSideBoundary()));
-	SimpleDynamics<ConstantTemperatureConstraint, BodyRegionByParticle> other_boundary_condition(other_boundary, "Phi", low_temperature);
+	SimpleDynamics<ConstantTemperatureConstraint, BodyPartByParticle> other_boundary_condition(other_boundary, "Phi", low_temperature);
 	//----------------------------------------------------------------------
 	//	Define the methods for I/O operations, observations of the simulation.
 	//	Regression tests are also defined here.

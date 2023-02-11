@@ -48,10 +48,10 @@ public:
 		: LocalDynamics(body_part.getSPHBody()),
 		  solid_dynamics::ElasticSolidDataSimple(sph_body_),
 		  acc_prior(particles_->acc_prior_),
-		  force_arr_(f_arr),
 		  mass_n_(particles_->mass_),
 		  Vol_(particles_->Vol_),
 		  F_(particles_->F_),
+		  force_arr_(f_arr),
 		  particles_num_(body_part.body_part_particles_.size())
 	{
 		area_0_.resize(particles_->total_real_particles_);
@@ -155,14 +155,14 @@ int main(int ac, char *av[])
 		{0.1 * end_time, 0.1 * load_total_force},
 		{0.4 * end_time, load_total_force},
 		{end_time, load_total_force}};
-	SimpleDynamics<LoadForce, BodyRegionByParticle> pull_force(load_surface, force_over_time);
+	SimpleDynamics<LoadForce, BodyPartByParticle> pull_force(load_surface, force_over_time);
 	cout << "load surface particle number: " << load_surface.body_part_particles_.size() << endl;
 
 	//=== define constraint ===
 	/* create a brick to tag the region */
 	Vecd half_size_1(0.03, 0.03, 0.02);
 	BodyRegionByParticle holder(beam_body, makeShared<TriangleMeshShapeBrick>(half_size_1, 1, Vecd(0.0, 0.0, -0.02)));
-	SimpleDynamics<solid_dynamics::FixConstraint, BodyRegionByParticle> constraint_holder(holder);
+	SimpleDynamics<solid_dynamics::FixConstraint, BodyPartByParticle> constraint_holder(holder);
 
 	/** Damping with the solid body*/
 	DampingWithRandomChoice<InteractionSplit<DampingPairwiseInner<Vec3d>>>

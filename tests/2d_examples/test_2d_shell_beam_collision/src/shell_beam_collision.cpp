@@ -192,7 +192,7 @@ int main(int ac, char *av[])
 	InteractionDynamics<solid_dynamics::ContactForceFromWall, BodyPartByParticle> beam_compute_solid_contact_forces(beam_contact);
 	InteractionDynamics<solid_dynamics::ContactForceToWall, BodyPartByParticle> shell_compute_solid_contact_forces(shell_contact);
 	BodyRegionByParticle holder(beam, makeShared<MultiPolygonShape>(createBeamConstrainShape()));
-	SimpleDynamics<solid_dynamics::FixConstraint, BodyRegionByParticle> constraint_holder(holder);
+	SimpleDynamics<solid_dynamics::FixConstraint, BodyPartByParticle> constraint_holder(holder);
 	/** Damping with the solid body*/
 	DampingWithRandomChoice<InteractionSplit<DampingPairwiseInner<Vec2d>>>
 		beam_damping(0.5, beam_inner, "Velocity", physical_viscosity);
@@ -225,9 +225,9 @@ int main(int ac, char *av[])
 	integ.setAllowInterpolation(false);
 	integ.initialize(state);
 	/** Coupling between SimBody and SPH.*/
-	ReduceDynamics<solid_dynamics::TotalForceForSimBody, SolidBodyPartForSimbody>
+	ReduceDynamics<solid_dynamics::TotalForceForSimBody, BodyPartByParticle>
 		force_on_shell(shell_multibody, MBsystem, shellMBody, force_on_bodies, integ);
-	SimpleDynamics<solid_dynamics::ConstraintBySimBody, SolidBodyPartForSimbody>
+	SimpleDynamics<solid_dynamics::ConstraintBySimBody, BodyPartByParticle>
 		constraint_shell(shell_multibody, MBsystem, shellMBody, force_on_bodies, integ);
 	//----------------------------------------------------------------------
 	//	Prepare the simulation with cell linked list, configuration
@@ -243,7 +243,6 @@ int main(int ac, char *av[])
 	Real T0 = 1.0;
 	Real end_time = T0;
 	Real output_interval = 0.01 * T0;
-	Real Dt = 0.1 * output_interval;
 	Real dt = 0.0;
 	//----------------------------------------------------------------------
 	//	Statistics for CPU time
