@@ -64,6 +64,10 @@ namespace SPH
 			sph_body_.setNewlyMoved();
 		}
 		//=================================================================================================//
+		void UpdateParticlePosition::update(size_t index_i, Real dt_square)
+		{
+			pos_[index_i] += acc_[index_i] * dt_square * 0.5 / sph_adaptation_->SmoothingLengthRatio(index_i);
+		}
 		//=================================================================================================//
 		UpdateSmoothingLengthRatioByShape::
 			UpdateSmoothingLengthRatioByShape(SPHBody &sph_body, Shape &target_shape)
