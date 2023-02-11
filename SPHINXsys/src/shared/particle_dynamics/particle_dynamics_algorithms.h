@@ -145,20 +145,12 @@ namespace SPH
 		DynamicsRange& dynamics_range_;
 
 	public:
-<<<<<<< HEAD
-		template <class DerivedDynamicsRange, typename... Args>
-		ReduceDynamics(DerivedDynamicsRange& derived_dynamics_range, Args &&...args)
-			: LocalDynamicsType(derived_dynamics_range, std::forward<Args>(args)...),
-			BaseDynamics<ReturnType>(), dynamics_range_(derived_dynamics_range) {};
-		virtual ~ReduceDynamics() {};
-=======
 		template <class DynamicsIdentifier, typename... Args>
 		ReduceDynamics(DynamicsIdentifier &identifier, Args &&...args)
 			: LocalDynamicsType(identifier, std::forward<Args>(args)...),
 			  BaseDynamics<ReturnType>(identifier.getSPHBody()),
 			  dynamics_range_(identifier.getDynamicsRange()){};
 		virtual ~ReduceDynamics(){};
->>>>>>> xiangyu/revise_base_dynamics
 
 		using ReduceReturnType = ReturnType;
 		std::string ReducedQuantityName() { return this->reduced_quantity_name_; };
