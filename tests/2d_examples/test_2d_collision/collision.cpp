@@ -151,7 +151,7 @@ int main(int ac, char *av[])
 		//----------------------------------------------------------------------
 		//	From here iteration for particle relaxation begins.
 		//----------------------------------------------------------------------
-		int relax_step = 1000;
+		size_t relax_step = 1000;
 		while (sph_system.TotalSteps() < relax_step)
 		{
 			free_ball_relaxation_step_inner.exec();

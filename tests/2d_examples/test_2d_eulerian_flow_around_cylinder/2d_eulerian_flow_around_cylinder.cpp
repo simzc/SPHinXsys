@@ -134,6 +134,8 @@ int main(int ac, char *av[])
 		ReloadParticleIO write_real_body_particle_reload_files(io_environment, sph_system.real_bodies_);
 		relax_dynamics::RelaxationStepInner relaxation_step_inner(cylinder_inner, true);
 		relax_dynamics::RelaxationStepComplex relaxation_step_complex(water_block_complex, "OuterBoundary", true);
+		ReducedQuantityRecording<ReduceAverage<Summation2Norm<Vecd>>>
+			cylinder_residue_force_recording(io_environment, cylinder, "Acceleration");
 		//----------------------------------------------------------------------
 		//	Particle relaxation starts here.
 		//----------------------------------------------------------------------
@@ -146,27 +148,26 @@ int main(int ac, char *av[])
 		//----------------------------------------------------------------------
 		//	First output before the main loop.
 		//----------------------------------------------------------------------
-		write_real_body_states.writeToFile(0);
+		write_real_body_states.writeToFileByStep();
 		//----------------------------------------------------------------------
 		//	Particle relaxation loop starts here.
 		//----------------------------------------------------------------------
-		int ite_p = 0;
-		while (ite_p < 1000)
+		size_t relax_step = 1000;
+		while (sph_system.TotalSteps() < relax_step)
 		{
 			relaxation_step_inner.parallel_exec();
 			relaxation_step_complex.parallel_exec();
-			ite_p += 1;
-			if (ite_p % 200 == 0)
-			{
-				cout << fixed << setprecision(9) << "Relaxation steps N = " << ite_p << "\n";
-				write_real_body_states.writeToFile(ite_p);
-			}
+			sph_system.accumulateTotalSteps();
+
+			sph_system.monitorSteps("FreeBallResidueForce", cylinder_residue_force_recording.ResultValue());
+			write_real_body_states.writeToFileByStep();
+
 			sph_system.updateSystemCellLinkedLists();
 			sph_system.updateSystemRelations();
 		}
 		std::cout << "The physics relaxation process finish !" << std::endl;
 
-		write_real_body_particle_reload_files.writeToFile(0);
+		write_real_body_particle_reload_files.writeToFileByStep();
 
 		return 0;
 	}
@@ -208,8 +209,6 @@ int main(int ac, char *av[])
 	//----------------------------------------------------------------------
 	//	Setup for time-stepping control
 	//----------------------------------------------------------------------
-	size_t number_of_iterations = 0;
-	int screen_output_interval = 1000;
 	Real end_time = 80.0;
 	Real output_interval = 5.0; /**< time stamps for output. */
 	//----------------------------------------------------------------------
@@ -220,10 +219,11 @@ int main(int ac, char *av[])
 	//----------------------------------------------------------------------
 	//	First output before the main loop.
 	//----------------------------------------------------------------------
-	write_real_body_states.writeToFile(0);
+	write_real_body_states.writeToFileByTime();
 	//----------------------------------------------------------------------
 	//	Main loop starts here.
 	//----------------------------------------------------------------------
+	sph_system.setScreenOutputInterval(1000);
 	while (GlobalStaticVariables::physical_time_ < end_time)
 	{
 		Real integration_time = 0.0;
@@ -234,27 +234,21 @@ int main(int ac, char *av[])
 			viscous_acceleration.parallel_exec();
 			pressure_relaxation.parallel_exec(dt);
 			density_relaxation.parallel_exec(dt);
+			variable_reset_in_boundary_condition.parallel_exec();
+			sph_system.accumulateTotalSteps();
+
+			sph_system.monitorSteps("Time", GlobalStaticVariables::physical_time_,
+									"fluid_dynamics_dt", dt);
+			write_total_viscous_force_on_inserted_body.writeToFileByStep();
+			write_total_force_on_inserted_body.writeToFileByStep();
+			write_maximum_speed.writeToFileByStep();
 
 			integration_time += dt;
 			GlobalStaticVariables::physical_time_ += dt;
-			variable_reset_in_boundary_condition.parallel_exec();
-
-			if (number_of_iterations % screen_output_interval == 0)
-			{
-				cout << fixed << setprecision(9) << "N=" << number_of_iterations << "	Time = "
-					 << GlobalStaticVariables::physical_time_
-					 << "	dt = " << dt << "\n";
-			}
-			number_of_iterations++;
 		}
 
 		tick_count t2 = tick_count::now();
-		write_real_body_states.writeToFile();
-
-		write_total_viscous_force_on_inserted_body.writeToFile(number_of_iterations);
-		write_total_force_on_inserted_body.writeToFile(number_of_iterations);
-
-		write_maximum_speed.writeToFile(number_of_iterations);
+		write_real_body_states.writeToFileByTime();
 		tick_count t3 = tick_count::now();
 		interval += t3 - t2;
 	}
