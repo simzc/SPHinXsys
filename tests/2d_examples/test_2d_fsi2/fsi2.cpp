@@ -30,6 +30,7 @@ int main(int ac, char *av[])
 	FluidBody water_block(sph_system, makeShared<WaterBlock>("WaterBody"));
 	water_block.defineParticlesAndMaterial<FluidParticles, WeaklyCompressibleFluid>(rho0_f, c_f, mu_f);
 	water_block.generateParticles<ParticleGeneratorLattice>();
+	water_block.setParticleSortInterval(100);
 
 	SolidBody wall_boundary(sph_system, makeShared<WallBoundary>("Wall"));
 	wall_boundary.defineParticlesAndMaterial<SolidParticles, Solid>();
@@ -53,10 +54,15 @@ int main(int ac, char *av[])
 	//	Basically the the range of bodies to build neighbor particle lists.
 	//----------------------------------------------------------------------
 	InnerRelation insert_body_inner(insert_body);
-	ComplexRelation water_block_complex(water_block, RealBodyVector{&wall_boundary, &insert_body});
+	InnerRelation water_block_inner(water_block);
+	ContactRelation water_block_contact(water_block, RealBodyVector{&wall_boundary, &insert_body});
 	ContactRelation insert_body_contact(insert_body, {&water_block});
-	ContactRelation beam_observer_contact(beam_observer, {&insert_body});
-	ContactRelation fluid_observer_contact(fluid_observer, {&water_block});
+	ObservingRelation beam_observer_contact(beam_observer, {&insert_body});
+	ObservingRelation fluid_observer_contact(fluid_observer, {&water_block});
+	//----------------------------------------------------------------------
+	//	Combined relations.
+	//----------------------------------------------------------------------
+	ComplexRelation water_block_complex(water_block_inner, water_block_contact);
 	//----------------------------------------------------------------------
 	//	Run particle relaxation for body-fitted distribution if chosen.
 	//----------------------------------------------------------------------
@@ -73,29 +79,34 @@ int main(int ac, char *av[])
 		ReloadParticleIO write_particle_reload_files(io_environment, {&insert_body});
 		/** A  Physics relaxation step. */
 		relax_dynamics::RelaxationStepInner relaxation_step_inner(insert_body_inner);
+		ReducedQuantityRecording<ReduceAverage<Summation2Norm<Vecd>>>
+			insert_body_residue_force_recording(io_environment, insert_body, "Acceleration");
 		//----------------------------------------------------------------------
 		//	Particle relaxation starts here.
 		//----------------------------------------------------------------------
 		random_insert_body_particles.parallel_exec(0.25);
 		relaxation_step_inner.SurfaceBounding().parallel_exec();
-		write_insert_body_to_vtp.writeToFile(0);
+		//----------------------------------------------------------------------
+		//	First output before the main loop.
+		//----------------------------------------------------------------------
+		write_insert_body_to_vtp.writeToFileByStep();
 		//----------------------------------------------------------------------
 		//	Relax particles of the insert body.
 		//----------------------------------------------------------------------
-		int ite_p = 0;
-		while (ite_p < 1000)
+		while (sph_system.TotalSteps() < 1000)
 		{
 			relaxation_step_inner.parallel_exec();
-			ite_p += 1;
-			if (ite_p % 200 == 0)
-			{
-				std::cout << std::fixed << std::setprecision(9) << "Relaxation steps for the inserted body N = " << ite_p << "\n";
-				write_insert_body_to_vtp.writeToFile(ite_p);
-			}
+			sph_system.accumulateTotalSteps();
+
+			insert_body_residue_force_recording.writeToFileByStep();
+			sph_system.monitorSteps("InsertBodyResidueForce", insert_body_residue_force_recording.ResultValue());
+			write_insert_body_to_vtp.writeToFileByStep();
+
+			sph_system.updateSystemCellLinkedLists();
+			sph_system.updateSystemRelations();
 		}
 		std::cout << "The physics relaxation process of inserted body finish !" << std::endl;
-		/** Output results. */
-		write_particle_reload_files.writeToFile(0);
+		write_particle_reload_files.writeToFileByStep();
 		return 0;
 	}
 	//----------------------------------------------------------------------
@@ -168,12 +179,12 @@ int main(int ac, char *av[])
 	//	and case specified initial condition if necessary.
 	//----------------------------------------------------------------------
 	/** initialize cell linked lists for all bodies. */
-	sph_system.initializeSystemCellLinkedLists();
+	sph_system.updateSystemCellLinkedLists();
 	/** periodic condition applied after the mesh cell linked list build up
 	 * but before the configuration build up. */
 	periodic_condition.update_cell_linked_list_.parallel_exec();
 	/** initialize configurations for all bodies. */
-	sph_system.initializeSystemConfigurations();
+	sph_system.updateSystemRelations();
 	/** computing surface normal direction for the wall. */
 	wall_boundary_normal_direction.parallel_exec();
 	/** computing surface normal direction for the insert body. */
@@ -183,8 +194,6 @@ int main(int ac, char *av[])
 	//----------------------------------------------------------------------
 	//	Setup computing and initial conditions.
 	//----------------------------------------------------------------------
-	size_t number_of_iterations = 0;
-	int screen_output_interval = 100;
 	Real end_time = 200.0;
 	Real output_interval = end_time / 200.0;
 	//----------------------------------------------------------------------
@@ -195,8 +204,8 @@ int main(int ac, char *av[])
 	//----------------------------------------------------------------------
 	//	First output before the main loop.
 	//----------------------------------------------------------------------
-	write_real_body_states.writeToFile();
-	write_beam_tip_displacement.writeToFile(number_of_iterations);
+	write_real_body_states.writeToFileByTime();
+	write_beam_tip_displacement.writeToFileByStep();
 	//----------------------------------------------------------------------
 	//	Main loop starts here.
 	//----------------------------------------------------------------------
@@ -218,9 +227,10 @@ int main(int ac, char *av[])
 			size_t inner_ite_dt = 0;
 			size_t inner_ite_dt_s = 0;
 			Real relaxation_time = 0.0;
+			Real dt = 0.0;
 			while (relaxation_time < Dt)
 			{
-				Real dt = SMIN(get_fluid_time_step_size.parallel_exec(), Dt);
+				dt = SMIN(get_fluid_time_step_size.parallel_exec(), Dt);
 				/** Fluid pressure relaxation */
 				pressure_relaxation.parallel_exec(dt);
 				/** FSI for pressure force. */
@@ -249,35 +259,25 @@ int main(int ac, char *av[])
 				parabolic_inflow.parallel_exec();
 				inner_ite_dt++;
 			}
+			sph_system.accumulateTotalSteps();
 
-			if (number_of_iterations % screen_output_interval == 0)
-			{
-				std::cout << std::fixed << std::setprecision(9) << "N=" << number_of_iterations << "	Time = "
-						  << GlobalStaticVariables::physical_time_
-						  << "	Dt = " << Dt << "	Dt / dt = " << inner_ite_dt << "	dt / dt_s = " << inner_ite_dt_s << "\n";
-			}
-			number_of_iterations++;
+			write_total_viscous_force_on_insert_body.writeToFileByStep();
+			write_fluid_velocity.writeToFileByStep();
+			write_beam_tip_displacement.writeToFileByStep();
+			sph_system.monitorSteps("Time", GlobalStaticVariables::physical_time_,
+									"advection_dt", Dt, "acoustic_dt", dt);
 
 			/** Water block configuration and periodic condition. */
 			periodic_condition.bounding_.parallel_exec();
-
-			water_block.updateCellLinkedListWithParticleSort(100);
+			sph_system.updateSystemCellLinkedLists();
 			periodic_condition.update_cell_linked_list_.parallel_exec();
-			water_block_complex.updateConfiguration();
-			/** one need update configuration after periodic condition. */
-			insert_body.updateCellLinkedList();
-			insert_body_contact.updateConfiguration();
-			/** write run-time observation into file */
-			write_beam_tip_displacement.writeToFile(number_of_iterations);
+			sph_system.updateSystemRelations();
 		}
 
 		tick_count t2 = tick_count::now();
 		/** write run-time observation into file */
 		compute_vorticity.parallel_exec();
-		write_real_body_states.writeToFile();
-		write_total_viscous_force_on_insert_body.writeToFile(number_of_iterations);
-		fluid_observer_contact.updateConfiguration();
-		write_fluid_velocity.writeToFile(number_of_iterations);
+		write_real_body_states.writeToFileByTime();
 		tick_count t3 = tick_count::now();
 		interval += t3 - t2;
 	}

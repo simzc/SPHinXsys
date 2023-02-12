@@ -227,8 +227,15 @@ namespace SPH
 		SPHBody &getSPHBody() { return inner_relation_.getSPHBody(); };
 		SPHBody &getDynamicsRange() { return inner_relation_.getSPHBody(); };
 		ComplexRelation(BaseInnerRelation &inner_relation, BaseContactRelation &contact_relation)
-			: inner_relation_(inner_relation),
-			  contact_relation_(contact_relation){};
+			: inner_relation_(inner_relation), contact_relation_(contact_relation)
+		{
+			if (&inner_relation.getSPHBody() != &contact_relation.getSPHBody())
+			{
+				std::cout << "\n Error: the inner and relations do not have the same source body!" << std::endl;
+				std::cout << __FILE__ << ':' << __LINE__ << std::endl;
+				exit(1);
+			}
+		};
 		virtual ~ComplexRelation(){};
 	};
 }
