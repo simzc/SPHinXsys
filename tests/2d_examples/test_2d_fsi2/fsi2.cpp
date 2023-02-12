@@ -49,25 +49,11 @@ int main(int ac, char *av[])
 	ObserverBody fluid_observer(sph_system, "FluidObserver");
 	fluid_observer.generateParticles<FluidObserverParticleGenerator>();
 	//----------------------------------------------------------------------
-	//	Define body relation map.
-	//	The contact map gives the topological connections between the bodies.
-	//	Basically the the range of bodies to build neighbor particle lists.
-	//----------------------------------------------------------------------
-	InnerRelation insert_body_inner(insert_body);
-	InnerRelation water_block_inner(water_block);
-	ContactRelation water_block_contact(water_block, RealBodyVector{&wall_boundary, &insert_body});
-	ContactRelation insert_body_contact(insert_body, {&water_block});
-	ObservingRelation beam_observer_contact(beam_observer, {&insert_body});
-	ObservingRelation fluid_observer_contact(fluid_observer, {&water_block});
-	//----------------------------------------------------------------------
-	//	Combined relations.
-	//----------------------------------------------------------------------
-	ComplexRelation water_block_complex(water_block_inner, water_block_contact);
-	//----------------------------------------------------------------------
 	//	Run particle relaxation for body-fitted distribution if chosen.
 	//----------------------------------------------------------------------
 	if (sph_system.RunParticleRelaxation())
 	{
+		InnerRelation insert_body_inner(insert_body);
 		//----------------------------------------------------------------------
 		//	Methods used for particle relaxation.
 		//----------------------------------------------------------------------
@@ -86,6 +72,8 @@ int main(int ac, char *av[])
 		//----------------------------------------------------------------------
 		random_insert_body_particles.parallel_exec(0.25);
 		relaxation_step_inner.SurfaceBounding().parallel_exec();
+		sph_system.updateSystemCellLinkedLists();
+		sph_system.updateSystemRelations();
 		//----------------------------------------------------------------------
 		//	First output before the main loop.
 		//----------------------------------------------------------------------
@@ -109,6 +97,21 @@ int main(int ac, char *av[])
 		write_particle_reload_files.writeToFileByStep();
 		return 0;
 	}
+	//----------------------------------------------------------------------
+	//	Define body relation map.
+	//	The contact map gives the topological connections between the bodies.
+	//	Basically the the range of bodies to build neighbor particle lists.
+	//----------------------------------------------------------------------
+	TotalLagrangian<InnerRelation> insert_body_inner(insert_body);
+	InnerRelation water_block_inner(water_block);
+	ContactRelation water_block_contact(water_block, RealBodyVector{&wall_boundary, &insert_body});
+	ContactRelation insert_body_contact(insert_body, {&water_block});
+	TotalLagrangian<ObservingRelation> beam_observer_contact(beam_observer, RealBodyVector{&insert_body});
+	ObservingRelation fluid_observer_contact(fluid_observer, {&water_block});
+	//----------------------------------------------------------------------
+	//	Combined relations.
+	//----------------------------------------------------------------------
+	ComplexRelation water_block_complex(water_block_inner, water_block_contact);
 	//----------------------------------------------------------------------
 	//	Define the main numerical methods used in the simulation.
 	//	Note that there may be data dependence on the constructors of these methods.
