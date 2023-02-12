@@ -133,8 +133,6 @@ int main(int ac, char *av[])
 	//----------------------------------------------------------------------
 	//	Setup for time-stepping control
 	//----------------------------------------------------------------------
-	size_t number_of_iterations = 0;
-	int screen_output_interval = 100;
 	Real end_time = 5.0;
 	Real output_interval = 0.1; /**< Time stamps for output of body states. */
 	/** statistics for computing CPU time. */
@@ -143,10 +141,8 @@ int main(int ac, char *av[])
 	//----------------------------------------------------------------------
 	//	First output before the main loop.
 	//----------------------------------------------------------------------
-	/** Output the start states of bodies. */
-	body_states_recording.writeToFile();
-	/** Output the mechanical energy of fluid. */
-	write_total_mechanical_energy.writeToFile();
+	body_states_recording.writeToFileByTime();
+	write_total_mechanical_energy.writeToFileByStep();
 	//----------------------------------------------------------------------
 	//	Main loop starts here.
 	//----------------------------------------------------------------------
@@ -156,29 +152,24 @@ int main(int ac, char *av[])
 		/** Integrate time (loop) until the next output time. */
 		while (integration_time < output_interval)
 		{
-			/** Acceleration due to viscous force. */
 			time_step_initialization.parallel_exec();
 			Real dt = get_fluid_time_step_size.parallel_exec();
 			viscous_acceleration.parallel_exec();
-			/** Dynamics including pressure relaxation. */
-			integration_time += dt;
 			pressure_relaxation.parallel_exec(dt);
 			density_and_energy_relaxation.parallel_exec(dt);
-			GlobalStaticVariables::physical_time_ += dt;
+			sph_system.accumulateTotalSteps();
 
-			if (number_of_iterations % screen_output_interval == 0)
-			{
-				std::cout << std::fixed << std::setprecision(9) << "N=" << number_of_iterations << "	Time = "
-						  << GlobalStaticVariables::physical_time_
-						  << "	dt = " << dt << "\n";
-			}
-			number_of_iterations++;
+			write_total_mechanical_energy.writeToFileByStep();
+			write_maximum_speed.writeToFileByStep();
+			sph_system.monitorSteps("Time", GlobalStaticVariables::physical_time_,
+									"fluid_dynamics_dt", dt);
+
+			integration_time += dt;
+			GlobalStaticVariables::physical_time_ += dt;
 		}
 
 		tick_count t2 = tick_count::now();
-		write_total_mechanical_energy.writeToFile(number_of_iterations);
-		write_maximum_speed.writeToFile(number_of_iterations);
-		body_states_recording.writeToFile();
+		body_states_recording.writeToFileByTime();
 		tick_count t3 = tick_count::now();
 		interval += t3 - t2;
 	}

@@ -57,6 +57,8 @@ int main(int ac, char *av[])
 		ReloadParticleIO write_particle_reload_files(io_environment, {&cylinder});
 		/** A  Physics relaxation step. */
 		relax_dynamics::RelaxationStepInner relaxation_step_inner(cylinder_inner);
+		ReducedQuantityRecording<ReduceAverage<Summation2Norm<Vecd>>>
+			cylinder_residue_force_recording(io_environment, cylinder, "Acceleration");
 		//----------------------------------------------------------------------
 		//	Particle relaxation starts here.
 		//----------------------------------------------------------------------
@@ -64,26 +66,26 @@ int main(int ac, char *av[])
 		relaxation_step_inner.SurfaceBounding().parallel_exec();
 		sph_system.updateSystemCellLinkedLists();
 		sph_system.updateSystemRelations();
-		write_inserted_body_to_vtp.writeToFile(0);
 		//----------------------------------------------------------------------
-		//	Relax particles of the insert body.
+		//	First output before the simulation.
 		//----------------------------------------------------------------------
-		int ite_p = 0;
-		while (ite_p < 1000)
+		write_inserted_body_to_vtp.writeToFileByStep();
+		while (sph_system.TotalSteps() < 1000)
 		{
 			relaxation_step_inner.parallel_exec();
-			ite_p += 1;
-			if (ite_p % 200 == 0)
-			{
-				cout << fixed << setprecision(9) << "Relaxation steps for the inserted body N = " << ite_p << "\n";
-				write_inserted_body_to_vtp.writeToFile(ite_p);
-			}
+			sph_system.accumulateTotalSteps();
+
+			cylinder_residue_force_recording.writeToFileByStep();
+			write_inserted_body_to_vtp.writeToFileByStep();
+			sph_system.monitorSteps("FreeBallResidueForce", cylinder_residue_force_recording.ResultValue());
+
 			sph_system.updateSystemCellLinkedLists();
 			sph_system.updateSystemRelations();
 		}
-		std::cout << "The physics relaxation process of inserted body finish !" << std::endl;
+		std::cout << "The physics relaxation process of the cylinder finish !" << std::endl;
+
 		/** Output results. */
-		write_particle_reload_files.writeToFile(0);
+		write_particle_reload_files.writeToFileByStep();
 		return 0;
 	}
 	//----------------------------------------------------------------------
@@ -94,7 +96,7 @@ int main(int ac, char *av[])
 	InnerRelation water_block_inner(water_block);
 	ContactRelation water_block_contact(water_block, {&cylinder});
 	ContactRelation cylinder_contact(cylinder, {&water_block});
-	ContactRelation fluid_observer_contact(fluid_observer, {&water_block});
+	ObservingRelation fluid_observer_contact(fluid_observer, {&water_block});
 
 	ComplexRelation water_block_complex(water_block_inner, water_block_contact);
 	//----------------------------------------------------------------------
@@ -168,12 +170,10 @@ int main(int ac, char *av[])
 	//----------------------------------------------------------------------
 	//	First output before the main loop.
 	//----------------------------------------------------------------------
-	write_real_body_states.writeToFile();
+	write_real_body_states.writeToFileByTime();
 	//----------------------------------------------------------------------
 	//	Setup computing and initial conditions.
 	//----------------------------------------------------------------------
-	size_t number_of_iterations = 0;
-	int screen_output_interval = 100;
 	Real end_time = 200.0;
 	Real output_interval = end_time / 400.0;
 	//----------------------------------------------------------------------
@@ -199,9 +199,10 @@ int main(int ac, char *av[])
 
 			size_t inner_ite_dt = 0;
 			Real relaxation_time = 0.0;
+			Real dt = 0.0;
 			while (relaxation_time < Dt)
 			{
-				Real dt = SMIN(get_fluid_time_step_size.parallel_exec(), Dt - relaxation_time);
+				dt = SMIN(get_fluid_time_step_size.parallel_exec(), Dt - relaxation_time);
 				/** Fluid pressure relaxation, first half. */
 				pressure_relaxation.parallel_exec(dt);
 				/** Fluid pressure relaxation, second half. */
@@ -213,19 +214,17 @@ int main(int ac, char *av[])
 				emitter_buffer_inflow_condition.parallel_exec();
 				inner_ite_dt++;
 			}
+			sph_system.accumulateTotalSteps();
 
-			if (number_of_iterations % screen_output_interval == 0)
-			{
-				cout << fixed << setprecision(9) << "N=" << number_of_iterations << "	Time = "
-					 << GlobalStaticVariables::physical_time_
-					 << "	Dt = " << Dt << "	Dt / dt = " << inner_ite_dt << "\n";
-			}
-			number_of_iterations++;
+			write_total_viscous_force_on_inserted_body.writeToFileByStep();
+			write_total_force_on_inserted_body.writeToFileByStep();
+			write_fluid_velocity.writeToFileByStep();
+			sph_system.monitorSteps("Time", GlobalStaticVariables::physical_time_,
+									"advection_dt", Dt, "acoustic_dt", dt);
 
 			/** Water block configuration and periodic condition. */
 			emitter_inflow_injection.parallel_exec();
 			disposer_outflow_deletion.parallel_exec();
-
 			sph_system.updateSystemCellLinkedLists();
 			sph_system.updateSystemRelations();
 		}
@@ -233,11 +232,7 @@ int main(int ac, char *av[])
 		tick_count t2 = tick_count::now();
 		/** write run-time observation into file */
 		compute_vorticity.parallel_exec();
-		write_real_body_states.writeToFile();
-		write_total_viscous_force_on_inserted_body.writeToFile(number_of_iterations);
-		write_total_force_on_inserted_body.writeToFile(number_of_iterations);
-		fluid_observer_contact.updateConfiguration();
-		write_fluid_velocity.writeToFile(number_of_iterations);
+		write_real_body_states.writeToFileByTime();
 		tick_count t3 = tick_count::now();
 		interval += t3 - t2;
 	}

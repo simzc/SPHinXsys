@@ -158,8 +158,6 @@ int main()
 	//----------------------------------------------------------------------
 	//	Time stepping control parameters.
 	//----------------------------------------------------------------------
-	size_t number_of_iterations = system.RestartStep();
-	int screen_output_interval = 100;
 	Real end_time = 30.0;
 	Real output_interval = 0.1;
 	Real dt = 0.0; /**< Default acoustic time step sizes. */
@@ -169,8 +167,8 @@ int main()
 	//----------------------------------------------------------------------
 	//	First output before the main loop.
 	//----------------------------------------------------------------------
-	body_states_recording.writeToFile();
-	write_water_mechanical_energy.writeToFile(number_of_iterations);
+	body_states_recording.writeToFileByTime();
+	write_water_mechanical_energy.writeToFileByStep();
 	//----------------------------------------------------------------------
 	//	Main loop starts here.
 	//----------------------------------------------------------------------
@@ -198,14 +196,12 @@ int main()
 				integration_time += dt;
 				GlobalStaticVariables::physical_time_ += dt;
 			}
+			system.accumulateTotalSteps();
 
-			if (number_of_iterations % screen_output_interval == 0)
-			{
-				std::cout << std::fixed << std::setprecision(9) << "N=" << number_of_iterations << "	Time = "
-						  << GlobalStaticVariables::physical_time_
-						  << "	Dt = " << Dt << "	dt = " << dt << "\n";
-			}
-			number_of_iterations++;
+			write_water_mechanical_energy.writeToFileByStep();
+			write_recorded_water_pressure.writeToFileByStep();
+			system.monitorSteps("Time", GlobalStaticVariables::physical_time_,
+								"advection_dt", Dt, "acoustic_dt", dt);
 
 			/** inflow emitter injection*/
 			emitter_injection.parallel_exec();
@@ -215,10 +211,8 @@ int main()
 		}
 
 		tick_count t2 = tick_count::now();
-		write_water_mechanical_energy.writeToFile(number_of_iterations);
 		indicate_free_surface.parallel_exec();
-		body_states_recording.writeToFile();
-		write_recorded_water_pressure.writeToFile(number_of_iterations);
+		body_states_recording.writeToFileByTime();
 		tick_count t3 = tick_count::now();
 		interval += t3 - t2;
 	}

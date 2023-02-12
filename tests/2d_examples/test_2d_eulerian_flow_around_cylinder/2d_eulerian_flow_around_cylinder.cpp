@@ -159,6 +159,7 @@ int main(int ac, char *av[])
 			relaxation_step_complex.parallel_exec();
 			sph_system.accumulateTotalSteps();
 
+			cylinder_residue_force_recording.writeToFileByStep();
 			sph_system.monitorSteps("FreeBallResidueForce", cylinder_residue_force_recording.ResultValue());
 			write_real_body_states.writeToFileByStep();
 

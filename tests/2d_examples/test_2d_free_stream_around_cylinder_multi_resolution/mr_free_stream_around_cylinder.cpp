@@ -34,6 +34,7 @@ int main(int ac, char *av[])
 		? water_block.generateParticles<ParticleGeneratorReload>(io_environment, water_block.getName())
 		: water_block.generateParticles<ParticleGeneratorMultiResolution>(refinement_region);
 	water_block.addBodyStateForRecording<Real>("SmoothingLengthRatio");
+	water_block.setParticleSortInterval(100);
 
 	SolidBody cylinder(sph_system, makeShared<Cylinder>("Cylinder"));
 	cylinder.defineAdaptationRatios(1.15, 4.0);
@@ -54,7 +55,7 @@ int main(int ac, char *av[])
 	AdaptiveContactRelation water_contact(water_block, {&cylinder});
 	ComplexRelation water_block_complex(water_block_inner, water_contact);
 	AdaptiveContactRelation cylinder_contact(cylinder, {&water_block});
-	AdaptiveContactRelation fluid_observer_contact(fluid_observer, {&water_block});
+	AdaptiveObservingRelation fluid_observer_contact(fluid_observer, {&water_block});
 	//----------------------------------------------------------------------
 	//	Run particle relaxation for body-fitted distribution if chosen.
 	//----------------------------------------------------------------------
@@ -74,6 +75,10 @@ int main(int ac, char *av[])
 		relax_dynamics::RelaxationStepInner relaxation_step_inner(cylinder_inner);
 		relax_dynamics::RelaxationStepComplex relaxation_step_complex(water_block_complex, "OuterBoundary", true);
 		SimpleDynamics<relax_dynamics::UpdateSmoothingLengthRatioByShape> update_smoothing_length_ratio(water_block, refinement_region);
+		ReducedQuantityRecording<ReduceAverage<Summation2Norm<Vecd>>>
+			cylinder_residue_force_recording(io_environment, cylinder, "Acceleration");
+		ReducedQuantityRecording<ReduceAverage<Summation2Norm<Vecd>>>
+			water_block_residue_force_recording(io_environment, water_block, "Acceleration");
 		//----------------------------------------------------------------------
 		//	Particle relaxation starts here.
 		//----------------------------------------------------------------------
@@ -81,26 +86,34 @@ int main(int ac, char *av[])
 		random_water_body_particles.parallel_exec(0.25);
 		relaxation_step_inner.SurfaceBounding().parallel_exec();
 		relaxation_step_complex.SurfaceBounding().parallel_exec();
-		write_real_body_states.writeToFile(0);
+		sph_system.updateSystemCellLinkedLists();
+		sph_system.updateSystemRelations();
+		//----------------------------------------------------------------------
+		//	First output before the simulation.
+		//----------------------------------------------------------------------
+		write_real_body_states.writeToFileByStep();
 		//----------------------------------------------------------------------
 		//	Relax particles of the insert body.
 		//----------------------------------------------------------------------
-		int ite_p = 0;
-		while (ite_p < 1000)
+		while (sph_system.TotalSteps() < 1000)
 		{
 			relaxation_step_inner.parallel_exec();
 			update_smoothing_length_ratio.parallel_exec();
 			relaxation_step_complex.parallel_exec();
-			ite_p += 1;
-			if (ite_p % 200 == 0)
-			{
-				cout << fixed << setprecision(9) << "Relaxation steps N = " << ite_p << "\n";
-				write_real_body_states.writeToFile(ite_p);
-			}
+			sph_system.accumulateTotalSteps();
+
+			cylinder_residue_force_recording.writeToFileByStep();
+			water_block_residue_force_recording.writeToFileByStep();
+			sph_system.monitorSteps("InsertBodyResidueForce", cylinder_residue_force_recording.ResultValue(),
+									"WaterBlockResidueForce", water_block_residue_force_recording.ResultValue());
+			write_real_body_states.writeToFileByStep();
+
+			sph_system.updateSystemCellLinkedLists();
+			sph_system.updateSystemRelations();
 		}
 		std::cout << "The physics relaxation process finished !" << std::endl;
 		/** Output results. */
-		write_real_body_particle_reload_files.writeToFile(0);
+		write_real_body_particle_reload_files.writeToFileByStep();
 		return 0;
 	}
 
@@ -144,7 +157,7 @@ int main(int ac, char *av[])
 	/** Computing viscous acceleration. */
 	InteractionDynamics<fluid_dynamics::ViscousAccelerationWithWall> viscous_acceleration(water_block_complex);
 	/** Apply transport velocity formulation. */
-	InteractionDynamics<fluid_dynamics::TransportVelocityCorrectionComplexAdaptive> 
+	InteractionDynamics<fluid_dynamics::TransportVelocityCorrectionComplexAdaptive>
 		transport_velocity_correction(water_block_complex);
 	/** compute the vorticity. */
 	InteractionDynamics<fluid_dynamics::VorticityInner> compute_vorticity(water_block_inner);
@@ -169,21 +182,16 @@ int main(int ac, char *av[])
 	//	Prepare the simulation with cell linked list, configuration
 	//	and case specified initial condition if necessary.
 	//----------------------------------------------------------------------
-	/** initialize cell linked lists for all bodies. */
-	sph_system.initializeSystemCellLinkedLists();
-	/** initialize configurations for all bodies. */
-	sph_system.initializeSystemConfigurations();
-	/** computing surface normal direction for the insert body. */
+	sph_system.updateSystemCellLinkedLists();
+	sph_system.updateSystemRelations();
 	cylinder_normal_direction.parallel_exec();
 	//----------------------------------------------------------------------
 	//	First output before the main loop.
 	//----------------------------------------------------------------------
-	write_real_body_states.writeToFile();
+	write_real_body_states.writeToFileByTime();
 	//----------------------------------------------------------------------
 	//	Setup computing and initial conditions.
 	//----------------------------------------------------------------------
-	size_t number_of_iterations = 0;
-	int screen_output_interval = 100;
 	Real end_time = 200.0;
 	Real output_interval = end_time / 400.0;
 	//----------------------------------------------------------------------
@@ -209,9 +217,10 @@ int main(int ac, char *av[])
 
 			size_t inner_ite_dt = 0;
 			Real relaxation_time = 0.0;
+			Real dt = 0.0;
 			while (relaxation_time < Dt)
 			{
-				Real dt = SMIN(get_fluid_time_step_size.parallel_exec(), Dt - relaxation_time);
+				dt = SMIN(get_fluid_time_step_size.parallel_exec(), Dt - relaxation_time);
 				/** Fluid pressure relaxation, first half. */
 				pressure_relaxation.parallel_exec(dt);
 				/** Fluid pressure relaxation, second half. */
@@ -223,34 +232,24 @@ int main(int ac, char *av[])
 				emitter_buffer_inflow_condition.parallel_exec();
 				inner_ite_dt++;
 			}
+			sph_system.accumulateTotalSteps();
 
-			if (number_of_iterations % screen_output_interval == 0)
-			{
-				cout << fixed << setprecision(9) << "N=" << number_of_iterations << "	Time = "
-					 << GlobalStaticVariables::physical_time_
-					 << "	Dt = " << Dt << "	Dt / dt = " << inner_ite_dt << "\n";
-			}
-			number_of_iterations++;
+			write_total_viscous_force_on_inserted_body.writeToFileByStep();
+			write_total_force_on_inserted_body.writeToFileByStep();
+			write_fluid_velocity.writeToFileByStep();
+			sph_system.monitorSteps("Time", GlobalStaticVariables::physical_time_,
+									"advection_dt", Dt, "acoustic_dt", dt);
 
-			/** Water block configuration and periodic condition. */
 			emitter_inflow_injection.parallel_exec();
 			disposer_outflow_deletion.parallel_exec();
-
-			water_block.updateCellLinkedListWithParticleSort(100);
-			water_block_complex.updateConfiguration();
-			/** one need update configuration after periodic condition. */
-			/** write run-time observation into file */
-			cylinder_contact.updateConfiguration();
+			sph_system.updateSystemCellLinkedLists();
+			sph_system.updateSystemRelations();
 		}
 
 		tick_count t2 = tick_count::now();
 		/** write run-time observation into file */
 		compute_vorticity.parallel_exec();
-		write_real_body_states.writeToFile();
-		write_total_viscous_force_on_inserted_body.writeToFile(number_of_iterations);
-		write_total_force_on_inserted_body.writeToFile(number_of_iterations);
-		fluid_observer_contact.updateConfiguration();
-		write_fluid_velocity.writeToFile(number_of_iterations);
+		write_real_body_states.writeToFileByTime();
 		tick_count t3 = tick_count::now();
 		interval += t3 - t2;
 	}
