@@ -18,12 +18,13 @@
 # You can create any custom variable you would like, and they will be accessible
 # in the templates via {{ site.myvariable }}.
 
-title: Your awesome title
-email: your-email@example.com
+title: SPHinXsys an open-source SPH multi-physics library
+email: xiangyu.hu@tum.de
 description: >- # this means to ignore newlines until "baseurl:"
-  Write an awesome description for your new site here. You can edit this
-  line in _config.yml. It will appear in your document head meta (for
-  Google search results) and in your feed.xml site description.
+  SPHinXsys provides open-source C++ APIs for physical accurate simulation and aims to model and to optimize coupled industrial dynamic systems including fluid, solid, 
+  multi-body dynamics and beyond with SPH (smoothed particle hydrodynamics), a meshless computational method using particle discretization, 
+  and AI-aware optimization algorithms. 
+  Since all formulations are based on a unified SPH framework, strong coupling is achieved for all physical processes.
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "" # the base hostname & protocol for your site, e.g. http://example.com
 twitter_username: jekyllrb
