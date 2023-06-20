@@ -50,14 +50,14 @@ namespace SPH
 	};
 
 	/**
-	* @class KernalGredientWithCorrectionInner
+	* @class KernalGradientWithCorrectionInner
 	* @brief obtain the corrected initial configuration in strong form and correct kernel gredient
 	*/
-    class KernalGredientWithCorrectionInner : public LocalDynamics, public GeneralDataDelegateInner
+    class KernalGradientWithCorrectionInner : public LocalDynamics, public GeneralDataDelegateInner
     {
         public:
-        KernalGredientWithCorrectionInner(BaseInnerRelation &inner_relation);
-        virtual ~KernalGredientWithCorrectionInner(){};
+        KernalGradientWithCorrectionInner(BaseInnerRelation &inner_relation);
+        virtual ~KernalGradientWithCorrectionInner(){};
         void interaction(size_t index_i, Real dt = 0.0);
         void update(size_t index_i, Real dt = 0.0);
 
@@ -69,12 +69,12 @@ namespace SPH
 	* @class KernalGredientWithCorrectionComplex
 	* @brief obtain the corrected initial configuration in strong form and correct kernel gredient in complex topology
 	*/
-    class KernalGredientWithCorrectionComplex : public BaseInteractionComplex<KernalGredientWithCorrectionInner, GeneralDataDelegateContact>
+    class KernalGredientWithCorrectionComplex : public BaseInteractionComplex<KernalGradientWithCorrectionInner, GeneralDataDelegateContact>
     {
       public:
         template <typename... Args>
         KernalGredientWithCorrectionComplex(Args &&...args)
-            : BaseInteractionComplex<KernalGredientWithCorrectionInner, GeneralDataDelegateContact>(std::forward<Args>(args)...){};
+            : BaseInteractionComplex<KernalGradientWithCorrectionInner, GeneralDataDelegateContact>(std::forward<Args>(args)...){};
         virtual ~KernalGredientWithCorrectionComplex(){};
         void interaction(size_t index_i, Real dt = 0.0);
         void update(size_t index_i, Real dt = 0.0);

@@ -252,7 +252,6 @@ int main(int ac, char *av[])
             }
             number_of_iterations++;
 
-            // water block configuration and periodic condition
             fluid_block.updateCellLinkedListWithParticleSort(100);
             fluid_block_complex.updateConfiguration();
         }

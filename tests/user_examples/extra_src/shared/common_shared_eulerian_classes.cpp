@@ -4,14 +4,14 @@
 namespace SPH
 {
 	//=================================================================================================//
-    KernalGredientWithCorrectionInner::KernalGredientWithCorrectionInner(BaseInnerRelation &inner_relation)
+    KernalGradientWithCorrectionInner::KernalGradientWithCorrectionInner(BaseInnerRelation &inner_relation)
         : LocalDynamics(inner_relation.getSPHBody()), GeneralDataDelegateInner(inner_relation)
     {
         particles_->registerVariable(B_, "CorrectionMatrix");
         particles_->registerVariable(local_configuration_inner_, "LocalConfigurationInner");
     };
     //=================================================================================================//
-    void KernalGredientWithCorrectionInner::interaction(size_t index_i, Real dt)
+    void KernalGradientWithCorrectionInner::interaction(size_t index_i, Real dt)
     {
         Matd local_configuration = Eps * Matd::Identity(); // a small number added to diagonal to avoid divide zero
         const Neighborhood &inner_neighborhood = inner_configuration_[index_i];
@@ -25,7 +25,7 @@ namespace SPH
         local_configuration_inner_[index_i] = local_configuration;
     }
     //=================================================================================================//
-    void KernalGredientWithCorrectionInner::update(size_t index_i, Real dt)
+    void KernalGradientWithCorrectionInner::update(size_t index_i, Real dt)
     {
         Neighborhood &inner_neighborhood = inner_configuration_[index_i];
         for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
@@ -53,7 +53,7 @@ namespace SPH
     //=================================================================================================//
     void KernalGredientWithCorrectionComplex::interaction(size_t index_i, Real dt)
     {
-        KernalGredientWithCorrectionInner::interaction(index_i, dt);
+        KernalGradientWithCorrectionInner::interaction(index_i, dt);
 
         Matd local_configuration = Eps * Matd::Identity(); // a small number added to diagonal to avoid divide zero
         for (size_t k = 0; k < contact_configuration_.size(); ++k)
@@ -75,7 +75,7 @@ namespace SPH
     //=================================================================================================//
     void KernalGredientWithCorrectionComplex::update(size_t index_i, Real dt)
     {
-        KernalGredientWithCorrectionInner::update(index_i, dt);
+        KernalGradientWithCorrectionInner::update(index_i, dt);
 
         for (size_t k = 0; k < contact_configuration_.size(); ++k)
         {

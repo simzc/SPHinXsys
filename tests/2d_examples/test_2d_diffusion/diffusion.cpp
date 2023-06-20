@@ -157,7 +157,6 @@ int main()
 	//	and case specified initial condition if necessary.
 	//----------------------------------------------------------------------
 	sph_system.initializeSystemCellLinkedLists();
-	periodic_condition_y.update_cell_linked_list_.exec();
 	sph_system.initializeSystemConfigurations();
 	correct_configuration.exec();
 	setup_diffusion_initial_condition.exec();
