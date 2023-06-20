@@ -205,7 +205,11 @@ class PeriodicConditionUsingCellLinkedList : public BasePeriodicCondition<execut
     PeriodicConditionUsingCellLinkedList(RealBody &real_body, BoundingBox bounding_bounds, int axis)
         : BasePeriodicCondition<execution::ParallelPolicy>(real_body, bounding_bounds, axis),
           bounding_(periodic_translation_, bound_cells_data_, real_body, bounding_bounds, axis),
-          update_cell_linked_list_(periodic_translation_, bound_cells_data_, real_body, bounding_bounds, axis){};
+          update_cell_linked_list_(periodic_translation_, bound_cells_data_, real_body, bounding_bounds, axis)
+    {
+        real_body.addBeforeUpdateCellLinkedList(&bounding_);
+        real_body.addAfterUpdateCellLinkedList(&update_cell_linked_list_);
+    };
     virtual ~PeriodicConditionUsingCellLinkedList(){};
 
     PeriodicBounding bounding_;
@@ -280,6 +284,8 @@ class PeriodicConditionUsingGhostParticles : public BasePeriodicCondition<execut
           ghost_update_(periodic_translation_, bound_cells_data_, ghost_particles_, real_body, bounding_bounds, axis)
     {
         ghost_particles_.resize(2);
+        real_body.addBeforeUpdateCellLinkedList(&bounding_);
+        real_body.addAfterUpdateCellLinkedList(&ghost_creation_);
     };
 
     virtual ~PeriodicConditionUsingGhostParticles(){};

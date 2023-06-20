@@ -138,7 +138,6 @@ int main()
 	 * @brief Setup geometry and initial conditions.
 	 */
 	system.initializeSystemCellLinkedLists();
-	periodic_condition.update_cell_linked_list_.exec();
 	system.initializeSystemConfigurations();
 	wall_boundary_normal_direction.exec();
 	/** Output the start states of bodies. */

@@ -171,9 +171,6 @@ int main(int ac, char *av[])
 	//----------------------------------------------------------------------
 	/** initialize cell linked lists for all bodies. */
 	sph_system.initializeSystemCellLinkedLists();
-	/** periodic condition applied after the mesh cell linked list build up
-	 * but before the configuration build up. */
-	periodic_condition.update_cell_linked_list_.exec();
 	/** initialize configurations for all bodies. */
 	sph_system.initializeSystemConfigurations();
 	/** computing surface normal direction for the wall. */
@@ -261,11 +258,7 @@ int main(int ac, char *av[])
 			}
 			number_of_iterations++;
 
-			/** Water block configuration and periodic condition. */
-			periodic_condition.bounding_.exec();
-
 			water_block.updateCellLinkedListWithParticleSort(100);
-			periodic_condition.update_cell_linked_list_.exec();
 			water_block_complex.updateConfiguration();
 			/** one need update configuration after periodic condition. */
 			insert_body.updateCellLinkedList();

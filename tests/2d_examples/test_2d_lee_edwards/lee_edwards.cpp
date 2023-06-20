@@ -138,7 +138,6 @@ int main()
 	 * @brief Setup geometry and initial conditions.
 	 */
 	system.initializeSystemCellLinkedLists();
-	periodic_condition.update_cell_linked_list_.exec();
 	system.initializeSystemConfigurations();
 	wall_boundary_normal_direction.exec();
 	/** Output the start states of bodies. */
@@ -198,10 +197,7 @@ int main()
 			number_of_iterations++;
 			/** Update cell linked list and configuration. */
 			time_instance = TickCount::now();
-			/** Water block configuration and periodic condition. */
-			periodic_condition.bounding_.exec();
 			water_block.updateCellLinkedListWithParticleSort(100);
-			periodic_condition.update_cell_linked_list_.exec();
 			water_block_complex.updateConfiguration();
 			interval_updating_configuration += TickCount::now() - time_instance;
 		}
