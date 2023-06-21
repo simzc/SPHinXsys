@@ -55,6 +55,81 @@ class BoundingAlongAxis : public BaseDynamics<void>,
     virtual ~BoundingAlongAxis(){};
 };
 
+class BaseBoundingCondition
+{
+  public:
+    BaseBoundingCondition(const BoundingBox &bounding_bounds)
+        : bounding_bounds_(bounding_bounds){};
+
+  protected:
+    const BoundingBox bounding_bounds_;
+};
+
+class PeriodicBoundary : public BaseBoundingCondition
+{
+  public:
+    PeriodicBoundary(BaseParticles *base_particles, const BoundingBox &bounding_bounds, int axis)
+        : BaseBoundingCondition(bounding_bounds),
+          axis_(axis), pos_(base_particles->pos_), sorted_id_(base_particles->sorted_id_),
+          translation_(bounding_bounds.second_[axis] - bounding_bounds.first_[axis]){};
+
+    void LowerBoundTranslation(size_t index_i)
+    {
+        pos_[index_i][axis_] += translation_;
+    };
+
+    void UpperBoundTranslation(size_t index_i)
+    {
+        pos_[index_i][axis_] -= translation_;
+    };
+
+  protected:
+    int axis_;
+    StdLargeVec<Vecd> &pos_;
+    StdLargeVec<size_t> &sorted_id_;
+
+  private:
+    Real translation_;
+};
+
+class LeeEdwardsBoundary : public PeriodicBoundary
+{
+  public:
+    LeeEdwardsBoundary(BaseParticles *base_particles, const BoundingBox &bounding_bounds, int axis,
+                       int shear_direction, Real shear_rate)
+        : PeriodicBoundary(base_particles, bounding_bounds, axis),
+          shear_direction_(shear_direction), vel_(base_particles->vel_),
+          shear_center_(0.5 * (bounding_bounds.second_[shear_direction] + bounding_bounds.first_[shear_direction])),
+          pos_increment_(bounding_bounds.second_[shear_direction] - bounding_bounds.first_[shear_direction]),
+          vel_increment_(pos_increment_ * shear_rate){};
+
+    void LowerBoundTranslation(size_t index_i)
+    {
+        PeriodicBoundary::LowerBoundTranslation(index_i);
+        flipState(index_i);
+    };
+
+    void UpperBoundTranslation(size_t index_i)
+    {
+        PeriodicBoundary::UpperBoundTranslation(index_i);
+        flipState(index_i);
+    };
+
+  private:
+    int shear_direction_; // upper bound moving toward positive side
+    StdLargeVec<Vecd> &vel_;
+    Real shear_center_;
+    Real pos_increment_;
+    Real vel_increment_;
+
+    void flipState(size_t index_i)
+    {
+        bool is_positive_side = pos_[index_i][shear_direction_] > shear_center_;
+        pos_[index_i][shear_direction_] += is_positive_side ? -pos_increment_ : pos_increment_;
+        vel_[index_i][shear_direction_] += is_positive_side ? -vel_increment_ : vel_increment_;
+    };
+};
+
 /**
  * @class BasePeriodicCondition
  * @brief Base class for two different type periodic boundary conditions.
