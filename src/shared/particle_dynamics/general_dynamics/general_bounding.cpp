@@ -4,8 +4,7 @@ namespace SPH
 {
 //=================================================================================================//
 BoundingAlongAxis::BoundingAlongAxis(RealBody &real_body, BoundingBox bounding_bounds, int axis)
-    : BaseDynamics<void>(real_body), LocalDynamics(real_body),
-      GeneralDataDelegateSimple(real_body),
+    : LocalDynamics(real_body), GeneralDataDelegateSimple(real_body),
       axis_(axis), bounding_bounds_(bounding_bounds),
       pos_(particles_->pos_),
       cell_linked_list_(real_body.getCellLinkedList()),
@@ -23,7 +22,7 @@ void PeriodicConditionUsingCellLinkedList::
             /** insert ghost particle to cell linked list */
             mutex_cell_list_entry_.lock();
             cell_linked_list_.InsertListDataEntry(std::get<0>(cell_list_data[num]),
-                                                  periodic_boundary_.LowerBoundTranslation(particle_position),
+                                                  LowerBoundTranslation(particle_position),
                                                   std::get<2>(cell_list_data[num]));
             mutex_cell_list_entry_.unlock();
         }
@@ -42,7 +41,7 @@ void PeriodicConditionUsingCellLinkedList::
             /** insert ghost particle to cell linked list */
             mutex_cell_list_entry_.lock();
             cell_linked_list_.InsertListDataEntry(std::get<0>(cell_list_data[num]),
-                                                  periodic_boundary_.UpperBoundTranslation(particle_position),
+                                                  UpperBoundTranslation(particle_position),
                                                   std::get<2>(cell_list_data[num]));
             mutex_cell_list_entry_.unlock();
         }

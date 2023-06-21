@@ -54,24 +54,6 @@ class BoundingAlongAxis : public LocalDynamics,
     virtual ~BoundingAlongAxis(){};
 
     template <class OperationType>
-    void checkLowerBound(size_t index_i, const OperationType &operation)
-    {
-        if (pos[index_i][axis_] < bounding_bounds_.first_[axis_])
-        {
-            operation(index_i);
-        }
-    };
-
-    template <class OperationType>
-    void checkUpperBound(size_t index_i, const OperationType &operation)
-    {
-        if (pos_[index_i][axis_] > bounding_bounds_.second_[axis_])
-        {
-            operation(index_i);
-        }
-    };
-
-    template <class OperationType>
     void checkNearLowerBound(size_t index_i, const OperationType &operation)
     {
         if (pos_[index_i][axis_] > bounding_bounds_.first_[axis_] &&
@@ -173,44 +155,50 @@ template <class PeriodicBoundaryType, class ExecutionPolicy>
 class BasePeriodicCondition
 {
   protected:
-    PeriodicBoundaryType periodic_boundary_;
     StdVec<CellLists> bound_cells_data_;
     /**
      * @class PeriodicBounding
      * @brief Periodic bounding particle position in an axis direction
      */
-    class PeriodicBounding : public BaseDynamics<void>, public BoundingAlongAxis
+    class PeriodicBounding : public BaseDynamics<void>, public PeriodicBoundaryType
     {
       protected:
-        PeriodicBoundaryType &periodic_boundary_;
         StdVec<CellLists> &bound_cells_data_;
 
+        void checkLowerBound(size_t index_i)
+        {
+            if (this->pos[index_i][axis_] < this->bounding_bounds_.first_[axis_])
+            {
+                this->LowerBoundTranslation(index_i);
+            }
+        };
+
+        void checkUpperBound(size_t index_i)
+        {
+            if (this->pos_[index_i][axis_] > this->bounding_bounds_.second_[axis_])
+            {
+                this->UpperBoundTranslation(index_i);
+            }
+        };
+
       public:
-        PeriodicBounding(PeriodicBoundaryType &periodic_boundary,
-                         StdVec<CellLists> &bound_cells_data,
-                         RealBody &real_body, BoundingBox bounding_bounds, int axis)
-            : BaseDynamics<void>(real_body), BoundingAlongAxis(real_body, bounding_bounds, axis),
-              periodic_boundary_(periodic_boundary),
+        template <typename... Args>
+        PeriodicBounding(StdVec<CellLists> &bound_cells_data,
+                         RealBody &real_body, BoundingBox bounding_bounds, int axis, Args &&...args)
+            : BaseDynamics<void>(real_body),
+              PeriodicBoundaryType(real_body, bounding_bounds, axis, std::forward<Args>(args)...),
               bound_cells_data_(bound_cells_data){};
         virtual ~PeriodicBounding(){};
 
         virtual void exec(Real dt = 0.0) override
         {
-            setupDynamics(dt);
-
             particle_for(ExecutionPolicy(), bound_cells_data_[0].first,
                          [&](size_t i)
-                         {
-                             checkLowerBound(i, [&](size_t i)
-                                             { periodic_boundary_.LowerBoundTranslation(i); })
-                         });
+                         { checkLowerBound(i) });
 
             particle_for(ExecutionPolicy(), bound_cells_data_[1].first,
                          [&](size_t i)
-                         {
-                             checkLowerBound(i, [&](size_t i)
-                                             { periodic_boundary_.UpperBoundTranslation(i); })
-                         });
+                         { checkLowerBound(i) });
         };
     };
 
@@ -218,27 +206,26 @@ class BasePeriodicCondition
      * @class PeriodicImage
      * @brief Creating periodic image for boundary condition in an axis direction
      */
-    class PeriodicImage : public BoundingAlongAxis
+    class PeriodicImage : public BaseDynamics<void>, public PeriodicBoundaryType
     {
       protected:
         std::mutex mutex_cell_list_entry_; /**< mutex exclusion for memory conflict */
-        PeriodicBoundaryType &periodic_boundary_;
         StdVec<CellLists> &bound_cells_data_;
         virtual void checkLowerBound(ListDataVector &cell_list_data, Real dt = 0.0) = 0;
         virtual void checkUpperBound(ListDataVector &cell_list_data, Real dt = 0.0) = 0;
 
       public:
-        PeriodicImage(PeriodicBoundaryType &periodic_boundary,
-                      StdVec<CellLists> &bound_cells_data,
-                      RealBody &real_body, BoundingBox bounding_bounds, int axis)
-            : BoundingAlongAxis(real_body, bounding_bounds, axis),
-              periodic_boundary_(periodic_boundary), bound_cells_data_(bound_cells_data){};
-        ;
+        template <typename... Args>
+        PeriodicImage(StdVec<CellLists> &bound_cells_data,
+                      RealBody &real_body, BoundingBox bounding_bounds, int axis, Args &&...args)
+            : BaseDynamics<void>(real_body),
+              PeriodicBoundaryType(real_body, bounding_bounds, axis, std::forward<Args>(args)...),
+              bound_cells_data_(bound_cells_data){};
         virtual ~PeriodicImage(){};
 
         virtual void exec(Real dt = 0.0) override
         {
-            setupDynamics(dt);
+            this->setupDynamics(dt);
 
             particle_for(ExecutionPolicy(), bound_cells_data_[0].second,
                          [&](ListDataVector *cell_list)
@@ -251,19 +238,11 @@ class BasePeriodicCondition
     };
 
   public:
-    template <typename... Args>
-    BasePeriodicCondition(RealBody &real_body, BoundingBox bounding_bounds, int axis, Args &&...args)
-        : periodic_boundary_(real_body.getBaseParticles(), bounding_bounds, axis, std::forward<Args>(args)...)
+    BasePeriodicCondition(RealBody &real_body, BoundingBox bounding_bounds, int axis)
     {
         bound_cells_data_.resize(2);
         BaseCellLinkedList &cell_linked_list = real_body.getCellLinkedList();
         cell_linked_list.tagBoundingCells(bound_cells_data_, bounding_bounds, axis);
-        if (periodic_translation_.norm() < real_body.sph_adaptation_->ReferenceSpacing())
-        {
-            std::cout << __FILE__ << ':' << __LINE__ << std::endl;
-            std::cout << "\n Periodic bounding failure: bounds not defined!" << std::endl;
-            exit(1);
-        }
     };
     virtual ~BasePeriodicCondition(){};
 };
@@ -291,18 +270,17 @@ class PeriodicConditionUsingCellLinkedList
         virtual void checkUpperBound(ListDataVector &cell_list_data, Real dt = 0.0) override;
 
       public:
-        PeriodicCellLinkedList(PeriodicBoundary &periodic_boundary,
-                               StdVec<CellLists> &bound_cells_data,
+        PeriodicCellLinkedList(StdVec<CellLists> &bound_cells_data,
                                RealBody &real_body, BoundingBox bounding_bounds, int axis)
-            : PeriodicImage(periodic_boundary, bound_cells_data, real_body, bounding_bounds, axis){};
+            : PeriodicImage(bound_cells_data, real_body, bounding_bounds, axis){};
         virtual ~PeriodicCellLinkedList(){};
     };
 
   public:
     PeriodicConditionUsingCellLinkedList(RealBody &real_body, BoundingBox bounding_bounds, int axis)
         : BasePeriodicCondition<PeriodicBoundary, execution::ParallelPolicy>(real_body, bounding_bounds, axis),
-          bounding_(periodic_boundary_, bound_cells_data_, real_body, bounding_bounds, axis),
-          update_cell_linked_list_(periodic_boundary_, bound_cells_data_, real_body, bounding_bounds, axis)
+          bounding_(bound_cells_data_, real_body, bounding_bounds, axis),
+          update_cell_linked_list_(bound_cells_data_, real_body, bounding_bounds, axis)
     {
         real_body.addBeforeUpdateCellLinkedList(&bounding_);
         real_body.addAfterUpdateCellLinkedList(&update_cell_linked_list_);
@@ -323,7 +301,9 @@ class PeriodicConditionUsingCellLinkedList
  *  Note that, currently, this class is not for periodic condition in combined directions,
  *  such as periodic condition in both x and y directions.
  */
-class PeriodicConditionUsingGhostParticles : public BasePeriodicCondition<execution::ParallelPolicy>
+template <class PeriodicBoundaryType>
+class PeriodicConditionUsingGhostParticles
+    : public BasePeriodicCondition<PeriodicBoundaryType, execution::ParallelPolicy>
 {
   protected:
     StdVec<IndexVector> ghost_particles_;
@@ -336,16 +316,57 @@ class PeriodicConditionUsingGhostParticles : public BasePeriodicCondition<execut
     {
       protected:
         StdVec<IndexVector> &ghost_particles_;
-        virtual void setupDynamics(Real dt = 0.0) override;
-        virtual void checkLowerBound(ListDataVector &cell_list_data, Real dt = 0.0) override;
-        virtual void checkUpperBound(ListDataVector &cell_list_data, Real dt = 0.0) override;
+        virtual void setupDynamics(Real dt = 0.0) override
+        {
+            for (size_t i = 0; i != ghost_particles_.size(); ++i)
+                ghost_particles_[i].clear();
+        };
+        virtual void checkLowerBound(ListDataVector &cell_list_data, Real dt = 0.0) override
+        {
+            for (size_t num = 0; num < cell_list_data.size(); ++num)
+            {
+                size_t index_i = std::get<0>(cell_list_data[num]);
+                Vecd particle_position = std::get<1>(cell_list_data[num]);
+                if (particle_position[axis_] > bounding_bounds_.first_[axis_] &&
+                    particle_position[axis_] < (bounding_bounds_.first_[axis_] + cut_off_radius_max_))
+                {
+                    mutex_cell_list_entry_.lock();
+                    size_t ghost_particle_index = this->particles_->insertAGhostParticle(index_i);
+                    this->LowerBoundTranslation(size_t index_i);
+                    /** insert ghost particle to cell linked list */
+                    cell_linked_list_.InsertListDataEntry(ghost_particle_index,
+                                                          this->pos_[ghost_particle_index],
+                                                          std::get<2>(cell_list_data[num]));
+                    mutex_cell_list_entry_.unlock();
+                }
+            }
+        };
+        virtual void checkUpperBound(ListDataVector &cell_list_data, Real dt = 0.0) override
+        {
+            for (size_t num = 0; num < cell_list_data.size(); ++num)
+            {
+                size_t index_i = std::get<0>(cell_list_data[num]);
+                Vecd particle_position = std::get<1>(cell_list_data[num]);
+                if (particle_position[axis_] < bounding_bounds_.second_[axis_] &&
+                    particle_position[axis_] > (bounding_bounds_.second_[axis_] - cut_off_radius_max_))
+                {
+                    mutex_cell_list_entry_.lock();
+                    size_t ghost_particle_index = particles_->insertAGhostParticle(index_i);
+                    this->LowerBoundTranslation(size_t index_i);
+                    /** insert ghost particle to cell linked list */
+                    cell_linked_list_.InsertListDataEntry(ghost_particle_index,
+                                                          this->pos_[ghost_particle_index],
+                                                          std::get<2>(cell_list_data[num]));
+                    mutex_cell_list_entry_.unlock();
+                }
+            }
+        };
 
       public:
-        PeriodicGhost(Vecd &periodic_translation,
-                      StdVec<CellLists> &bound_cells_data,
-                      StdVec<IndexVector> &ghost_particles,
-                      RealBody &real_body, BoundingBox bounding_bounds, int axis)
-            : PeriodicImage(periodic_translation, bound_cells_data, real_body, bounding_bounds, axis),
+        template <typename... Args>
+        PeriodicGhost(StdVec<IndexVector> &ghost_particles, StdVec<CellLists> &bound_cells_data,
+                      RealBody &real_body, BoundingBox bounding_bounds, int axis, Args &&...args)
+            : PeriodicImage(bound_cells_data, real_body, bounding_bounds, axis, std::forward<Args>(args)...),
               ghost_particles_(ghost_particles){};
         virtual ~PeriodicGhost(){};
     };
@@ -354,42 +375,60 @@ class PeriodicConditionUsingGhostParticles : public BasePeriodicCondition<execut
      * @class UpdatePeriodicGhost
      * @brief update ghost particles in an axis direction
      */
-    class UpdatePeriodicGhost : public PeriodicBounding
+    class UpdatePeriodicGhost : public BaseDynamics<void>, public PeriodicBoundaryType
     {
       protected:
         StdVec<IndexVector> &ghost_particles_;
-        void checkLowerBound(size_t index_i, Real dt = 0.0) override;
-        void checkUpperBound(size_t index_i, Real dt = 0.0) override;
+        void checkLowerBound(size_t index_i)
+        {
+            this->particles_->updateFromAnotherParticle(index_i, sorted_id_[index_i]);
+            this->LowerBoundTranslation(index_i);
+        };
+        void checkUpperBound(size_t index_i)
+        {
+            this->particles_->updateFromAnotherParticle(index_i, sorted_id_[index_i]);
+            this->UpperBoundTranslation(index_i);
+        };
 
       public:
-        UpdatePeriodicGhost(Vecd &periodic_translation,
-                            StdVec<CellLists> &bound_cells_data,
-                            StdVec<IndexVector> &ghost_particles,
-                            RealBody &real_body, BoundingBox bounding_bounds, int axis)
-            : PeriodicBounding(periodic_translation, bound_cells_data, real_body, bounding_bounds, axis),
+        template <typename... Args>
+        UpdatePeriodicGhost(StdVec<IndexVector> &ghost_particles, RealBody &real_body,
+                            BoundingBox bounding_bounds, int axis, Args &&...args)
+            : BaseDynamics<void>(real_body),
+              PeriodicBoundaryType(real_body, bounding_bounds, axis, std::forward<Args>(args)...),
               ghost_particles_(ghost_particles){};
         virtual ~UpdatePeriodicGhost(){};
 
-        virtual void exec(Real dt = 0.0) override;
+        virtual void exec(Real dt = 0.0) override
+        {
+            particle_for(execution::ParallelPolicy(), ghost_particles_[0],
+                         [&](size_t i)
+                         { checkLowerBound(i); });
+
+            particle_for(execution::ParallelPolicy(), ghost_particles_[1],
+                         [&](size_t i)
+                         { checkUpperBound(i); });
+        };
+
+      public:
+        template <typename... Args>
+        PeriodicConditionUsingGhostParticles(Args &&...args)
+            : BasePeriodicCondition<PeriodicBoundaryType, execution::ParallelPolicy>(std::forward<Args>(args)...),
+              bounding_(this->bound_cells_data_, std::forward<Args>(args)...),
+              ghost_creation_(this->ghost_particles_, this->bound_cells_data_, std::forward<Args>(args)...),
+              ghost_update_(this->ghost_particles_, std::forward<Args>(args)...)
+        {
+            ghost_particles_.resize(2);
+            real_body.addBeforeUpdateCellLinkedList(&bounding_);
+            real_body.addAfterUpdateCellLinkedList(&ghost_creation_);
+        };
+
+        virtual ~PeriodicConditionUsingGhostParticles(){};
+
+        PeriodicBounding bounding_;
+        PeriodicGhost ghost_creation_;
+        UpdatePeriodicGhost ghost_update_;
     };
-
-  public:
-    PeriodicConditionUsingGhostParticles(RealBody &real_body, BoundingBox bounding_bounds, int axis)
-        : BasePeriodicCondition<execution::ParallelPolicy>(real_body, bounding_bounds, axis),
-          bounding_(periodic_translation_, bound_cells_data_, real_body, bounding_bounds, axis),
-          ghost_creation_(periodic_translation_, bound_cells_data_, ghost_particles_, real_body, bounding_bounds, axis),
-          ghost_update_(periodic_translation_, bound_cells_data_, ghost_particles_, real_body, bounding_bounds, axis)
-    {
-        ghost_particles_.resize(2);
-        real_body.addBeforeUpdateCellLinkedList(&bounding_);
-        real_body.addAfterUpdateCellLinkedList(&ghost_creation_);
-    };
-
-    virtual ~PeriodicConditionUsingGhostParticles(){};
-
-    PeriodicBounding bounding_;
-    PeriodicGhost ghost_creation_;
-    UpdatePeriodicGhost ghost_update_;
 };
 } // namespace SPH
 #endif // GENERAL_BOUNDING_H
