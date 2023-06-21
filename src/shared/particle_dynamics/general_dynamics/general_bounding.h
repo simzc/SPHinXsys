@@ -39,8 +39,7 @@ namespace SPH
  * @brief Bounding particle position in along axis.
  * The axis must be 0, 1 for 2d and 0, 1, 2 for 3d
  */
-class BoundingAlongAxis : public BaseDynamics<void>,
-                          public LocalDynamics,
+class BoundingAlongAxis : public LocalDynamics,
                           public GeneralDataDelegateSimple
 {
   protected:
@@ -53,24 +52,51 @@ class BoundingAlongAxis : public BaseDynamics<void>,
   public:
     BoundingAlongAxis(RealBody &real_body, BoundingBox bounding_bounds, int axis);
     virtual ~BoundingAlongAxis(){};
+
+    template <class OperationType>
+    void checkLowerBound(size_t index_i, const OperationType &operation)
+    {
+        if (pos[index_i][axis_] < bounding_bounds_.first_[axis_])
+        {
+            operation(index_i);
+        }
+    };
+
+    template <class OperationType>
+    void checkUpperBound(size_t index_i, const OperationType &operation)
+    {
+        if (pos_[index_i][axis_] > bounding_bounds_.second_[axis_])
+        {
+            operation(index_i);
+        }
+    };
+
+    template <class OperationType>
+    void checkNearLowerBound(size_t index_i, const OperationType &operation)
+    {
+        if (pos_[index_i][axis_] > bounding_bounds_.first_[axis_] &&
+            pos_[index_i][axis_] < (bounding_bounds_.first_[axis_] + cut_off_radius_max_))
+        {
+            operation(index_i);
+        }
+    };
+
+    template <class OperationType>
+    void checkNearUpperBound(size_t index_i, const OperationType &operation)
+    {
+        if (pos_[index_i][axis_] < bounding_bounds_.second_[axis_] &&
+            pos_[index_i][axis_] > (bounding_bounds_.second_[axis_] - cut_off_radius_max_))
+        {
+            operation(index_i);
+        }
+    };
 };
 
-class BaseBoundingCondition
+class PeriodicBoundary : public BoundingAlongAxis
 {
   public:
-    BaseBoundingCondition(const BoundingBox &bounding_bounds)
-        : bounding_bounds_(bounding_bounds){};
-
-  protected:
-    const BoundingBox bounding_bounds_;
-};
-
-class PeriodicBoundary : public BaseBoundingCondition
-{
-  public:
-    PeriodicBoundary(BaseParticles *base_particles, const BoundingBox &bounding_bounds, int axis)
-        : BaseBoundingCondition(bounding_bounds),
-          axis_(axis), pos_(base_particles->pos_), sorted_id_(base_particles->sorted_id_),
+    PeriodicBoundary(RealBody &real_body, BoundingBox bounding_bounds, int axis)
+        : BoundingAlongAxis(real_body, bounding_bounds, axis),
           translation_(bounding_bounds.second_[axis] - bounding_bounds.first_[axis]){};
 
     void LowerBoundTranslation(size_t index_i)
@@ -83,10 +109,17 @@ class PeriodicBoundary : public BaseBoundingCondition
         pos_[index_i][axis_] -= translation_;
     };
 
-  protected:
-    int axis_;
-    StdLargeVec<Vecd> &pos_;
-    StdLargeVec<size_t> &sorted_id_;
+    Vecd LowerBoundTranslation(Vecd pos)
+    {
+        pos[axis_] += translation_;
+        return pos;
+    };
+
+    Vecd UpperBoundTranslation(Vecd &pos)
+    {
+        pos[axis_] -= translation_;
+        return pos;
+    };
 
   private:
     Real translation_;
@@ -95,10 +128,10 @@ class PeriodicBoundary : public BaseBoundingCondition
 class LeeEdwardsBoundary : public PeriodicBoundary
 {
   public:
-    LeeEdwardsBoundary(BaseParticles *base_particles, const BoundingBox &bounding_bounds, int axis,
+    LeeEdwardsBoundary(RealBody &real_body, const BoundingBox &bounding_bounds, int axis,
                        int shear_direction, Real shear_rate)
-        : PeriodicBoundary(base_particles, bounding_bounds, axis),
-          shear_direction_(shear_direction), vel_(base_particles->vel_),
+        : PeriodicBoundary(real_body, bounding_bounds, axis),
+          vel_(particles_->vel_), shear_direction_(shear_direction),
           shear_center_(0.5 * (bounding_bounds.second_[shear_direction] + bounding_bounds.first_[shear_direction])),
           pos_increment_(bounding_bounds.second_[shear_direction] - bounding_bounds.first_[shear_direction]),
           vel_increment_(pos_increment_ * shear_rate){};
@@ -115,9 +148,11 @@ class LeeEdwardsBoundary : public PeriodicBoundary
         flipState(index_i);
     };
 
+  protected:
+    StdLargeVec<Vecd> &vel_;
+
   private:
     int shear_direction_; // upper bound moving toward positive side
-    StdLargeVec<Vecd> &vel_;
     Real shear_center_;
     Real pos_increment_;
     Real vel_increment_;
@@ -134,48 +169,28 @@ class LeeEdwardsBoundary : public PeriodicBoundary
  * @class BasePeriodicCondition
  * @brief Base class for two different type periodic boundary conditions.
  */
-template <class ExecutionPolicy>
+template <class PeriodicBoundaryType, class ExecutionPolicy>
 class BasePeriodicCondition
 {
   protected:
-    Vecd periodic_translation_;
+    PeriodicBoundaryType periodic_boundary_;
     StdVec<CellLists> bound_cells_data_;
-    Vecd setPeriodicTranslation(BoundingBox &bounding_bounds, int axis)
-    {
-        Vecd periodic_translation = Vecd::Zero();
-        periodic_translation[axis] =
-            bounding_bounds.second_[axis] - bounding_bounds.first_[axis];
-        return periodic_translation;
-    };
-
     /**
      * @class PeriodicBounding
      * @brief Periodic bounding particle position in an axis direction
      */
-    class PeriodicBounding : public BoundingAlongAxis
+    class PeriodicBounding : public BaseDynamics<void>, public BoundingAlongAxis
     {
       protected:
-        Vecd &periodic_translation_;
+        PeriodicBoundaryType &periodic_boundary_;
         StdVec<CellLists> &bound_cells_data_;
 
-        virtual void checkLowerBound(size_t index_i, Real dt = 0.0)
-        {
-            if (pos_[index_i][axis_] < bounding_bounds_.first_[axis_])
-                pos_[index_i][axis_] += periodic_translation_[axis_];
-        };
-
-        virtual void checkUpperBound(size_t index_i, Real dt = 0.0)
-        {
-            if (pos_[index_i][axis_] > bounding_bounds_.second_[axis_])
-                pos_[index_i][axis_] -= periodic_translation_[axis_];
-        };
-
       public:
-        PeriodicBounding(Vecd &periodic_translation,
+        PeriodicBounding(PeriodicBoundaryType &periodic_boundary,
                          StdVec<CellLists> &bound_cells_data,
                          RealBody &real_body, BoundingBox bounding_bounds, int axis)
-            : BoundingAlongAxis(real_body, bounding_bounds, axis),
-              periodic_translation_(periodic_translation),
+            : BaseDynamics<void>(real_body), BoundingAlongAxis(real_body, bounding_bounds, axis),
+              periodic_boundary_(periodic_boundary),
               bound_cells_data_(bound_cells_data){};
         virtual ~PeriodicBounding(){};
 
@@ -185,11 +200,17 @@ class BasePeriodicCondition
 
             particle_for(ExecutionPolicy(), bound_cells_data_[0].first,
                          [&](size_t i)
-                         { checkLowerBound(i, dt); });
+                         {
+                             checkLowerBound(i, [&](size_t i)
+                                             { periodic_boundary_.LowerBoundTranslation(i); })
+                         });
 
             particle_for(ExecutionPolicy(), bound_cells_data_[1].first,
                          [&](size_t i)
-                         { checkUpperBound(i, dt); });
+                         {
+                             checkLowerBound(i, [&](size_t i)
+                                             { periodic_boundary_.UpperBoundTranslation(i); })
+                         });
         };
     };
 
@@ -201,18 +222,17 @@ class BasePeriodicCondition
     {
       protected:
         std::mutex mutex_cell_list_entry_; /**< mutex exclusion for memory conflict */
-        Vecd &periodic_translation_;
+        PeriodicBoundaryType &periodic_boundary_;
         StdVec<CellLists> &bound_cells_data_;
         virtual void checkLowerBound(ListDataVector &cell_list_data, Real dt = 0.0) = 0;
         virtual void checkUpperBound(ListDataVector &cell_list_data, Real dt = 0.0) = 0;
 
       public:
-        PeriodicImage(Vecd &periodic_translation,
+        PeriodicImage(PeriodicBoundaryType &periodic_boundary,
                       StdVec<CellLists> &bound_cells_data,
                       RealBody &real_body, BoundingBox bounding_bounds, int axis)
             : BoundingAlongAxis(real_body, bounding_bounds, axis),
-              periodic_translation_(periodic_translation),
-              bound_cells_data_(bound_cells_data){};
+              periodic_boundary_(periodic_boundary), bound_cells_data_(bound_cells_data){};
         ;
         virtual ~PeriodicImage(){};
 
@@ -231,8 +251,9 @@ class BasePeriodicCondition
     };
 
   public:
-    BasePeriodicCondition(RealBody &real_body, BoundingBox bounding_bounds, int axis)
-        : periodic_translation_(setPeriodicTranslation(bounding_bounds, axis))
+    template <typename... Args>
+    BasePeriodicCondition(RealBody &real_body, BoundingBox bounding_bounds, int axis, Args &&...args)
+        : periodic_boundary_(real_body.getBaseParticles(), bounding_bounds, axis, std::forward<Args>(args)...)
     {
         bound_cells_data_.resize(2);
         BaseCellLinkedList &cell_linked_list = real_body.getCellLinkedList();
@@ -255,7 +276,8 @@ class BasePeriodicCondition
  *	the second after the updating.
  *	If the exec or parallel_exec is called directly, error message will be given.
  */
-class PeriodicConditionUsingCellLinkedList : public BasePeriodicCondition<execution::ParallelPolicy>
+class PeriodicConditionUsingCellLinkedList
+    : public BasePeriodicCondition<PeriodicBoundary, execution::ParallelPolicy>
 {
   protected:
     /**
@@ -269,18 +291,18 @@ class PeriodicConditionUsingCellLinkedList : public BasePeriodicCondition<execut
         virtual void checkUpperBound(ListDataVector &cell_list_data, Real dt = 0.0) override;
 
       public:
-        PeriodicCellLinkedList(Vecd &periodic_translation,
+        PeriodicCellLinkedList(PeriodicBoundary &periodic_boundary,
                                StdVec<CellLists> &bound_cells_data,
                                RealBody &real_body, BoundingBox bounding_bounds, int axis)
-            : PeriodicImage(periodic_translation, bound_cells_data, real_body, bounding_bounds, axis){};
+            : PeriodicImage(periodic_boundary, bound_cells_data, real_body, bounding_bounds, axis){};
         virtual ~PeriodicCellLinkedList(){};
     };
 
   public:
     PeriodicConditionUsingCellLinkedList(RealBody &real_body, BoundingBox bounding_bounds, int axis)
-        : BasePeriodicCondition<execution::ParallelPolicy>(real_body, bounding_bounds, axis),
-          bounding_(periodic_translation_, bound_cells_data_, real_body, bounding_bounds, axis),
-          update_cell_linked_list_(periodic_translation_, bound_cells_data_, real_body, bounding_bounds, axis)
+        : BasePeriodicCondition<PeriodicBoundary, execution::ParallelPolicy>(real_body, bounding_bounds, axis),
+          bounding_(periodic_boundary_, bound_cells_data_, real_body, bounding_bounds, axis),
+          update_cell_linked_list_(periodic_boundary_, bound_cells_data_, real_body, bounding_bounds, axis)
     {
         real_body.addBeforeUpdateCellLinkedList(&bounding_);
         real_body.addAfterUpdateCellLinkedList(&update_cell_linked_list_);
