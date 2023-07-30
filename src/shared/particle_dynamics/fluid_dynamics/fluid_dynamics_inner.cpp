@@ -84,12 +84,12 @@ Real AcousticTimeStepSize::outputResult(Real reduced_value)
 }
 //=================================================================================================//
 AdvectionTimeStepSizeForImplicitViscosity::
-    AdvectionTimeStepSizeForImplicitViscosity(SPHBody &sph_body, Real U_max, Real advectionCFL)
-    : LocalDynamicsReduce<Real, ReduceMax>(sph_body, U_max * U_max),
+    AdvectionTimeStepSizeForImplicitViscosity(SPHBody &sph_body, Real U_ref, Real advectionCFL)
+    : LocalDynamicsReduce<Real, ReduceMax>(sph_body, Real(0)),
       FluidDataSimple(sph_body), vel_(particles_->vel_),
       smoothing_length_min_(sph_body.sph_adaptation_->MinimumSmoothingLength()),
-      advectionCFL_(advectionCFL),
-      speed_max_(*particles_->registerGlobalVariable("MaximumSpeed", U_max)) {}
+      speed_max_(*particles_->registerGlobalVariable<Real>("MaximumSpeed")),
+      speed_ref_(U_ref), advectionCFL_(advectionCFL) {}
 //=================================================================================================//
 Real AdvectionTimeStepSizeForImplicitViscosity::reduce(size_t index_i, Real dt)
 {
@@ -99,15 +99,15 @@ Real AdvectionTimeStepSizeForImplicitViscosity::reduce(size_t index_i, Real dt)
 Real AdvectionTimeStepSizeForImplicitViscosity::outputResult(Real reduced_value)
 {
     speed_max_ = sqrt(reduced_value);
-    return advectionCFL_ * smoothing_length_min_ / (speed_max_ + TinyReal);
+    return advectionCFL_ * smoothing_length_min_ / (SMAX(speed_max_, speed_ref_) + TinyReal);
 }
 //=================================================================================================//
-AdvectionTimeStepSize::AdvectionTimeStepSize(SPHBody &sph_body, Real U_max, Real advectionCFL)
-    : AdvectionTimeStepSizeForImplicitViscosity(sph_body, U_max, advectionCFL),
+AdvectionTimeStepSize::AdvectionTimeStepSize(SPHBody &sph_body, Real U_ref, Real advectionCFL)
+    : AdvectionTimeStepSizeForImplicitViscosity(sph_body, U_ref, advectionCFL),
       fluid_(DynamicCast<Fluid>(this, particles_->getBaseMaterial()))
 {
     Real viscous_speed = fluid_.ReferenceViscosity() / fluid_.ReferenceDensity() / smoothing_length_min_;
-    reference_ = SMAX(viscous_speed * viscous_speed, reference_);
+    speed_ref_ = SMAX(viscous_speed, speed_ref_);
 }
 //=================================================================================================//
 Real AdvectionTimeStepSize::reduce(size_t index_i, Real dt)

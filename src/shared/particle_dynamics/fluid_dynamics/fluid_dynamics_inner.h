@@ -236,7 +236,7 @@ class AdvectionTimeStepSizeForImplicitViscosity
 {
   public:
     explicit AdvectionTimeStepSizeForImplicitViscosity(
-        SPHBody &sph_body, Real U_max, Real advectionCFL = 0.25);
+        SPHBody &sph_body, Real U_ref, Real advectionCFL = 0.25);
     virtual ~AdvectionTimeStepSizeForImplicitViscosity(){};
     Real reduce(size_t index_i, Real dt = 0.0);
     virtual Real outputResult(Real reduced_value) override;
@@ -244,8 +244,8 @@ class AdvectionTimeStepSizeForImplicitViscosity
   protected:
     StdLargeVec<Vecd> &vel_;
     Real smoothing_length_min_;
-    Real advectionCFL_;
     Real &speed_max_;
+    Real speed_ref_, advectionCFL_;
 };
 
 /**
@@ -255,7 +255,7 @@ class AdvectionTimeStepSizeForImplicitViscosity
 class AdvectionTimeStepSize : public AdvectionTimeStepSizeForImplicitViscosity
 {
   public:
-    explicit AdvectionTimeStepSize(SPHBody &sph_body, Real U_max, Real advectionCFL = 0.25);
+    explicit AdvectionTimeStepSize(SPHBody &sph_body, Real U_ref, Real advectionCFL = 0.25);
     virtual ~AdvectionTimeStepSize(){};
     Real reduce(size_t index_i, Real dt = 0.0);
 

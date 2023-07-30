@@ -21,8 +21,8 @@ Real BW = particle_spacing_ref * 2;    /**< Extending width for BCs. */
 //----------------------------------------------------------------------
 Real rho0_f = 1.0;       /**< Reference density of water. */
 Real rho0_a = 0.001;     /**< Reference density of air. */
-Real U_max = 1.0;        /**< Characteristic velocity. */
-Real c_f = 10.0 * U_max; /**< Reference sound speed. */
+Real U_ref = 1.0;        /**< Characteristic velocity. */
+Real c_f = 10.0 * U_ref; /**< Reference sound speed. */
 Real mu_f = 0.2;         /**< Water viscosity. */
 Real mu_a = 0.002;       /**< Air viscosity. */
 //----------------------------------------------------------------------
@@ -142,8 +142,8 @@ int main()
     SimpleDynamics<TimeStepInitialization> initialize_a_air_step(air_block);
     SimpleDynamics<NormalDirectionFromBodyShape> wall_boundary_normal_direction(wall_boundary);
     /** Time step size without considering sound wave speed. */
-    ReduceDynamics<fluid_dynamics::AdvectionTimeStepSize> get_water_advection_time_step_size(water_block, U_max);
-    ReduceDynamics<fluid_dynamics::AdvectionTimeStepSize> get_air_advection_time_step_size(air_block, U_max);
+    ReduceDynamics<fluid_dynamics::AdvectionTimeStepSize> get_water_advection_time_step_size(water_block, U_ref);
+    ReduceDynamics<fluid_dynamics::AdvectionTimeStepSize> get_air_advection_time_step_size(air_block, U_ref);
     /** Time step size with considering sound wave speed. */
     ReduceDynamics<fluid_dynamics::AcousticTimeStepSize> get_water_time_step_size(water_block);
     ReduceDynamics<fluid_dynamics::AcousticTimeStepSize> get_air_time_step_size(air_block);
