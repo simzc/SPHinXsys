@@ -172,9 +172,10 @@ class AngularConservativeViscousAccelerationInner : public BaseViscousAccelerati
 class TransportVelocityCorrectionInner : public LocalDynamics, public FluidDataInner
 {
   public:
-    explicit TransportVelocityCorrectionInner(BaseInnerRelation &inner_relation, Real coefficient = 0.2);
+    explicit TransportVelocityCorrectionInner(BaseInnerRelation &inner_relation, Real coefficient = 10.0);
     virtual ~TransportVelocityCorrectionInner(){};
 
+    virtual void setupDynamics(Real dt = 0.0) override;
     inline void interaction(size_t index_i, Real dt = 0.0);
 
   protected:
@@ -182,6 +183,7 @@ class TransportVelocityCorrectionInner : public LocalDynamics, public FluidDataI
     StdLargeVec<int> &surface_indicator_;
     Real smoothing_length_sqr_;
     const Real coefficient_;
+    Real &speed_max_, correction_magnitude_;
 };
 
 /**
@@ -243,6 +245,7 @@ class AdvectionTimeStepSizeForImplicitViscosity
     StdLargeVec<Vecd> &vel_;
     Real smoothing_length_min_;
     Real advectionCFL_;
+    Real &speed_max_;
 };
 
 /**

@@ -141,19 +141,19 @@ int main()
     SimpleDynamics<TimeStepInitialization> initialize_a_water_step(water_block);
     SimpleDynamics<TimeStepInitialization> initialize_a_air_step(air_block);
     SimpleDynamics<NormalDirectionFromBodyShape> wall_boundary_normal_direction(wall_boundary);
-    /** Evaluation of density by summation approach. */
-    InteractionWithUpdate<fluid_dynamics::DensitySummationComplex>
-        update_water_density_by_summation(water_wall_contact, water_air_complex);
-    InteractionWithUpdate<fluid_dynamics::DensitySummationComplex>
-        update_air_density_by_summation(air_wall_contact, air_water_complex);
-    InteractionDynamics<fluid_dynamics::TransportVelocityCorrectionComplex>
-        air_transport_correction(air_wall_contact, air_water_complex, 0.05);
     /** Time step size without considering sound wave speed. */
     ReduceDynamics<fluid_dynamics::AdvectionTimeStepSize> get_water_advection_time_step_size(water_block, U_max);
     ReduceDynamics<fluid_dynamics::AdvectionTimeStepSize> get_air_advection_time_step_size(air_block, U_max);
     /** Time step size with considering sound wave speed. */
     ReduceDynamics<fluid_dynamics::AcousticTimeStepSize> get_water_time_step_size(water_block);
     ReduceDynamics<fluid_dynamics::AcousticTimeStepSize> get_air_time_step_size(air_block);
+    /** Evaluation of density by summation approach. */
+    InteractionWithUpdate<fluid_dynamics::DensitySummationComplex>
+        update_water_density_by_summation(water_wall_contact, water_air_complex);
+    InteractionWithUpdate<fluid_dynamics::DensitySummationComplex>
+        update_air_density_by_summation(air_wall_contact, air_water_complex);
+    InteractionDynamics<fluid_dynamics::TransportVelocityCorrectionComplex>
+        air_transport_correction(air_wall_contact, air_water_complex);
     /** Pressure relaxation for water by using position verlet time stepping. */
     Dynamics1Level<fluid_dynamics::MultiPhaseIntegration1stHalfRiemannWithWall>
         water_pressure_relaxation(water_wall_contact, water_air_complex);
@@ -229,7 +229,7 @@ int main()
 
             update_water_density_by_summation.exec();
             update_air_density_by_summation.exec();
-            air_transport_correction.exec();
+            air_transport_correction.exec(Dt);
 
             air_viscous_acceleration.exec();
             water_viscous_acceleration.exec();

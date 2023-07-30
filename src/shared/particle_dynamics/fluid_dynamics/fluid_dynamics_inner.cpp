@@ -47,7 +47,14 @@ TransportVelocityCorrectionInner::
     : LocalDynamics(inner_relation.getSPHBody()), FluidDataInner(inner_relation),
       pos_(particles_->pos_), surface_indicator_(*particles_->getVariableByName<int>("SurfaceIndicator")),
       smoothing_length_sqr_(pow(sph_body_.sph_adaptation_->ReferenceSmoothingLength(), 2)),
-      coefficient_(coefficient) {}
+      coefficient_(coefficient),
+      speed_max_(*particles_->getGlobalVariableByName<Real>("MaximumSpeed")),
+      correction_magnitude_(0) {}
+//=================================================================================================//
+void TransportVelocityCorrectionInner::setupDynamics(Real dt)
+{
+    correction_magnitude_ = 0.5 * coefficient_ * speed_max_ * speed_max_ * dt * dt;
+}
 //=================================================================================================//
 TransportVelocityCorrectionInnerAdaptive::
     TransportVelocityCorrectionInnerAdaptive(BaseInnerRelation &inner_relation, Real coefficient)
@@ -81,7 +88,8 @@ AdvectionTimeStepSizeForImplicitViscosity::
     : LocalDynamicsReduce<Real, ReduceMax>(sph_body, U_max * U_max),
       FluidDataSimple(sph_body), vel_(particles_->vel_),
       smoothing_length_min_(sph_body.sph_adaptation_->MinimumSmoothingLength()),
-      advectionCFL_(advectionCFL) {}
+      advectionCFL_(advectionCFL),
+      speed_max_(*particles_->registerGlobalVariable("MaximumSpeed", U_max)) {}
 //=================================================================================================//
 Real AdvectionTimeStepSizeForImplicitViscosity::reduce(size_t index_i, Real dt)
 {
@@ -90,8 +98,8 @@ Real AdvectionTimeStepSizeForImplicitViscosity::reduce(size_t index_i, Real dt)
 //=================================================================================================//
 Real AdvectionTimeStepSizeForImplicitViscosity::outputResult(Real reduced_value)
 {
-    Real speed_max = sqrt(reduced_value);
-    return advectionCFL_ * smoothing_length_min_ / (speed_max + TinyReal);
+    speed_max_ = sqrt(reduced_value);
+    return advectionCFL_ * smoothing_length_min_ / (speed_max_ + TinyReal);
 }
 //=================================================================================================//
 AdvectionTimeStepSize::AdvectionTimeStepSize(SPHBody &sph_body, Real U_max, Real advectionCFL)

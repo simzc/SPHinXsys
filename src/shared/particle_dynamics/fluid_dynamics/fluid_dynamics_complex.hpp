@@ -52,7 +52,7 @@ void TransportVelocityCorrectionComplex::
 
     /** correcting particle position */
     if (surface_indicator_[index_i] == 0)
-        pos_[index_i] += coefficient_ * smoothing_length_sqr_ * acceleration_trans;
+        pos_[index_i] += correction_magnitude_ * acceleration_trans;
 }
 //=================================================================================================//
 void TransportVelocityCorrectionComplexAdaptive::

@@ -77,8 +77,7 @@ void AngularConservativeViscousAccelerationInner::
     acc_prior_[index_i] += acceleration / rho_[index_i];
 }
 //=================================================================================================//
-void TransportVelocityCorrectionInner::
-    interaction(size_t index_i, Real dt)
+void TransportVelocityCorrectionInner::interaction(size_t index_i, Real dt)
 {
     Vecd acceleration_trans = Vecd::Zero();
     const Neighborhood &inner_neighborhood = inner_configuration_[index_i];
@@ -91,7 +90,7 @@ void TransportVelocityCorrectionInner::
     }
 
     if (surface_indicator_[index_i] == 0)
-        pos_[index_i] += coefficient_ * smoothing_length_sqr_ * acceleration_trans;
+        pos_[index_i] += correction_magnitude_ * acceleration_trans;
 }
 //=================================================================================================//
 void VorticityInner::interaction(size_t index_i, Real dt)
