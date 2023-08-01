@@ -60,6 +60,9 @@ class ComplexShape;
  */
 class SPHSystem
 {
+  private:
+    DataContainerUniquePtrAssemble<GlobalVariable> system_variable_ptrs_;
+
   public:
     SPHSystem(BoundingBox system_domain_bounds, Real resolution_ref,
               size_t number_of_threads = std::thread::hardware_concurrency());
@@ -92,10 +95,42 @@ class SPHSystem
 #ifdef BOOST_AVAILABLE
     void handleCommandlineOptions(int ac, char *av[]);
 #endif
+
+    template <typename DataType>
+    DataType *registerSystemVariable(const std::string &variable_name,
+                                     DataType initial_value = ZeroData<DataType>::value)
+    {
+        GlobalVariable<DataType> *variable = findVariableByName<DataType>(system_variables_, variable_name);
+
+        return variable != nullptr
+                   ? variable->ValueAddress()
+                   : addVariableToAssemble<DataType>(system_variables_,
+                                                     system_variable_ptrs_, variable_name, initial_value)
+                         ->ValueAddress();
+    };
+    template <typename DataType>
+    DataType *getSystemVariableByName(const std::string &variable_name)
+    {
+        GlobalVariable<DataType> *variable = findVariableByName<DataType>(system_variables_, variable_name);
+
+        if (variable != nullptr)
+        {
+            return variable->ValueAddress();
+        }
+
+        std::cout << "\nError: the variable '" << variable_name << "' is not registered!\n";
+        std::cout << __FILE__ << ':' << __LINE__ << std::endl;
+        return nullptr;
+
+        return nullptr;
+    };
+
   protected:
     bool run_particle_relaxation_; /**< run particle relaxation for body fitted particle distribution */
     bool reload_particles_;        /**< start the simulation with relaxed particles. */
     size_t restart_step_;          /**< restart step */
+
+    GlobalVariables system_variables_;
 };
 } // namespace SPH
 #endif // SPH_SYSTEM_H
