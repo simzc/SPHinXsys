@@ -109,6 +109,7 @@ int main()
     //----------------------------------------------------------------------
     BoundingBox system_domain_bounds(Vec2d(-BW, -BW), Vec2d(DL + BW, DH + BW));
     SPHSystem sph_system(system_domain_bounds, particle_spacing_ref);
+    Real &system_speed_max = *sph_system.registerSystemVariable("SystemMaximumSpeed", Real(0));
     IOEnvironment io_environment(sph_system);
     //----------------------------------------------------------------------
     //	Creating bodies with corresponding materials and particles.
@@ -192,6 +193,7 @@ int main()
     sph_system.initializeSystemCellLinkedLists();
     sph_system.initializeSystemConfigurations();
     wall_boundary_normal_direction.exec();
+
     //----------------------------------------------------------------------
     //	Setup for time-stepping control
     //----------------------------------------------------------------------
@@ -220,8 +222,11 @@ int main()
         /** Integrate time (loop) until the next output time. */
         while (integration_time < output_interval)
         {
-            /** Acceleration due to viscous force and gravity. */
             time_instance = TickCount::now();
+            //----------------------------------------------------------------------
+            //	Time step initialization.
+            //----------------------------------------------------------------------
+            system_speed_max = 0.0;
             initialize_a_water_step.exec();
             initialize_a_air_step.exec();
 

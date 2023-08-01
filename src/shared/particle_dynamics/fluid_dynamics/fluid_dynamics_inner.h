@@ -191,6 +191,7 @@ class AdvectionTimeStepSizeForImplicitViscosity
     StdLargeVec<Vecd> &vel_;
     Real smoothing_length_min_;
     Real speed_ref_, advectionCFL_;
+    Real &system_speed_max_;
 };
 
 /**

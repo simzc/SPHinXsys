@@ -66,7 +66,8 @@ AdvectionTimeStepSizeForImplicitViscosity::
     : LocalDynamicsReduce<Real, ReduceMax>(sph_body, Real(0)),
       FluidDataSimple(sph_body), vel_(particles_->vel_),
       smoothing_length_min_(sph_body.sph_adaptation_->MinimumSmoothingLength()),
-      speed_ref_(U_ref), advectionCFL_(advectionCFL) {}
+      speed_ref_(U_ref), advectionCFL_(advectionCFL),
+      system_speed_max_(*sph_body.getSPHSystem().getSystemVariableByName<Real>("SystemMaximumSpeed")) {}
 //=================================================================================================//
 Real AdvectionTimeStepSizeForImplicitViscosity::reduce(size_t index_i, Real dt)
 {
@@ -76,6 +77,7 @@ Real AdvectionTimeStepSizeForImplicitViscosity::reduce(size_t index_i, Real dt)
 Real AdvectionTimeStepSizeForImplicitViscosity::outputResult(Real reduced_value)
 {
     Real speed_max = sqrt(reduced_value);
+    system_speed_max_ = SMAX(speed_max, system_speed_max_);
     return advectionCFL_ * smoothing_length_min_ / (SMAX(speed_max, speed_ref_) + TinyReal);
 }
 //=================================================================================================//

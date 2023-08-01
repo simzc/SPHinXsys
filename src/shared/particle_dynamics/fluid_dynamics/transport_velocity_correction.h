@@ -60,9 +60,15 @@ class TransportVelocityCorrectionInner : public LocalDynamics, public FluidDataI
     explicit TransportVelocityCorrectionInner(BaseInnerRelation &inner_relation, Real coefficient = 0.2)
         : LocalDynamics(inner_relation.getSPHBody()), FluidDataInner(inner_relation),
           pos_(particles_->pos_), indicator_(*particles_->getVariableByName<int>("Indicator")),
-          smoothing_length_sqr_(pow(sph_body_.sph_adaptation_->ReferenceSmoothingLength(), 2)),
-          coefficient_(coefficient), checkWithinScope(particles_){};
+          coefficient_(coefficient), checkWithinScope(particles_),
+          system_speed_max_(*sph_body_.getSPHSystem().getSystemVariableByName<Real>("SystemMaximumSpeed")),
+          correction_magnitude_(0){};
     virtual ~TransportVelocityCorrectionInner(){};
+
+    void setupDynamics(Real dt = 0.0) override
+    {
+        correction_magnitude_ = 0.5 * coefficient_ * system_speed_max_ * system_speed_max_ * dt * dt;
+    };
 
     void interaction(size_t index_i, Real dt = 0.0)
     {
@@ -78,16 +84,17 @@ class TransportVelocityCorrectionInner : public LocalDynamics, public FluidDataI
                 acceleration_trans -= 2.0 * nablaW_ijV_j;
             }
 
-            pos_[index_i] += coefficient_ * smoothing_length_sqr_ * acceleration_trans;
+            pos_[index_i] += correction_magnitude_ * acceleration_trans;
         }
     };
 
   protected:
     StdLargeVec<Vecd> &pos_;
     StdLargeVec<int> &indicator_;
-    Real smoothing_length_sqr_;
     const Real coefficient_;
     ParticleScopeType checkWithinScope;
+    Real &system_speed_max_;
+    Real correction_magnitude_;
 };
 
 /**
@@ -124,7 +131,7 @@ class TransportVelocityCorrectionComplex
                 }
             }
 
-            this->pos_[index_i] += this->coefficient_ * this->smoothing_length_sqr_ * acceleration_trans;
+            this->pos_[index_i] += this->correction_magnitude_ * acceleration_trans;
         }
     };
 };
