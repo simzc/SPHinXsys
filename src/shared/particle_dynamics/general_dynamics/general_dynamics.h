@@ -142,24 +142,6 @@ class ParticleSmoothing : public LocalDynamics, public GeneralDataDelegateInner
 };
 
 /**
- * @class VelocityBoundCheck
- * @brief  check whether particle velocity within a given bound
- */
-class VelocityBoundCheck : public LocalDynamicsReduce<bool, ReduceOR>,
-                           public GeneralDataDelegateSimple
-{
-  protected:
-    StdLargeVec<Vecd> &vel_;
-    Real velocity_bound_;
-
-  public:
-    VelocityBoundCheck(SPHBody &sph_body, Real velocity_bound);
-    virtual ~VelocityBoundCheck(){};
-
-    bool reduce(size_t index_i, Real dt = 0.0);
-};
-
-/**
  * @class 	UpperFrontInXDirection
  * @brief 	Get the upper front In X Direction for a SPH body
  *			TODO: a test using this method

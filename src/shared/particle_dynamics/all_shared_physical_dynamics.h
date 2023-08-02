@@ -32,6 +32,7 @@
 #define ALL_SHARED_PHYSICAL_DYNAMICS_H
 
 #include "active_muscle_dynamics.h"
+#include "all_diagnosis_dynamics.h"
 #include "all_diffusion_reaction_dynamics.h"
 #include "all_fluid_dynamics.h"
 #include "all_general_dynamics.h"

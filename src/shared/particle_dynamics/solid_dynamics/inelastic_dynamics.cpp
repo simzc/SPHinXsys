@@ -7,8 +7,9 @@ namespace solid_dynamics
 {
 //=================================================================================================//
 PlasticIntegration1stHalf::
-    PlasticIntegration1stHalf(BaseInnerRelation &inner_relation) : Integration1stHalf(inner_relation),
-                                                                   plastic_solid_(DynamicCast<PlasticSolid>(this, elastic_solid_))
+    PlasticIntegration1stHalf(BaseInnerRelation &inner_relation)
+    : Integration1stHalf(inner_relation),
+      plastic_solid_(DynamicCast<PlasticSolid>(this, elastic_solid_))
 {
     numerical_dissipation_factor_ = 0.5;
 }

@@ -21,35 +21,34 @@
  *                                                                           *
  * ------------------------------------------------------------------------- */
 /**
- * @file 	inelastic_solid_dynamics.h
- * @brief 	Here, we define the algorithm classes for inelastic_solid dynamics.
- * @details We consider here a weakly compressible solids.
- * @author	Xiaojing Tang, Chi Zhang and Xiangyu Hu
+ * @file 	bound_diagnosis.h
+ * @brief 	diagnosis related bounding check
+ * @author	Xiangyu Hu
  */
 
-#pragma once
+#ifndef BOUND_DIAGNOSIS_H
+#define BOUND_DIAGNOSIS_H
 
-#include "elastic_dynamics.h"
-#include "inelastic_solid.h"
+#include "general_dynamics.h"
 
 namespace SPH
 {
-namespace solid_dynamics
-{
 /**
- * @class PlasticIntegration1stHalf
- * @brief computing stress relaxation process by verlet time stepping
- * This is the first step
+ * @class VelocityBoundCheck
+ * @brief  check whether particle velocity within a given bound
  */
-class PlasticIntegration1stHalf : public Integration1stHalf
+class VelocityBoundCheck : public LocalDynamicsReduce<bool, ReduceOR>,
+                           public GeneralDataDelegateSimple
 {
-  public:
-    PlasticIntegration1stHalf(BaseInnerRelation &inner_relation);
-    virtual ~PlasticIntegration1stHalf(){};
-    void initialization(size_t index_i, Real dt = 0.0);
-
   protected:
-    PlasticSolid &plastic_solid_;
+    StdLargeVec<Vecd> &vel_;
+    Real velocity_bound_;
+
+  public:
+    VelocityBoundCheck(SPHBody &sph_body, Real velocity_bound);
+    virtual ~VelocityBoundCheck(){};
+
+    bool reduce(size_t index_i, Real dt = 0.0);
 };
-} // namespace solid_dynamics
 } // namespace SPH
+#endif // BOUND_DIAGNOSIS_H
