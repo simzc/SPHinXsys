@@ -105,8 +105,8 @@ class EulerianIntegration1stHalfWithWall : public InteractionWithWall<EulerianIn
   public:
     // template for different combination of constructing body relations
     template <class BaseBodyRelationType>
-    EulerianIntegration1stHalfWithWall(BaseContactRelation &wall_contact_relation, BaseBodyRelationType &base_body_relation, Real limiter_parameter = 15.0)
-        : InteractionWithWall<EulerianIntegration1stHalfType>(wall_contact_relation, base_body_relation), limiter_input_(limiter_parameter){};
+    EulerianIntegration1stHalfWithWall(BaseContactRelation &wall_contact_relation, BaseBodyRelationType &base_relation, Real limiter_parameter = 15.0)
+        : InteractionWithWall<EulerianIntegration1stHalfType>(wall_contact_relation, base_relation), limiter_input_(limiter_parameter){};
     explicit EulerianIntegration1stHalfWithWall(ComplexRelation &fluid_wall_relation)
         : EulerianIntegration1stHalfWithWall(fluid_wall_relation.getContactRelation(), fluid_wall_relation.getInnerRelation()){};
     virtual ~EulerianIntegration1stHalfWithWall(){};
@@ -146,8 +146,8 @@ class EulerianIntegration2ndHalfWithWall : public InteractionWithWall<EulerianIn
   public:
     // template for different combination of constructing body relations
     template <class BaseBodyRelationType>
-    EulerianIntegration2ndHalfWithWall(BaseContactRelation &wall_contact_relation, BaseBodyRelationType &base_body_relation, Real limiter_parameter = 15.0)
-        : InteractionWithWall<EulerianIntegration2ndHalfType>(wall_contact_relation, base_body_relation), limiter_input_(limiter_parameter){};
+    EulerianIntegration2ndHalfWithWall(BaseContactRelation &wall_contact_relation, BaseBodyRelationType &base_relation, Real limiter_parameter = 15.0)
+        : InteractionWithWall<EulerianIntegration2ndHalfType>(wall_contact_relation, base_relation), limiter_input_(limiter_parameter){};
     explicit EulerianIntegration2ndHalfWithWall(ComplexRelation &fluid_wall_relation)
         : EulerianIntegration2ndHalfWithWall(fluid_wall_relation.getContactRelation(), fluid_wall_relation.getInnerRelation()){};
     virtual ~EulerianIntegration2ndHalfWithWall(){};

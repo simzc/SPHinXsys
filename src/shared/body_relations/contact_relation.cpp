@@ -1,4 +1,4 @@
-#include "contact_body_relation.h"
+#include "contact_relation.h"
 #include "base_particle_dynamics.h"
 #include "cell_linked_list.hpp"
 

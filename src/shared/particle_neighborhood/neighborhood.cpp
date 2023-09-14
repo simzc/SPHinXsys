@@ -7,7 +7,7 @@
 
 #include "base_particle_dynamics.h"
 #include "base_particles.hpp"
-#include "complex_body.h"
+#include "tree_body.h"
 
 namespace SPH
 {

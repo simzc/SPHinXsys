@@ -32,7 +32,7 @@
 #pragma once
 
 #include "base_body_part.h"
-#include "complex_body.h"
+#include "tree_body.h"
 #include "fluid_body.h"
 #include "observer_body.h"
 #include "solid_body.h"

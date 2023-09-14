@@ -85,11 +85,11 @@ template <class BaseIntegrationType>
 template <class BaseBodyRelationType, typename... Args>
 InteractionWithWall<BaseIntegrationType>::
     InteractionWithWall(BaseContactRelation &wall_contact_relation,
-                        BaseBodyRelationType &base_body_relation, Args &&...args)
-    : BaseIntegrationType(base_body_relation, std::forward<Args>(args)...),
+                        BaseBodyRelationType &base_relation, Args &&...args)
+    : BaseIntegrationType(base_relation, std::forward<Args>(args)...),
       FluidWallData(wall_contact_relation)
 {
-    if (&base_body_relation.getSPHBody() != &wall_contact_relation.getSPHBody())
+    if (&base_relation.getSPHBody() != &wall_contact_relation.getSPHBody())
     {
         std::cout << "\n Error: the two body_relations do not have the same source body!" << std::endl;
         std::cout << __FILE__ << ':' << __LINE__ << std::endl;

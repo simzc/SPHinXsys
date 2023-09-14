@@ -21,15 +21,15 @@
  *                                                                           *
  * ------------------------------------------------------------------------- */
 /**
- * @file 	inner_body_relation.h
+ * @file 	inner_relation.h
  * @brief 	The topological relations within the body.
  * @author	Chi Zhang and Xiangyu Hu
  */
 
-#ifndef INNER_BODY_RELATION_H
-#define INNER_BODY_RELATION_H
+#ifndef INNER_RELATION_H
+#define INNER_RELATION_H
 
-#include "base_body_relation.h"
+#include "base_relation.h"
 
 namespace SPH
 {
@@ -113,4 +113,4 @@ class TreeInnerRelation : public InnerRelation
     virtual void updateConfiguration() override;
 };
 } // namespace SPH
-#endif // INNER_BODY_RELATION_H
+#endif // INNER_RELATION_H

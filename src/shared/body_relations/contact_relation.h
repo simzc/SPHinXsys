@@ -21,18 +21,18 @@
  *                                                                           *
  * ------------------------------------------------------------------------- */
 /**
- * @file 	contact_body_relation.h
+ * @file 	contact_relation.h
  * @brief 	The topological relations between bodies,
  * 			and the corresponding local topologies (particle configurations)
  * 			are constructed in these classes.
  * @author	Chi Zhang and Xiangyu Hu
  */
 
-#ifndef CONTACT_BODY_RELATION_H
-#define CONTACT_BODY_RELATION_H
+#ifndef CONTACT_RELATION_H
+#define CONTACT_RELATION_H
 
-#include "base_body_relation.h"
-#include "inner_body_relation.h"
+#include "base_relation.h"
+#include "inner_relation.h"
 
 namespace SPH
 {
@@ -153,4 +153,4 @@ class AdaptiveContactRelation : public BaseContactRelation
     virtual void updateConfiguration() override;
 };
 } // namespace SPH
-#endif // CONTACT_BODY_RELATION_H
+#endif // CONTACT_RELATION_H

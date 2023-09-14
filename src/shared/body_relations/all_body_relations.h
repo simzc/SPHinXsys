@@ -26,12 +26,12 @@
  *          body relation used in SPHinXsys.
  * @author	Chi Zhang and Xiangyu Hu
  */
-#ifndef ALL_BODY_RELATIONS_H
-#define ALL_BODY_RELATIONS_H
+#ifndef ALL_RELATIONS_H
+#define ALL_RELATIONS_H
 
-#include "base_body_relation.h"
-#include "complex_body_relation.h"
-#include "contact_body_relation.h"
-#include "inner_body_relation.h"
+#include "base_relation.h"
+#include "complex_relation.h"
+#include "contact_relation.h"
+#include "inner_relation.h"
 
-#endif // ALL_BODY_RELATIONS_H
+#endif // ALL_RELATIONS_H

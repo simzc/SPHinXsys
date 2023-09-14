@@ -1,7 +1,7 @@
-#include "complex_body_relation.h"
+#include "complex_relation.h"
 #include "base_particle_dynamics.h"
-#include "contact_body_relation.h"
-#include "inner_body_relation.h"
+#include "contact_relation.h"
+#include "inner_relation.h"
 
 namespace SPH
 {

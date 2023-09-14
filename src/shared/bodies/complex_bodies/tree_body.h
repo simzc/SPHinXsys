@@ -21,16 +21,16 @@
  *                                                                           *
  * ------------------------------------------------------------------------- */
 /**
- * @file 	complex_body.h
- * @brief 	A complex body is characterized with a secondary structure,
+ * @file 	  tree_body.h
+ * @brief   A tree body is characterized with a secondary structure,
  * 			which can be imported externally or created according to specific rules.
  * 			The secondary structure will be used or even created by the corresponding
  * 			particle generator.
  * @author	Chi Zhang and Xiangyu Hu
  */
 
-#ifndef COMPLEX_BODY_H
-#define COMPLEX_BODY_H
+#ifndef TREE_BODY_H
+#define TREE_BODY_H
 
 #include "base_body.h"
 #include "base_body_part.h"
@@ -128,4 +128,4 @@ class TreeTerminates : public BodyPartByParticle
     virtual ~TreeTerminates(){};
 };
 } // namespace SPH
-#endif // COMPLEX_BODY_H
+#endif // TREE_BODY_H

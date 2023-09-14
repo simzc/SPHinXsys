@@ -54,7 +54,7 @@ class InteractionWithWall : public BaseIntegrationType, public FluidWallData
   public:
     template <class BaseBodyRelationType, typename... Args>
     InteractionWithWall(BaseContactRelation &wall_contact_relation,
-                        BaseBodyRelationType &base_body_relation, Args &&...args);
+                        BaseBodyRelationType &base_relation, Args &&...args);
     template <typename... Args>
     InteractionWithWall(ComplexRelation &fluid_wall_relation, Args &&...args)
         : InteractionWithWall(fluid_wall_relation.getContactRelation(),
@@ -171,10 +171,10 @@ class BaseExtendIntegration1stHalfWithWall : public BaseIntegration1stHalfWithWa
   public:
     template <class BaseBodyRelationType, typename... Args>
     BaseExtendIntegration1stHalfWithWall(BaseContactRelation &wall_contact_relation,
-                                         BaseBodyRelationType &base_body_relation,
+                                         BaseBodyRelationType &base_relation,
                                          Args &&...args, Real penalty_strength = 1.0)
         : BaseIntegration1stHalfWithWall<BaseIntegration1stHalfType>(
-              wall_contact_relation, base_body_relation, std::forward<Args>(args)...),
+              wall_contact_relation, base_relation, std::forward<Args>(args)...),
           penalty_strength_(penalty_strength)
     {
         this->particles_->registerVariable(non_cnsrv_acc_, "NonConservativeAcceleration");

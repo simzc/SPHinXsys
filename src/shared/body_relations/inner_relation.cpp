@@ -1,4 +1,4 @@
-#include "inner_body_relation.h"
+#include "inner_relation.h"
 #include "base_particle_dynamics.h"
 #include "base_particles.hpp"
 #include "cell_linked_list.hpp"

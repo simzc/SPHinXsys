@@ -21,15 +21,15 @@
  *                                                                           *
  * ------------------------------------------------------------------------- */
 /**
- * @file 	complex_body_relation.h
+ * @file 	complex_relation.h
  * @brief 	The topological relations within one body and to other bodies.
  * @author	Chi Zhang and Xiangyu Hu
  */
 
-#ifndef COMPLEX_BODY_RELATION_H
-#define COMPLEX_BODY_RELATION_H
+#ifndef COMPLEX_RELATION_H
+#define COMPLEX_RELATION_H
 
-#include "base_body_relation.h"
+#include "base_relation.h"
 
 namespace SPH
 {
@@ -66,4 +66,4 @@ class ComplexRelation : public SPHRelation
     virtual void updateConfiguration() override;
 };
 } // namespace SPH
-#endif // COMPLEX_BODY_RELATION_H
+#endif // COMPLEX_RELATION_H
