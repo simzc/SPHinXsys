@@ -47,13 +47,14 @@ namespace SPH
     class BaseDiffusion : public BaseMaterial
     {
     public:
-        BaseDiffusion(size_t diffusion_species_index, size_t gradient_species_index)
-            : BaseMaterial()
+        explicit BaseDiffusion(size_t diffusion_species_index, size_t gradient_species_index, Real rho0)
+            : BaseMaterial(rho0)
             , diffusion_species_index_(diffusion_species_index)
             , gradient_species_index_(gradient_species_index)
         {
             material_type_name_ = "BaseDiffusion";
         };
+        BaseDiffusion(size_t diffusion_species_index, size_t gradient_species_index) : BaseDiffusion(diffusion_species_index, gradient_species_index, 1.0){};
         virtual ~BaseDiffusion(){};
 
         size_t diffusion_species_index_;
@@ -107,13 +108,14 @@ namespace SPH
         IsotropicThermalDiffusion(size_t diffusion_species_index
                                 , size_t gradient_species_index
                                 , Real  thermal_conductivity = 1.0
-                                , Real thermal_capacity = 1.0 )
-            : BaseDiffusion(diffusion_species_index, gradient_species_index)
+                                , Real thermal_capacity = 1.0 
+                                , Real rho = 1.0)
+            : BaseDiffusion(diffusion_species_index, gradient_species_index, rho)
             , thermal_conductivity_(thermal_conductivity)
             , thermal_capacity_(thermal_capacity)
         {
             material_type_name_ = "IsotropicThermalDiffusion";
-            thermal_diffusivity_ = thermal_conductivity_ / thermal_capacity_ / ReferenceDensity() ;
+            thermal_diffusivity_ = thermal_conductivity_ / thermal_capacity_ / ReferenceDensity();
         };
         virtual ~IsotropicThermalDiffusion(){};
     
