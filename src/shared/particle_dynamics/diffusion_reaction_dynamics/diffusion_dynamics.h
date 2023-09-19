@@ -220,8 +220,8 @@ namespace SPH
         inline void interaction(size_t index_i, Real dt = 0.0);
     };
 
-    template <class DiffusionType, class ParticlesType, class KernelGradientType = KernelGradientContact>
-    using ThermalDiffusionRelaxationContact = DiffusionRelaxationContact<DiffusionType, ParticlesType, KernelGradientType, BaseThermalDiffusionRelaxation<ParticlesType>>;
+    template <class DiffusionType, class ParticlesType, class ContactParticlesType, class KernelGradientType = KernelGradientContact>
+    using ThermalDiffusionRelaxationContact = DiffusionRelaxationContact<DiffusionType, ParticlesType, ContactParticlesType, KernelGradientType, BaseThermalDiffusionRelaxation>;
 
     /**
      * @class DiffusionRelaxationDirichlet
@@ -241,8 +241,8 @@ namespace SPH
         inline void interaction(size_t index_i, Real dt = 0.0);
     };
 
-    template <class ParticlesType, class KernelGradientType = KernelGradientContact>
-    using ThermalDiffusionRelaxationDirichlet = DiffusionRelaxationDirichlet<ParticlesType, KernelGradientType, BaseThermalDiffusionRelaxation<ParticlesType>>;
+    template <class ParticlesType, class ContactParticlesType, class KernelGradientType = KernelGradientContact>
+    using ThermalDiffusionRelaxationDirichlet = DiffusionRelaxationDirichlet<ParticlesType, ContactParticlesType, KernelGradientType, BaseThermalDiffusionRelaxation>;
 
     /**
      * @class DiffusionRelaxationNeumann
@@ -266,8 +266,8 @@ namespace SPH
         inline void interaction(size_t index_i, Real dt = 0.0);
     };
 
-    template <class ParticlesType, class KernelGradientType = KernelGradientContact>
-    using ThermalDiffusionRelaxationNeumann = DiffusionRelaxationNeumann<ParticlesType, KernelGradientType, BaseThermalDiffusionRelaxation<ParticlesType>>;
+    template <class ParticlesType, class ContactParticlesType, class KernelGradientType = KernelGradientContact>
+    using ThermalDiffusionRelaxationNeumann = DiffusionRelaxationNeumann<ParticlesType, ContactParticlesType, KernelGradientType, BaseThermalDiffusionRelaxation>;
 
     /**
      * @class RelaxationOfAllDiffusionSpeciesRobinContact
@@ -292,8 +292,8 @@ namespace SPH
         inline void interaction(size_t index_i, Real dt = 0.0);
     };
 
-    template <class ParticlesType, class KernelGradientType = KernelGradientContact>
-    using ThermalDiffusionRelaxationRobin = DiffusionRelaxationRobin<ParticlesType, KernelGradientType, BaseThermalDiffusionRelaxation<ParticlesType>>;
+    template <class ParticlesType, class ContactParticlesType, class KernelGradientType = KernelGradientContact>
+    using ThermalDiffusionRelaxationRobin = DiffusionRelaxationRobin<ParticlesType, ContactParticlesType, KernelGradientType, BaseThermalDiffusionRelaxation>;
 
     /**
      * @class InitializationRK
