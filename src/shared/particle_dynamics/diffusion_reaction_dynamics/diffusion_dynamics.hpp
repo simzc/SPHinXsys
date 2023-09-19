@@ -183,9 +183,9 @@ namespace SPH
     {
         for (size_t m = 0; m < this->all_diffusions_.size(); ++m)
         {
-            Real diff_coeff_ij = contact_thermal_diffusivities_[contact_k][m].getInterParticleDiffusivity(particle_i, particle_i, e_ij);
+            Real diff_coeff_ij = contact_thermal_diffusivities_[contact_k][m].getContactDiffusivity(particle_i, particle_i, e_ij);
             Real phi_ij = (*this->gradient_species_[m])[particle_i] - (*contact_gradient_species_[contact_k][m])[particle_j];
-            (*this->diffusion_dt_[m])[particle_i] += diff_coeff_ij * phi_ij * surface_area_ij;
+            (*this->diffusion_dt_[m])[particle_i] += this->all_thermal_capcity_reciprocal_[m] * diff_coeff_ij * phi_ij * surface_area_ij;
         }
     }
     //=================================================================================================//
@@ -240,7 +240,7 @@ namespace SPH
             Real diff_coeff_ij =
                 this->all_diffusions_[m]->getInterParticleDiffusionCoeff(particle_i, particle_i, e_ij);
             Real phi_ij = (*this->gradient_species_[m])[particle_i] - (*contact_gradient_species_[k][m])[particle_j];
-            (*this->diffusion_dt_[m])[particle_i] += diff_coeff_ij * phi_ij * surface_area_ij;
+            (*this->diffusion_dt_[m])[particle_i] += this->all_thermal_capcity_reciprocal_[m] * diff_coeff_ij * phi_ij * surface_area_ij;
         }
     }
     //=================================================================================================//
@@ -288,7 +288,7 @@ namespace SPH
     {
         for (size_t m = 0; m < this->all_diffusions_.size(); ++m)
         {
-            (*this->diffusion_dt_[m])[particle_i] += surface_area_ij_Neumann * (*contact_heat_flux_[k])[particle_j];
+            (*this->diffusion_dt_[m])[particle_i] += this->all_thermal_capcity_reciprocal_[m] * surface_area_ij_Neumann * (*contact_heat_flux_[k])[particle_j];
         }
     }
     //=================================================================================================//
@@ -343,7 +343,7 @@ namespace SPH
         for (size_t m = 0; m < this->all_diffusions_.size(); ++m)
         {
             Real phi_ij = *contact_T_infinity_[k] - (*this->diffusion_species_[m])[particle_i];
-            (*this->diffusion_dt_[m])[particle_i] += (*contact_convection_[k])[particle_j] * phi_ij * surface_area_ij_Robin;
+            (*this->diffusion_dt_[m])[particle_i] += this->all_thermal_capcity_reciprocal_[m] * (*contact_convection_[k])[particle_j] * phi_ij * surface_area_ij_Robin;
         }
     }
     //=================================================================================================//
