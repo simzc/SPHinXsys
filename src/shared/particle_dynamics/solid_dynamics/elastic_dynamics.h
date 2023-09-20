@@ -275,10 +275,12 @@ class DecomposedIntegration1stHalf : public BaseIntegration1stHalf
         for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
         {
             size_t index_j = inner_neighborhood.j_[n];
-            Vecd shear_force_ij = correction_factor_ * elastic_solid_.ShearModulus() *
+            Vecd e_ij = inner_neighborhood.e_ij_[n];
+            Vecd shear_force_ij = 2.0 * correction_factor_ * elastic_solid_.ShearModulus() *
                                   (J_to_minus_2_over_dimension_[index_i] + J_to_minus_2_over_dimension_[index_j]) *
-                                  (pos_[index_i] - pos_[index_j]) / inner_neighborhood.r_ij_[n];
-            acceleration += ((stress_on_particle_[index_i] + stress_on_particle_[index_j]) * inner_neighborhood.e_ij_[n] + shear_force_ij) *
+                                  (pos_[index_i] - pos_[index_j]) / inner_neighborhood.r_ij_[n] /
+                                  e_ij.dot((Cp_[index_i] + Cp_[index_j]) * e_ij);
+            acceleration += ((stress_on_particle_[index_i] + stress_on_particle_[index_j]) * e_ij + shear_force_ij) *
                             inner_neighborhood.dW_ijV_j_[n] * inv_rho0_;
         }
         acc_[index_i] = acceleration;
@@ -286,7 +288,7 @@ class DecomposedIntegration1stHalf : public BaseIntegration1stHalf
 
   protected:
     StdLargeVec<Real> J_to_minus_2_over_dimension_;
-    StdLargeVec<Matd> stress_on_particle_, inverse_F_T_;
+    StdLargeVec<Matd> stress_on_particle_, Cp_;
     const Real correction_factor_ = 1.07;
 };
 
