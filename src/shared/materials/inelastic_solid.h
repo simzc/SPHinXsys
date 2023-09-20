@@ -32,8 +32,52 @@
 
 #include "elastic_solid.h"
 
+#include "base_particles.hpp"
 namespace SPH
 {
+class NoReturnMapping
+{
+  public:
+    NoReturnMapping(BaseParticles *base_particles)
+        : F_(*base_particles->getVariableByName<Matd>("DeformationGradient")){};
+    Matd ElasticLeftCauchyTensor(size_t index_i)
+    {
+        return F_[index_i] * F_[index_i].transpose();
+    };
+    Real ScalingFactor(size_t index_i, size_t index_j, const Vecd &e_ij)
+    {
+        return 1.0;
+    };
+
+  protected:
+    StdLargeVec<Matd> &F_;
+};
+
+class J2ReturnMapping : public NoReturnMapping
+{
+  public:
+    J2ReturnMapping(BaseParticles *base_particles)
+        : NoReturnMapping(base_particles)
+    {
+        base_particles->registerVariable(Cp_, "PlasticRightCauchyTensor");
+    };
+    Matd ElasticLeftCauchyTensor(size_t index_i)
+    {
+        Matd F_T = F_[index_i].transpose();
+        Matd be = F_[index_i] * F_T;
+        Cp_[index_i] = F_T * be.inverse() * F_[index_i];
+        return be;
+    };
+
+    Real ScalingFactor(size_t index_i, size_t index_j, const Vecd &e_ij)
+    {
+        return e_ij.dot((Cp_[index_i] + Cp_[index_j]) * e_ij);
+    };
+
+  protected:
+    StdLargeVec<Matd> Cp_;
+};
+
 /**
  * @class PlasticSolid
  * @brief Abstract class for a generalized plastic solid

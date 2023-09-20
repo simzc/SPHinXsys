@@ -260,14 +260,35 @@ class Integration1stHalfKirchhoff : public Integration1stHalf
  * it may be due to the determinate of deformation matrix become negative.
  * In this case, you may need decrease CFL number when computing time-step size.
  */
+template <class ReturnMappingType>
 class DecomposedIntegration1stHalf : public BaseIntegration1stHalf
 {
   public:
-    explicit DecomposedIntegration1stHalf(BaseInnerRelation &inner_relation);
+    explicit DecomposedIntegration1stHalf(BaseInnerRelation &inner_relation)
+        : BaseIntegration1stHalf(inner_relation), return_mapping_(particles_)
+    {
+        particles_->registerVariable(J_to_minus_2_over_dimension_, "DeterminantTerm");
+        particles_->registerVariable(stress_on_particle_, "StressOnParticle");
+    };
     virtual ~DecomposedIntegration1stHalf(){};
-    void initialization(size_t index_i, Real dt = 0.0);
+    void initialization(size_t index_i, Real dt = 0.0)
+    {
+        pos_[index_i] += vel_[index_i] * dt * 0.5;
+        F_[index_i] += dF_dt_[index_i] * dt * 0.5;
+        Real J = F_[index_i].determinant();
+        rho_[index_i] = rho0_ / J;
+        J_to_minus_2_over_dimension_[index_i] = pow(J * J, -OneOverDimensions);
 
-    inline void interaction(size_t index_i, Real dt = 0.0)
+        Matd be = return_mapping_.ElasticLeftCauchyTensor(index_i);
+        Matd inverse_F_T = F_[index_i].inverse().transpose();
+        stress_on_particle_[index_i] =
+            inverse_F_T * (elastic_solid_.VolumetricKirchhoff(J) -
+                           correction_factor_ * elastic_solid_.ShearModulus() *
+                               J_to_minus_2_over_dimension_[index_i] * be.trace() * OneOverDimensions) +
+            elastic_solid_.NumericalDampingLeftCauchy(F_[index_i], dF_dt_[index_i], smoothing_length_, index_i) * inverse_F_T;
+    };
+
+    void interaction(size_t index_i, Real dt = 0.0)
     {
         // including gravity and force from fluid
         Vecd acceleration = Vecd::Zero();
@@ -276,10 +297,10 @@ class DecomposedIntegration1stHalf : public BaseIntegration1stHalf
         {
             size_t index_j = inner_neighborhood.j_[n];
             Vecd e_ij = inner_neighborhood.e_ij_[n];
-            Vecd shear_force_ij = 2.0 * correction_factor_ * elastic_solid_.ShearModulus() *
+            Vecd shear_force_ij = correction_factor_ * elastic_solid_.ShearModulus() *
                                   (J_to_minus_2_over_dimension_[index_i] + J_to_minus_2_over_dimension_[index_j]) *
-                                  (pos_[index_i] - pos_[index_j]) / inner_neighborhood.r_ij_[n] /
-                                  e_ij.dot((Cp_[index_i] + Cp_[index_j]) * e_ij);
+                                  (pos_[index_i] - pos_[index_j]) / inner_neighborhood.r_ij_[n] *
+                                  return_mapping_.ScalingFactor(index_i, index_j, e_ij);
             acceleration += ((stress_on_particle_[index_i] + stress_on_particle_[index_j]) * e_ij + shear_force_ij) *
                             inner_neighborhood.dW_ijV_j_[n] * inv_rho0_;
         }
@@ -287,6 +308,7 @@ class DecomposedIntegration1stHalf : public BaseIntegration1stHalf
     };
 
   protected:
+    ReturnMappingType return_mapping_;
     StdLargeVec<Real> J_to_minus_2_over_dimension_;
     StdLargeVec<Matd> stress_on_particle_, Cp_;
     const Real correction_factor_ = 1.07;

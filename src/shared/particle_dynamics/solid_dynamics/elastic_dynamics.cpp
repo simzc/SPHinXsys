@@ -125,34 +125,6 @@ void Integration1stHalfCauchy::initialization(size_t index_i, Real dt)
                              inverse_F_T * B_[index_i];
 }
 //=================================================================================================//
-DecomposedIntegration1stHalf::
-    DecomposedIntegration1stHalf(BaseInnerRelation &inner_relation)
-    : BaseIntegration1stHalf(inner_relation)
-{
-    particles_->registerVariable(J_to_minus_2_over_dimension_, "DeterminantTerm");
-    particles_->registerVariable(stress_on_particle_, "StressOnParticle");
-    particles_->registerVariable(Cp_, "PlasticRightCauchyTensor");
-};
-//=================================================================================================//
-void DecomposedIntegration1stHalf::initialization(size_t index_i, Real dt)
-{
-    pos_[index_i] += vel_[index_i] * dt * 0.5;
-    F_[index_i] += dF_dt_[index_i] * dt * 0.5;
-    Matd F_T = F_[index_i].transpose();
-    Real J = F_[index_i].determinant();
-    rho_[index_i] = rho0_ / J;
-    J_to_minus_2_over_dimension_[index_i] = pow(J * J, -OneOverDimensions);
-
-    Matd be = F_[index_i] * F_T;
-    Cp_[index_i] = F_T * be.inverse() * F_[index_i];
-    Matd inverse_F_T = F_[index_i].inverse().transpose();
-    stress_on_particle_[index_i] =
-        inverse_F_T * (elastic_solid_.VolumetricKirchhoff(J) -
-                       correction_factor_ * elastic_solid_.ShearModulus() *
-                           J_to_minus_2_over_dimension_[index_i] * be.trace() * OneOverDimensions) +
-        elastic_solid_.NumericalDampingLeftCauchy(F_[index_i], dF_dt_[index_i], smoothing_length_, index_i) * inverse_F_T;
-}
-//=================================================================================================//
 void Integration2ndHalf::initialization(size_t index_i, Real dt)
 {
     pos_[index_i] += vel_[index_i] * dt * 0.5;
