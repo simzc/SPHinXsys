@@ -65,7 +65,7 @@ class J2ReturnMapping : public NoReturnMapping
     {
         Matd F_T = F_[index_i].transpose();
         Matd be = F_[index_i] * F_T;
-        Cp_[index_i] = F_T * be.inverse() * F_[index_i];
+        Cp_[index_i] = F_T * be.inverse() * F_[index_i] - be.inverse() * be.trace() * OneOverDimensions;
         return be;
     };
 

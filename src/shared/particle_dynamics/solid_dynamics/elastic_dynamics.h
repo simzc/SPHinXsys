@@ -279,13 +279,10 @@ class DecomposedIntegration1stHalf : public BaseIntegration1stHalf
         rho_[index_i] = rho0_ / J;
         J_to_minus_2_over_dimension_[index_i] = pow(J * J, -OneOverDimensions);
 
-        Matd be = return_mapping_.ElasticLeftCauchyTensor(index_i);
+        return_mapping_.ElasticLeftCauchyTensor(index_i);
         Matd inverse_F_T = F_[index_i].inverse().transpose();
-        stress_on_particle_[index_i] =
-            inverse_F_T * (elastic_solid_.VolumetricKirchhoff(J) -
-                           correction_factor_ * elastic_solid_.ShearModulus() *
-                               J_to_minus_2_over_dimension_[index_i] * be.trace() * OneOverDimensions) +
-            elastic_solid_.NumericalDampingLeftCauchy(F_[index_i], dF_dt_[index_i], smoothing_length_, index_i) * inverse_F_T;
+        stress_on_particle_[index_i] = inverse_F_T * elastic_solid_.VolumetricKirchhoff(J) +
+                                       elastic_solid_.NumericalDampingLeftCauchy(F_[index_i], dF_dt_[index_i], smoothing_length_, index_i) * inverse_F_T;
     };
 
     void interaction(size_t index_i, Real dt = 0.0)
@@ -310,7 +307,7 @@ class DecomposedIntegration1stHalf : public BaseIntegration1stHalf
   protected:
     ReturnMappingType return_mapping_;
     StdLargeVec<Real> J_to_minus_2_over_dimension_;
-    StdLargeVec<Matd> stress_on_particle_, Cp_;
+    StdLargeVec<Matd> stress_on_particle_;
     const Real correction_factor_ = 1.07;
 };
 
