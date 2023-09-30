@@ -30,6 +30,7 @@ DecomposedPlasticIntegration1stHalf::
       plastic_solid_(DynamicCast<PlasticSolid>(this, elastic_solid_))
 {
     particles_->registerVariable(scaling_matrix_, "ScalingMatrix");
+    particles_->registerVariable(bt_, "RightCauchy");
 }
 //=================================================================================================//
 void DecomposedPlasticIntegration1stHalf::initialization(size_t index_i, Real dt)
@@ -41,14 +42,15 @@ void DecomposedPlasticIntegration1stHalf::initialization(size_t index_i, Real dt
     rho_[index_i] = rho0_ * one_over_J;
 
     Matd be = plastic_solid_.ElasticLeftCauchy(F_[index_i], index_i, dt);
-    Matd bt = F_[index_i] * F_[index_i].transpose();
-    scaling_matrix_[index_i] = be * bt.inverse();
+    J_to_minus_2_over_dimension_[index_i] = pow(be.determinant(), -OneOverDimensions);
 
     Matd inverse_F_T = F_[index_i].inverse().transpose();
-    Matd deviatoric_PK = plastic_solid_.DeviatoricKirchhoff(be - be.trace() * OneOverDimensions * Matd::Identity());
+    scaling_matrix_[index_i] = inverse_F_T * be * inverse_F_T.transpose();
+    Real isotropic_stress = correction_factor_ * plastic_solid_.ShearModulus() *
+                            J_to_minus_2_over_dimension_[index_i] * be.trace() * OneOverDimensions;
     stress_on_particle_[index_i] =
-        inverse_F_T * elastic_solid_.VolumetricKirchhoff(J) +
-        (deviatoric_PK + elastic_solid_.NumericalDampingLeftCauchy(F_[index_i], dF_dt_[index_i], smoothing_length_, index_i)) * inverse_F_T;
+        inverse_F_T * plastic_solid_.VolumetricKirchhoff(J) - inverse_F_T * isotropic_stress * B_[index_i] +
+        plastic_solid_.NumericalDampingLeftCauchy(F_[index_i], dF_dt_[index_i], smoothing_length_, index_i) * inverse_F_T;
 }
 //=================================================================================================//
 void DecomposedPlasticIntegration1stHalf::interaction(size_t index_i, Real dt)
@@ -62,9 +64,10 @@ void DecomposedPlasticIntegration1stHalf::interaction(size_t index_i, Real dt)
         Real r_ij = inner_neighborhood.r_ij_[n];
         Vecd e_ij = inner_neighborhood.e_ij_[n];
         Vecd pair_distance = pos_[index_i] - pos_[index_j];
-        Vecd shear_force_ij = 100.0 * elastic_solid_.ShearModulus() *
-                              (0.5 * (scaling_matrix_[index_i] + scaling_matrix_[index_j]) * e_ij).dot(e_ij) *
-                              (pair_distance - 0.5 * (F_[index_i] + F_[index_j]) * r_ij * e_ij);
+        Matd pair_scaling = J_to_minus_2_over_dimension_[index_i] * scaling_matrix_[index_i] +
+                            J_to_minus_2_over_dimension_[index_j] * scaling_matrix_[index_j];
+        Vecd shear_force_ij = correction_factor_ * plastic_solid_.ShearModulus() *
+                              pair_scaling * pair_distance / r_ij;
         acceleration += ((stress_on_particle_[index_i] + stress_on_particle_[index_j]) * e_ij + shear_force_ij) *
                         inner_neighborhood.dW_ijV_j_[n] * inv_rho0_;
     }
