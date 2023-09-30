@@ -4,9 +4,9 @@
  * @author 	Liezhao Wu, Xiaojing Tang and Xiangyu Hu
  */
 
-#include "sphinxsys.h"   
-#include "viscous_inelastic_solid.h"        
-using namespace SPH;           
+#include "sphinxsys.h"
+#include "viscous_inelastic_solid.h"
+using namespace SPH;
 //----------------------------------------------------------------------
 //	Basic geometry parameters and numerical setup.
 //----------------------------------------------------------------------
@@ -25,11 +25,11 @@ StdVec<Vecd> observation_location = {cream_center};
 //----------------------------------------------------------------------
 Real gravity_g = 9.8;
 // shaving cream material
-Real rho0_s = 77.7;                /*  density  */
-Real Bulk_modulus = 1.09e5;        /*  bulk modulus */
-Real Shear_modulus = 290.0;        /*  shear modulus */
-Real yield_stress = 31.9;          /*  yield stress */
-Real viscosity = 27.2;             /* viscosity  */
+Real rho0_s = 77.7;                                                                                     /*  density  */
+Real Bulk_modulus = 1.09e5;                                                                             /*  bulk modulus */
+Real Shear_modulus = 290.0;                                                                             /*  shear modulus */
+Real yield_stress = 31.9;                                                                               /*  yield stress */
+Real viscosity = 27.2;                                                                                  /* viscosity  */
 Real Herschel_Bulkley_power = 0.22;                                                                     /*   Herschel_Bulkley_power. */
 Real Youngs_modulus = (9.0 * Shear_modulus * Bulk_modulus) / (3.0 * Bulk_modulus + Shear_modulus);      /*   Young's modulus  */
 Real poisson = (3.0 * Bulk_modulus - 2.0 * Shear_modulus) / (6.0 * Bulk_modulus + 2.0 * Shear_modulus); /*  Poisson's ratio */
@@ -86,7 +86,7 @@ int main(int ac, char *av[])
     /** Tag for running particle relaxation for the initially body-fitted distribution */
     sph_system.setRunParticleRelaxation(false);
     /** Tag for starting with relaxed body-fitted particles distribution */
-    sph_system.setReloadParticles(true);
+    sph_system.setReloadParticles(false);
     sph_system.handleCommandlineOptions(ac, av);
     IOEnvironment io_environment(sph_system);
     //----------------------------------------------------------------------
@@ -161,7 +161,7 @@ int main(int ac, char *av[])
     InteractionWithUpdate<KernelCorrectionMatrixInner> cream_corrected_configuration(cream_inner);
     ReduceDynamics<solid_dynamics::AcousticTimeStepSize> cream_get_time_step_size(cream, 0.2);
     /** stress relaxation for the balls. */
-    Dynamics1Level<solid_dynamics::PlasticIntegration1stHalf> cream_stress_relaxation_first_half(cream_inner);
+    Dynamics1Level<solid_dynamics::DecomposedPlasticIntegration1stHalf> cream_stress_relaxation_first_half(cream_inner);
     Dynamics1Level<solid_dynamics::Integration2ndHalf> cream_stress_relaxation_second_half(cream_inner);
     /** constraint for the cream. */
     BodyRegionByParticle platform(cream, makeShared<MultiPolygonShape>(createPlatformConstraint()));
@@ -227,7 +227,7 @@ int main(int ac, char *av[])
                 integration_time += dt;
                 GlobalStaticVariables::physical_time_ += dt;
 
-                 cream_displacement_recording.writeToFile(ite);
+                cream_displacement_recording.writeToFile(ite);
             }
         }
         TickCount t2 = TickCount::now();
@@ -249,7 +249,7 @@ int main(int ac, char *av[])
     else
     {
         cream_displacement_recording.testResult();
-    } 
+    }
 
     return 0;
 }

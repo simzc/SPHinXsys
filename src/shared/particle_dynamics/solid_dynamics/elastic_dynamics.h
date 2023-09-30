@@ -266,27 +266,11 @@ class DecomposedIntegration1stHalf : public BaseIntegration1stHalf
     explicit DecomposedIntegration1stHalf(BaseInnerRelation &inner_relation);
     virtual ~DecomposedIntegration1stHalf(){};
     void initialization(size_t index_i, Real dt = 0.0);
-
-    inline void interaction(size_t index_i, Real dt = 0.0)
-    {
-        // including gravity and force from fluid
-        Vecd acceleration = Vecd::Zero();
-        const Neighborhood &inner_neighborhood = inner_configuration_[index_i];
-        for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
-        {
-            size_t index_j = inner_neighborhood.j_[n];
-            Vecd shear_force_ij = correction_factor_ * elastic_solid_.ShearModulus() *
-                                  (J_to_minus_2_over_dimension_[index_i] + J_to_minus_2_over_dimension_[index_j]) *
-                                  (pos_[index_i] - pos_[index_j]) / inner_neighborhood.r_ij_[n];
-            acceleration += ((stress_on_particle_[index_i] + stress_on_particle_[index_j]) * inner_neighborhood.e_ij_[n] + shear_force_ij) *
-                            inner_neighborhood.dW_ijV_j_[n] * inv_rho0_;
-        }
-        acc_[index_i] = acceleration;
-    };
+    void interaction(size_t index_i, Real dt = 0.0);
 
   protected:
-    StdLargeVec<Real> J_to_minus_2_over_dimension_;
-    StdLargeVec<Matd> stress_on_particle_, inverse_F_T_;
+    StdLargeVec<Real> J_to_minus_2_over_dimension_, isotropic_stress_;
+    StdLargeVec<Matd> stress_on_particle_;
     const Real correction_factor_ = 1.07;
 };
 

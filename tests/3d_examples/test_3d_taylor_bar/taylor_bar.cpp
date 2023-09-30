@@ -15,7 +15,7 @@ int main(int ac, char *av[])
     /** Setup the system. Please the make sure the global domain bounds are correctly defined. */
     SPHSystem sph_system(system_domain_bounds, particle_spacing_ref);
     sph_system.setRunParticleRelaxation(false);
-    sph_system.setReloadParticles(false);
+    sph_system.setReloadParticles(true);
 #ifdef BOOST_AVAILABLE
     sph_system.handleCommandlineOptions(ac, av);
 #endif
@@ -88,7 +88,7 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     //	All numerical methods will be used in this case.
     //----------------------------------------------------------------------
-    Dynamics1Level<solid_dynamics::PlasticIntegration1stHalf> stress_relaxation_first_half(column_inner);
+    Dynamics1Level<solid_dynamics::DecomposedPlasticIntegration1stHalf> stress_relaxation_first_half(column_inner);
     Dynamics1Level<solid_dynamics::Integration2ndHalf> stress_relaxation_second_half(column_inner);
     InteractionDynamics<solid_dynamics::DynamicContactForceWithWall> column_wall_contact_force(column_wall_contact);
     SimpleDynamics<NormalDirectionFromBodyShape> wall_normal_direction(wall);
@@ -175,7 +175,6 @@ int main(int ac, char *av[])
 
     write_displacement.testResult();
     write_velocity.testResult();
-
 
     return 0;
 }

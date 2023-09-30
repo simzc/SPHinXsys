@@ -131,7 +131,6 @@ DecomposedIntegration1stHalf::
 {
     particles_->registerVariable(J_to_minus_2_over_dimension_, "DeterminantTerm");
     particles_->registerVariable(stress_on_particle_, "StressOnParticle");
-    particles_->registerVariable(inverse_F_T_, "InverseTransposedDeformation");
 };
 //=================================================================================================//
 void DecomposedIntegration1stHalf::initialization(size_t index_i, Real dt)
@@ -143,12 +142,28 @@ void DecomposedIntegration1stHalf::initialization(size_t index_i, Real dt)
     rho_[index_i] = rho0_ * one_over_J;
     J_to_minus_2_over_dimension_[index_i] = pow(one_over_J * one_over_J, OneOverDimensions);
 
-    inverse_F_T_[index_i] = F_[index_i].inverse().transpose();
-    stress_on_particle_[index_i] =
-        inverse_F_T_[index_i] * (elastic_solid_.VolumetricKirchhoff(J) -
-                                 correction_factor_ * elastic_solid_.ShearModulus() * J_to_minus_2_over_dimension_[index_i] *
-                                     (F_[index_i] * F_[index_i].transpose()).trace() * OneOverDimensions) +
-        elastic_solid_.NumericalDampingLeftCauchy(F_[index_i], dF_dt_[index_i], smoothing_length_, index_i) * inverse_F_T_[index_i];
+    Matd inverse_F_T = F_[index_i].inverse().transpose();
+    Real isotropic_stress = correction_factor_ * elastic_solid_.ShearModulus() * J_to_minus_2_over_dimension_[index_i] *
+                            (F_[index_i] * F_[index_i].transpose()).trace() * OneOverDimensions;
+    stress_on_particle_[index_i] = inverse_F_T * (elastic_solid_.VolumetricKirchhoff(J) - isotropic_stress) +
+                                   elastic_solid_.NumericalDampingLeftCauchy(F_[index_i], dF_dt_[index_i], smoothing_length_, index_i) * inverse_F_T;
+}
+//=================================================================================================//
+void DecomposedIntegration1stHalf::interaction(size_t index_i, Real dt)
+{
+    // including gravity and force from fluid
+    Vecd acceleration = Vecd::Zero();
+    const Neighborhood &inner_neighborhood = inner_configuration_[index_i];
+    for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
+    {
+        size_t index_j = inner_neighborhood.j_[n];
+        Vecd shear_force_ij = correction_factor_ * elastic_solid_.ShearModulus() *
+                              (J_to_minus_2_over_dimension_[index_i] + J_to_minus_2_over_dimension_[index_j]) *
+                              (pos_[index_i] - pos_[index_j]) / inner_neighborhood.r_ij_[n];
+        acceleration += ((stress_on_particle_[index_i] + stress_on_particle_[index_j]) * inner_neighborhood.e_ij_[n] + shear_force_ij) *
+                        inner_neighborhood.dW_ijV_j_[n] * inv_rho0_;
+    }
+    acc_[index_i] = acceleration;
 }
 //=================================================================================================//
 void Integration2ndHalf::initialization(size_t index_i, Real dt)
