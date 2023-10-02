@@ -45,11 +45,11 @@ void DecomposedPlasticIntegration1stHalf::initialization(size_t index_i, Real dt
     J_to_minus_2_over_dimension_[index_i] = pow(be.determinant(), -OneOverDimensions);
 
     Matd inverse_F_T = F_[index_i].inverse().transpose();
-    scaling_matrix_[index_i] = inverse_F_T * be * inverse_F_T.transpose();
+    scaling_matrix_[index_i] = be * inverse_F_T * inverse_F_T.transpose();
     Real isotropic_stress = correction_factor_ * plastic_solid_.ShearModulus() *
                             J_to_minus_2_over_dimension_[index_i] * be.trace() * OneOverDimensions;
     stress_on_particle_[index_i] =
-        inverse_F_T * plastic_solid_.VolumetricKirchhoff(J) - inverse_F_T * isotropic_stress * B_[index_i] +
+        inverse_F_T * plastic_solid_.VolumetricKirchhoff(J) - inverse_F_T * isotropic_stress +
         plastic_solid_.NumericalDampingLeftCauchy(F_[index_i], dF_dt_[index_i], smoothing_length_, index_i) * inverse_F_T;
 }
 //=================================================================================================//
