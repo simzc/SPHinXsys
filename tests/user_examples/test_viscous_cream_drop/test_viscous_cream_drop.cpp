@@ -190,7 +190,7 @@ int main(int ac, char *av[])
     int ite = 0;
     Real T0 = 0.8;
     Real end_time = T0;
-    Real output_interval = 0.01 * T0;
+    Real output_interval = 0.002 * T0;
     Real Dt = 0.1 * output_interval;
     Real dt = 0.0;
     //----------------------------------------------------------------------
