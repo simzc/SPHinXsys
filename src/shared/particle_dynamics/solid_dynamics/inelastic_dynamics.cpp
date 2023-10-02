@@ -30,7 +30,6 @@ DecomposedPlasticIntegration1stHalf::
       plastic_solid_(DynamicCast<PlasticSolid>(this, elastic_solid_))
 {
     particles_->registerVariable(scaling_matrix_, "ScalingMatrix");
-    particles_->registerVariable(bt_, "RightCauchy");
 }
 //=================================================================================================//
 void DecomposedPlasticIntegration1stHalf::initialization(size_t index_i, Real dt)
