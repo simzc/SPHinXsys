@@ -42,20 +42,16 @@ void DecomposedPlasticIntegration1stHalf::initialization(size_t index_i, Real dt
     rho_[index_i] = rho0_ * one_over_J;
 
     Matd be = plastic_solid_.ElasticLeftCauchy(F_[index_i], index_i, dt);
-    J_to_minus_2_over_dimension_[index_i] = pow(be.determinant(), -OneOverDimensions);
-
     Matd inverse_F_T = F_[index_i].inverse().transpose();
-    scaling_matrix_[index_i] = be * inverse_F_T * inverse_F_T.transpose();
-    Real isotropic_stress = correction_factor_ * plastic_solid_.ShearModulus() *
-                            J_to_minus_2_over_dimension_[index_i] * be.trace() * OneOverDimensions;
+    scaling_matrix_[index_i] = (be - 0.0 * Matd::Identity() * be.trace() * OneOverDimensions) * inverse_F_T * inverse_F_T.transpose();
+    Real isotropic_stress = correction_factor_ * plastic_solid_.ShearModulus();
     stress_on_particle_[index_i] =
-        inverse_F_T * plastic_solid_.VolumetricKirchhoff(J) - inverse_F_T * isotropic_stress +
+        inverse_F_T * plastic_solid_.VolumetricKirchhoff(J) - 1.0 * inverse_F_T * isotropic_stress +
         plastic_solid_.NumericalDampingLeftCauchy(F_[index_i], dF_dt_[index_i], smoothing_length_, index_i) * inverse_F_T;
 }
 //=================================================================================================//
 void DecomposedPlasticIntegration1stHalf::interaction(size_t index_i, Real dt)
 {
-    // including gravity and force from fluid
     Vecd acceleration = Vecd::Zero();
     const Neighborhood &inner_neighborhood = inner_configuration_[index_i];
     for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
@@ -64,8 +60,7 @@ void DecomposedPlasticIntegration1stHalf::interaction(size_t index_i, Real dt)
         Real r_ij = inner_neighborhood.r_ij_[n];
         Vecd e_ij = inner_neighborhood.e_ij_[n];
         Vecd pair_distance = pos_[index_i] - pos_[index_j];
-        Matd pair_scaling = J_to_minus_2_over_dimension_[index_i] * scaling_matrix_[index_i] +
-                            J_to_minus_2_over_dimension_[index_j] * scaling_matrix_[index_j];
+        Matd pair_scaling = scaling_matrix_[index_i] + scaling_matrix_[index_j];
         Vecd shear_force_ij = correction_factor_ * plastic_solid_.ShearModulus() *
                               pair_scaling * pair_distance / r_ij;
         acceleration += ((stress_on_particle_[index_i] + stress_on_particle_[index_j]) * e_ij + shear_force_ij) *
