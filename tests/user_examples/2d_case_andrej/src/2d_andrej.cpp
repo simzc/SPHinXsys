@@ -13,27 +13,42 @@ using namespace SPH;
 Real DL = 5.0;                        /**< Reference length. */
 Real DH = 3.0;                        /**< Reference and the height of main channel. */
 Real DL1 = 0.7 * DL;                  /**< The length of the main channel. */
-
+Real resolution_ref = 0.5;           /**< Initial reference particle spacing. */
+Real BW = resolution_ref * 4;         /**< Reference size of the emitter. */
 Real L_First = 150.0;
 Real L_Bar = 1.0;
 Real L_Second = 150.0;
-Real H_inlet = 5.0;
+Real H_inlet = 5.0; /**< Inflows region height. */
 Real H_Bar = 6.0;
 Real H_Wall_front = 40.0;
+Real H_initial = 2.0;
 
-Real resolution_ref = 0.5;           /**< Initial reference particle spacing. */
-Real BW = resolution_ref * 4;         /**< Reference size of the emitter. */
+Real L_inlet = 2.0 * BW;           /**< Inflow region length. */
+Real inlet_height = 0.0;      /**< Inflow location height */
+Real inlet_distance = -BW;    /**< Inflow location distance */
+Vec2d inlet_halfsize = Vec2d(0.5 * L_inlet, 0.5 * H_inlet);
+Vec2d inlet_translation = Vec2d(inlet_distance, H_initial) + inlet_halfsize;
+Vec2d disposer_halfsize = Vec2d(0.5 * BW, 0.5 * (H_inlet + H_Wall_front));
+Vec2d disposer_translation = Vec2d(L_First + L_Bar + L_Second, H_inlet + H_Wall_front) - disposer_halfsize;
+
+
+
 Real DL_sponge = resolution_ref * 20; /**< Reference size of the emitter buffer to impose inflow condition. */
 //-------------------------------------------------------
 //----------------------------------------------------------------------
 //	Global parameters on the fluid properties
 //----------------------------------------------------------------------
 Real rho0_f = 1.0; /**< Reference density of fluid. */
-Real U_f = 1.0;    /**< Characteristic velocity. */
+Real gravity_g = 1.0;
+//Real U_f = 1.0;    /**< Characteristic velocity. */
 /** Reference sound speed needs to consider the flow speed in the narrow channels. */
-Real c_f = 10.0 * U_f * SMAX(Real(1), DH / (Real(2.0) * (DL - DL1)));
+//Real c_f = 10.0 * U_f * SMAX(Real(1), DH / (Real(2.0) * (DL - DL1)));
+Real U_f = 2.0 * sqrt(gravity_g * (inlet_height + H_inlet)); /**< Characteristic velocity. */
 Real Re = 100.0;                    /**< Reynolds number. */
 Real mu_f = rho0_f * U_f * DH / Re; /**< Dynamics viscosity. */
+
+
+Real c_f = 10.0 * U_f;  
 //----------------------------------------------------------------------
 //	define geometry of SPH bodies
 //----------------------------------------------------------------------
@@ -52,13 +67,13 @@ std::vector<Vecd> inner_wall_shape{
 
 std::vector<Vecd> inner_boundary
 {
-    Vecd(-BW,0.0), Vecd(-BW, H_inlet), Vecd(0.0, H_inlet), Vecd(0.0, H_inlet + H_Wall_front), Vecd(L_First + L_Bar + L_Second, H_inlet + H_Wall_front),
-    Vecd(L_First + L_Bar + L_Second, 0.0), Vecd(L_First + L_Bar, 0.0), Vecd(L_First + L_Bar, H_Bar), Vecd(L_First, H_Bar), Vecd(L_First, 0.0), Vecd(-BW,0.0)
+    Vecd(0.0, 0.0), Vecd(0.0, H_initial), Vecd(-BW, H_initial), Vecd(-BW, H_initial + H_inlet), Vecd(0.0,H_initial + H_inlet), Vecd(0.0, H_initial + H_inlet + H_Wall_front), Vecd(L_First + L_Bar + L_Second, H_initial + H_inlet + H_Wall_front),
+    Vecd(L_First + L_Bar + L_Second, 0.0), Vecd(L_First + L_Bar, 0.0), Vecd(L_First + L_Bar, H_Bar), Vecd(L_First, H_Bar), Vecd(L_First, 0.0), Vecd(0.0, 0.0)
 };
 
 std::vector<Vecd> outer_boundary
 {
-    Vecd(-BW, -BW), Vecd(-BW, H_inlet + H_Wall_front + BW), Vecd(L_First + L_Bar + L_Second, H_inlet + H_Wall_front + BW), Vecd(L_First + L_Bar + L_Second, -BW),
+    Vecd(-BW, -BW), Vecd(-BW, H_initial + H_inlet + H_Wall_front + BW), Vecd(L_First + L_Bar + L_Second, H_initial + H_inlet + H_Wall_front + BW), Vecd(L_First + L_Bar + L_Second, -BW),
     Vecd(-BW, -BW)
 };
 //----------------------------------------------------------------------
@@ -92,7 +107,7 @@ class WallBoundaryInner : public MultiPolygonShape
     explicit WallBoundaryInner(const std::string &shape_name) : MultiPolygonShape(shape_name)
     {
         //multi_polygon_.addAPolygon(outer_boundary, ShapeBooleanOps::add);
-        multi_polygon_.addAPolygon(inner_boundary, ShapeBooleanOps::sub);
+        multi_polygon_.addAPolygon(inner_boundary, ShapeBooleanOps::add);
     }
 };
 
@@ -132,6 +147,19 @@ struct InflowVelocity
         return target_velocity;
     }
 };
+
+class InletInflowCondition : public fluid_dynamics::EmitterInflowCondition
+{
+  public:
+    InletInflowCondition(BodyAlignedBoxByParticle &aligned_box_part)
+        : EmitterInflowCondition(aligned_box_part) {}
+
+  protected:
+    virtual Vecd getTargetVelocity(Vecd &position, Vecd &velocity) override
+    {
+        return Vec2d(2.0, 0.0);
+    }
+};
 //-----------------------------------------------------------------------------------------------------------
 //	Main program starts here.
 //-----------------------------------------------------------------------------------------------------------
@@ -140,30 +168,36 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     //	Build up the environment of a SPHSystem with global controls.
     //----------------------------------------------------------------------
-    BoundingBox system_domain_bounds(Vec2d(- BW, - BW), Vec2d(L_First + L_Bar + L_Second, H_inlet + H_Wall_front + BW));
+    BoundingBox system_domain_bounds(Vec2d(-50.0, - 50.0), Vec2d(350.0, 350.0));
     SPHSystem sph_system(system_domain_bounds, resolution_ref);
     sph_system.handleCommandlineOptions(ac, av);
     IOEnvironment io_environment(sph_system);
-    BodyStatesRecordingToVtp write_body_states(io_environment, sph_system.real_bodies_);
     //----------------------------------------------------------------------
     //	Creating body, materials and particles.cd
     //----------------------------------------------------------------------
-    FluidBody water_block(sph_system, makeShared<WaterBlock>("WaterBody"));
+    FluidBody water_block(sph_system, makeShared<TransformShape<GeometricShapeBox>>(
+                                         Transform(inlet_translation), inlet_halfsize, "WaterBody"));
+    water_block.sph_adaptation_->resetKernel<KernelTabulated<KernelWendlandC2>>(20);
+    //FluidBody water_block(sph_system, makeShared<WaterBlock>("WaterBody"));
     water_block.defineParticlesAndMaterial<BaseParticles, WeaklyCompressibleFluid>(rho0_f, c_f, mu_f);
     water_block.generateParticles<ParticleGeneratorLattice>();
-
-    SolidBody wall_boundary_outer(sph_system, makeShared<WallBoundaryOuter>("Wall"));
-    wall_boundary_outer.defineBodyLevelSetShape()->writeLevelSet(io_environment);
-
-    SolidBody wall_boundary_inner(sph_system, makeShared<WallBoundaryInner>("Wall"));
-    wall_boundary_inner.defineBodyLevelSetShape()->writeLevelSet(io_environment);
  
+   /* SolidBody wall_boundary_inner(sph_system, makeShared<WallBoundaryInner>("Wall_Inner"));
+    wall_boundary_inner.defineBodyLevelSetShape()->writeLevelSet(io_environment);
+    wall_boundary_inner.defineParticlesAndMaterial<SolidParticles, Solid>();
+    wall_boundary_inner.generateParticles<ParticleGeneratorLattice>();*/
+
     SolidBody wall_boundary(sph_system, makeShared<WallBoundary>("Wall"));
-    wall_boundary.defineBodyLevelSetShape()->writeLevelSet(io_environment);
     wall_boundary.defineParticlesAndMaterial<SolidParticles, Solid>();
     wall_boundary.generateParticles<ParticleGeneratorLattice>();
-    write_body_states.writeToFile();
-
+    for (size_t i = 0; i != wall_boundary.getBaseParticles().pos_.size(); i++)
+    {
+        std::string output_folder = "./output";
+		std::string filefullpath = output_folder + "/" + "solid_boundary_" + ".dat";
+		std::ofstream out_file(filefullpath.c_str(), std::ios::app);
+		out_file <<wall_boundary.getBaseParticles().pos_[i][0]<<" "<<wall_boundary.getBaseParticles().pos_[i][1]<<" " << std::endl;
+		out_file << " \n";
+    }
 
     //----------------------------------------------------------------------
     //	Define body relation map.
@@ -180,47 +214,47 @@ int main(int ac, char *av[])
     //	Note that there may be data dependence on the constructors of these methods.
     //----------------------------------------------------------------------
     Dynamics1Level<fluid_dynamics::Integration1stHalfRiemannWithWall> pressure_relaxation(water_block_complex_relation);
-    Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWall> density_relaxation(water_block_complex_relation);
+    Dynamics1Level<fluid_dynamics::Integration2ndHalfRiemannWithWall> density_relaxation(water_block_complex_relation);
     InteractionDynamics<fluid_dynamics::ViscousAccelerationWithWall> viscous_acceleration(water_block_complex_relation);
-    InteractionDynamics<fluid_dynamics::TransportVelocityCorrectionComplex<BulkParticles>> transport_velocity_correction(water_block_complex_relation);
+    //InteractionDynamics<fluid_dynamics::TransportVelocityCorrectionComplex<BulkParticles>> transport_velocity_correction(water_block_complex_relation);
     InteractionWithUpdate<fluid_dynamics::SpatialTemporalFreeSurfaceIdentificationComplex>
         inlet_outlet_surface_particle_indicator(water_block_complex_relation);
-    InteractionWithUpdate<fluid_dynamics::DensitySummationFreeStreamComplex> update_density_by_summation(water_block_complex_relation);
+    InteractionWithUpdate<fluid_dynamics::DensitySummationFreeSurfaceComplex> update_density_by_summation(water_block_complex_relation);
     water_block.addBodyStateForRecording<Real>("Pressure"); // output for debug
     water_block.addBodyStateForRecording<int>("Indicator"); // output for debug
 
-    SimpleDynamics<TimeStepInitialization> initialize_a_fluid_step(water_block);
+    SharedPtr<Gravity> gravity_ptr = makeShared<Gravity>(Vecd(0.0, -gravity_g));
+    SimpleDynamics<TimeStepInitialization> initialize_a_fluid_step(water_block, gravity_ptr);
     ReduceDynamics<fluid_dynamics::AdvectionTimeStepSize> get_fluid_advection_time_step_size(water_block, U_f);
     ReduceDynamics<fluid_dynamics::AcousticTimeStepSize> get_fluid_time_step_size(water_block);
     SimpleDynamics<NormalDirectionFromBodyShape> wall_boundary_normal_direction(wall_boundary);
 
-    Vec2d emitter_halfsize = Vec2d(0.5 * BW, 0.5 * DH);
+    BodyAlignedBoxByParticle emitter(
+        water_block, makeShared<AlignedBoxShape>(Transform(inlet_translation), inlet_halfsize));
+    SimpleDynamics<InletInflowCondition> inflow_condition(emitter);
+    SimpleDynamics<fluid_dynamics::EmitterInflowInjection> emitter_injection(emitter, 550, 0);
+
+    /*Vec2d emitter_halfsize = Vec2d(0.5 * BW, 0.5 * DH);
     Vec2d emitter_translation = Vec2d(-DL_sponge, 0.0) + emitter_halfsize;
     BodyAlignedBoxByParticle emitter(
         water_block, makeShared<AlignedBoxShape>(Transform(Vec2d(emitter_translation)), emitter_halfsize));
-    SimpleDynamics<fluid_dynamics::EmitterInflowInjection> emitter_inflow_injection(emitter, 10, 0);
+    SimpleDynamics<fluid_dynamics::EmitterInflowInjection> emitter_inflow_injection(emitter, 10, 0);*/
 
-    Vec2d inlet_buffer_halfsize = Vec2d(0.5 * DL_sponge, 0.5 * DH);
+    /*Vec2d inlet_buffer_halfsize = Vec2d(0.5 * DL_sponge, 0.5 * DH);
     Vec2d inlet_buffer_translation = Vec2d(-DL_sponge, 0.0) + inlet_buffer_halfsize;
     BodyAlignedBoxByCell emitter_buffer(
         water_block, makeShared<AlignedBoxShape>(Transform(Vec2d(inlet_buffer_translation)), inlet_buffer_halfsize));
-    SimpleDynamics<fluid_dynamics::InflowVelocityCondition<InflowVelocity>> emitter_buffer_inflow_condition(emitter_buffer);
+    SimpleDynamics<fluid_dynamics::InflowVelocityCondition<InflowVelocity>> emitter_buffer_inflow_condition(emitter_buffer);*/
 
-    Vec2d disposer_up_halfsize = Vec2d(0.3 * DH, 0.5 * BW);
-    Vec2d disposer_up_translation = Vec2d(DL + 0.05 * DH, 2.0 * DH) - disposer_up_halfsize;
-    BodyAlignedBoxByCell disposer_up(
-        water_block, makeShared<AlignedBoxShape>(Transform(Vec2d(disposer_up_translation)), disposer_up_halfsize));
-    SimpleDynamics<fluid_dynamics::DisposerOutflowDeletion> disposer_up_outflow_deletion(disposer_up, yAxis);
+    BodyAlignedBoxByCell disposer(
+        water_block, makeShared<AlignedBoxShape>(Transform(Vec2d(disposer_translation)), disposer_halfsize));
+    SimpleDynamics<fluid_dynamics::DisposerOutflowDeletion> disposer_outflow_deletion(disposer, xAxis);
 
-    Vec2d disposer_down_halfsize = disposer_up_halfsize;
-    Vec2d disposer_down_translation = Vec2d(DL1 - 0.05 * DH, -DH) + disposer_down_halfsize;
-    BodyAlignedBoxByCell disposer_down(
-        water_block, makeShared<AlignedBoxShape>(Transform(Rotation2d(Pi), Vec2d(disposer_down_translation)), disposer_down_halfsize));
-    SimpleDynamics<fluid_dynamics::DisposerOutflowDeletion> disposer_down_outflow_deletion(disposer_down, yAxis);
     //----------------------------------------------------------------------
     //	Define the methods for I/O operations and observations of the simulation.
     //----------------------------------------------------------------------
-    //BodyStatesRecordingToVtp write_body_states(io_environment, sph_system.real_bodies_);
+    //IOEnvironment io_environment(sph_system);
+    BodyStatesRecordingToVtp write_body_states(io_environment, sph_system.real_bodies_);
     //----------------------------------------------------------------------
     //	Prepare the simulation with cell linked list, configuration
     //	and case specified initial condition if necessary.
@@ -228,6 +262,7 @@ int main(int ac, char *av[])
     sph_system.initializeSystemCellLinkedLists();
     sph_system.initializeSystemConfigurations();
     wall_boundary_normal_direction.exec();
+    inlet_outlet_surface_particle_indicator.exec();
     //----------------------------------------------------------------------
     //	Setup computing and initial conditions.
     //----------------------------------------------------------------------
@@ -244,7 +279,7 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     //	First output before the main loop.
     //----------------------------------------------------------------------
-    //write_body_states.writeToFile();
+    write_body_states.writeToFile();
     //----------------------------------------------------------------------------------------------------
     //	Main loop starts here.
     //----------------------------------------------------------------------------------------------------
@@ -256,23 +291,26 @@ int main(int ac, char *av[])
         {
             initialize_a_fluid_step.exec();
             Real Dt = get_fluid_advection_time_step_size.exec();
-            inlet_outlet_surface_particle_indicator.exec();
+            //inlet_outlet_surface_particle_indicator.exec();
             update_density_by_summation.exec();
-            viscous_acceleration.exec();
-            transport_velocity_correction.exec();
+            //viscous_acceleration.exec();
+            //transport_velocity_correction.exec();
 
             /** Dynamics including pressure relaxation. */
             Real relaxation_time = 0.0;
             while (relaxation_time < Dt)
             {
-                dt = SMIN(get_fluid_time_step_size.exec(), Dt - relaxation_time);
+                //dt = SMIN(get_fluid_time_step_size.exec(), Dt - relaxation_time);
+                
                 pressure_relaxation.exec(dt);
-                emitter_buffer_inflow_condition.exec();
+                inflow_condition.exec();
+                //emitter_buffer_inflow_condition.exec();
                 density_relaxation.exec(dt);
-
+                dt = get_fluid_time_step_size.exec();
                 relaxation_time += dt;
                 integration_time += dt;
                 GlobalStaticVariables::physical_time_ += dt;
+                //write_body_states.writeToFile();
             }
 
             if (number_of_iterations % screen_output_interval == 0)
@@ -284,9 +322,11 @@ int main(int ac, char *av[])
             number_of_iterations++;
 
             /** inflow injection*/
-            emitter_inflow_injection.exec();
+            emitter_injection.exec();
+            disposer_outflow_deletion.exec();
+            /*emitter_inflow_injection.exec();
             disposer_up_outflow_deletion.exec();
-            disposer_down_outflow_deletion.exec();
+            disposer_down_outflow_deletion.exec();*/
 
             /** Update cell linked list and configuration. */
             water_block.updateCellLinkedListWithParticleSort(100);
@@ -294,6 +334,7 @@ int main(int ac, char *av[])
         }
 
         TickCount t2 = TickCount::now();
+        inlet_outlet_surface_particle_indicator.exec();
         write_body_states.writeToFile();
         TickCount t3 = TickCount::now();
         interval += t3 - t2;

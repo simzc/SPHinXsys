@@ -12,15 +12,27 @@ using namespace SPH;
 //----------------------------------------------------------------------
 Real DL = 5.366;              /**< Tank length. */
 Real DH = 5.366;              /**< Tank height. */
-Real resolution_ref = 0.025;  /**< Initial reference particle spacing. */
+Real resolution_ref = 0.25;  /**< Initial reference particle spacing. */
 Real BW = resolution_ref * 4; /**< Extending width for wall boundary. */
 Real LL = 2.0 * BW;           /**< Inflow region length. */
 Real LH = 0.125;              /**< Inflows region height. */
-Real inlet_height = 0.0;      /**< Inflow location height */
+Real inlet_height = 0.1;      /**< Inflow location height */
 Real inlet_distance = -BW;    /**< Inflow location distance */
-Vec2d inlet_halfsize = Vec2d(0.5 * LL, 0.5 * LH);
+
+Real L_First = 150.0;
+Real L_Bar = 1.0;
+Real L_Second = 150.0;
+Real H_inlet = 5.0; /**< Inflows region height. */
+Real H_Bar = 6.0;
+Real H_Wall_front = 40.0;
+Real L_inlet = 2.0 * BW;           /**< Inflow region length. */
+//Vec2d inlet_halfsize = Vec2d(0.5 * LL, 0.5 * LH);
+Vec2d inlet_halfsize = Vec2d(0.5 * L_inlet, 0.5 * H_inlet);
 Vec2d inlet_translation = Vec2d(inlet_distance, inlet_height) + inlet_halfsize;
-BoundingBox system_domain_bounds(Vec2d(-BW, -BW), Vec2d(DL + BW, DH + BW));
+Vec2d disposer_halfsize = Vec2d(0.5 * BW, 0.5 * (H_inlet + H_Wall_front));
+Vec2d disposer_translation = Vec2d(L_First + L_Bar + L_Second, H_inlet + H_Wall_front) - disposer_halfsize;
+
+BoundingBox system_domain_bounds(Vec2d(-BW, -BW), Vec2d(L_First + L_Bar + L_Second + BW, H_inlet + H_Wall_front + BW));
 // observer location
 StdVec<Vecd> observation_location = {Vecd(DL, 0.2)};
 Real rho0_f = 1.0;                                      /**< Reference density of fluid. */
@@ -54,19 +66,58 @@ std::vector<Vecd> CreateInnerWallShape()
 
     return inner_wall_shape;
 }
+
+std::vector<Vecd> inner_boundary
+{
+    Vecd(0.0, 0.0), Vecd(0.0, H_inlet + H_Wall_front), Vecd(L_First + L_Bar + L_Second, H_inlet + H_Wall_front),
+    Vecd(L_First + L_Bar + L_Second, 0.0), Vecd(L_First + L_Bar, 0.0), Vecd(L_First + L_Bar, H_Bar), Vecd(L_First, H_Bar), Vecd(L_First, 0.0), Vecd(0.0, 0.0)
+};
+
+std::vector<Vecd> outer_boundary
+{
+    Vecd(-BW, -BW), Vecd(-BW, H_inlet + H_Wall_front + BW), Vecd(L_First + L_Bar + L_Second + BW , H_inlet + H_Wall_front + BW), Vecd(L_First + L_Bar + L_Second + BW , -BW),
+    Vecd(-BW, -BW)
+};
+
 //----------------------------------------------------------------------
 //	Case-dependent wall boundary
 //----------------------------------------------------------------------
+//class WallBoundary : public MultiPolygonShape
+//{
+//  public:
+//    explicit WallBoundary(const std::string &shape_name) : MultiPolygonShape(shape_name)
+//    {
+//        multi_polygon_.addAPolygon(CreateOuterWallShape(), ShapeBooleanOps::add);
+//        multi_polygon_.addAPolygon(CreateInnerWallShape(), ShapeBooleanOps::sub);
+//        multi_polygon_.addABox(Transform(inlet_translation), inlet_halfsize, ShapeBooleanOps::sub);
+//    }
+//};
+
 class WallBoundary : public MultiPolygonShape
 {
   public:
     explicit WallBoundary(const std::string &shape_name) : MultiPolygonShape(shape_name)
     {
-        multi_polygon_.addAPolygon(CreateOuterWallShape(), ShapeBooleanOps::add);
-        multi_polygon_.addAPolygon(CreateInnerWallShape(), ShapeBooleanOps::sub);
+        multi_polygon_.addAPolygon(outer_boundary, ShapeBooleanOps::add);
+        multi_polygon_.addAPolygon(inner_boundary, ShapeBooleanOps::sub);
         multi_polygon_.addABox(Transform(inlet_translation), inlet_halfsize, ShapeBooleanOps::sub);
     }
 };
+
+Real h = 1.3 * resolution_ref;
+MultiPolygon createWaveProbeShape()
+{
+    std::vector<Vecd> pnts;
+    pnts.push_back(Vecd(L_First - h, 0.0));
+    pnts.push_back(Vecd(L_First - h, H_inlet + H_Wall_front));
+    pnts.push_back(Vecd(L_First + h, H_inlet + H_Wall_front));
+    pnts.push_back(Vecd(L_First + h, 0.0));
+    pnts.push_back(Vecd(L_First - h, 0.0));
+
+    MultiPolygon multi_polygon;
+    multi_polygon.addAPolygon(pnts, ShapeBooleanOps::add);
+    return multi_polygon;
+}
 //----------------------------------------------------------------------
 //	Inlet inflow condition
 //----------------------------------------------------------------------
@@ -79,7 +130,8 @@ class InletInflowCondition : public fluid_dynamics::EmitterInflowCondition
   protected:
     virtual Vecd getTargetVelocity(Vecd &position, Vecd &velocity) override
     {
-        return Vec2d(0.5, 0.0);
+        //return Vec2d((1.0 / sqrt(0.1)), 0.0);
+        return Vec2d(3.0, 0.0);
     }
 };
 //----------------------------------------------------------------------
@@ -97,12 +149,13 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     FluidBody water_body(sph_system, makeShared<TransformShape<GeometricShapeBox>>(
                                          Transform(inlet_translation), inlet_halfsize, "WaterBody"));
-    water_body.sph_adaptation_->resetKernel<KernelTabulated<KernelWendlandC2>>(20);
+    //water_body.sph_adaptation_->resetKernel<KernelTabulated<KernelWendlandC2>>(20);
     water_body.defineParticlesAndMaterial<BaseParticles, WeaklyCompressibleFluid>(rho0_f, c_f);
     water_body.generateParticles<ParticleGeneratorLattice>();
     /**note that, as particle sort is activated (by default) for fluid particles,
      * the output occasionally does not reflect the real free surface indication due to sorting. */
     SolidBody wall(sph_system, makeShared<WallBoundary>("Wall"));
+    //wall.defineAdaptationRatios(1.3, 3);
     wall.defineParticlesAndMaterial<SolidParticles, Solid>();
     wall.generateParticles<ParticleGeneratorLattice>();
 
@@ -124,6 +177,7 @@ int main(int ac, char *av[])
     Dynamics1Level<fluid_dynamics::Integration1stHalfRiemannWithWall> pressure_relaxation(water_body_complex);
     Dynamics1Level<fluid_dynamics::Integration2ndHalfRiemannWithWall> density_relaxation(water_body_complex);
     InteractionWithUpdate<fluid_dynamics::DensitySummationFreeSurfaceComplex> update_density_by_summation(water_body_complex);
+    InteractionDynamics<fluid_dynamics::ViscousAccelerationWithWall> viscous_acceleration(water_body_complex);
     InteractionWithUpdate<fluid_dynamics::SpatialTemporalFreeSurfaceIdentificationComplex>
         indicate_free_surface(water_body_complex);
     water_body.addBodyStateForRecording<Real>("PositionDivergence"); // for debug
@@ -139,6 +193,10 @@ int main(int ac, char *av[])
     SimpleDynamics<InletInflowCondition> inflow_condition(emitter);
     SimpleDynamics<fluid_dynamics::EmitterInflowInjection> emitter_injection(emitter, 550, 0);
 
+    BodyAlignedBoxByCell disposer(
+        water_body, makeShared<AlignedBoxShape>(Transform(Vec2d(disposer_translation)), disposer_halfsize));
+    SimpleDynamics<fluid_dynamics::DisposerOutflowDeletion> disposer_outflow_deletion(disposer, xAxis);
+
     //----------------------------------------------------------------------
     //	File Output
     //----------------------------------------------------------------------
@@ -148,6 +206,11 @@ int main(int ac, char *av[])
         write_water_mechanical_energy(io_environment, water_body, gravity_ptr);
     RegressionTestDynamicTimeWarping<ObservedQuantityRecording<Real>>
         write_recorded_water_pressure("Pressure", io_environment, fluid_observer_contact_relation);
+
+    /** WaveProbes. */
+    BodyRegionByCell wave_probe_buffer_(water_body, makeShared<MultiPolygonShape>(createWaveProbeShape(), "WaveProbe"));
+    RegressionTestDynamicTimeWarping<ReducedQuantityRecording<UpperFrontInAxisDirection<BodyPartByCell>>>
+        wave_probe(io_environment, wave_probe_buffer_, "FreeSurfaceHeight");
     //----------------------------------------------------------------------
     //	Prepare the simulation with cell linked list, configuration
     //	and case specified initial condition if necessary.
@@ -156,12 +219,13 @@ int main(int ac, char *av[])
     sph_system.initializeSystemConfigurations();
     wall_normal_direction.exec();
     indicate_free_surface.exec();
+    
     //----------------------------------------------------------------------
     //	Time stepping control parameters.
     //----------------------------------------------------------------------
     size_t number_of_iterations = sph_system.RestartStep();
     int screen_output_interval = 100;
-    Real end_time = 50.0;
+    Real end_time = 500.0;
     Real output_interval = 0.1;
     Real dt = 0.0; /**< Default acoustic time step sizes. */
     /** statistics for computing CPU time. */
@@ -172,6 +236,7 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     body_states_recording.writeToFile();
     write_water_mechanical_energy.writeToFile(number_of_iterations);
+    wave_probe.writeToFile(number_of_iterations);
     //----------------------------------------------------------------------
     //	Main loop starts here.
     //----------------------------------------------------------------------
@@ -185,7 +250,7 @@ int main(int ac, char *av[])
             initialize_a_fluid_step.exec();
             Real Dt = get_fluid_advection_time_step_size.exec();
             update_density_by_summation.exec();
-
+            //viscous_acceleration.exec();
             /** Dynamics including pressure relaxation. */
             Real relaxation_time = 0.0;
             while (relaxation_time < Dt)
@@ -210,6 +275,7 @@ int main(int ac, char *av[])
 
             /** inflow emitter injection*/
             emitter_injection.exec();
+           // disposer_outflow_deletion.exec();
             /** Update cell linked list and configuration. */
 
             water_body.updateCellLinkedListWithParticleSort(100);
@@ -219,6 +285,7 @@ int main(int ac, char *av[])
 
         TickCount t2 = TickCount::now();
         write_water_mechanical_energy.writeToFile(number_of_iterations);
+        wave_probe.writeToFile(number_of_iterations);
         indicate_free_surface.exec();
         body_states_recording.writeToFile();
         write_recorded_water_pressure.writeToFile(number_of_iterations);
