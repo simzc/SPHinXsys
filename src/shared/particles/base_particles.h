@@ -33,7 +33,7 @@
 
 #include "base_data_package.h"
 #include "base_material.h"
-#include "base_variable.h"
+#include "all_variables.h"
 #include "particle_sorting.h"
 #include "sph_data_containers.h"
 #include "xml_parser.h"

@@ -29,9 +29,9 @@
 #ifndef SPH_DATA_CONTAINERS_H
 #define SPH_DATA_CONTAINERS_H
 
+#include "all_variables.h"
 #include "base_data_package.h"
 #include "base_data_type.h"
-#include "base_variable.h"
 
 namespace SPH
 {

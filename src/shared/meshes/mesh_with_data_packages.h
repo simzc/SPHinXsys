@@ -29,8 +29,8 @@
 #ifndef MESH_WITH_DATA_PACKAGES_H
 #define MESH_WITH_DATA_PACKAGES_H
 
+#include "all_variables.h"
 #include "base_mesh.h"
-#include "base_variable.h"
 #include "my_memory_pool.h"
 
 #include <algorithm>

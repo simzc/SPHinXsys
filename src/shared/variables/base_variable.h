@@ -27,8 +27,8 @@
  * @author	Xiangyu Hu
  */
 
-#ifndef BASE_VARIABLES_H
-#define BASE_VARIABLES_H
+#ifndef BASE_VARIABLE_H
+#define BASE_VARIABLE_H
 
 #include "base_data_package.h"
 
@@ -98,4 +98,4 @@ VariableType<DataType> *addVariableToAssemble(DataContainerAddressAssemble<Varia
     return new_variable;
 };
 } // namespace SPH
-#endif // BASE_VARIABLES_H
+#endif // BASE_VARIABLE_H
