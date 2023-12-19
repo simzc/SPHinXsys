@@ -34,6 +34,53 @@
 
 namespace SPH
 {
+template <typename T>
+struct HostType
+{
+    using type = T;
+};
+
+template <typename T>
+using Host = typename HostType<T>::type;
+
+template <typename T>
+struct DeviceType
+{
+    using type = T;
+};
+
+template <>
+struct DeviceType<Real>
+{
+    using type = DeviceReal;
+};
+
+template <>
+struct DeviceType<Vec2d>
+{
+    using type = DeviceVec2d;
+};
+
+template <>
+struct DeviceType<Vec3d>
+{
+    using type = DeviceVec3d;
+};
+
+template <>
+struct DeviceType<Mat2d>
+{
+    using type = DeviceMat2d;
+};
+
+template <>
+struct DeviceType<Mat3d>
+{
+    using type = DeviceMat3d;
+};
+
+template <typename T>
+using Device = typename DeviceType<T>::type;
 
 template <typename Type, class Enable = void>
 struct DataTypeEquivalence

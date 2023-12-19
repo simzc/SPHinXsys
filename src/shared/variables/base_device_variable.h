@@ -31,59 +31,26 @@
 #define BASE_DEVICE_VARIABLE_H
 
 #include "base_variable.h"
+#include "host_device_type_interface.h"
 #include "memory_transfer.h"
 
 namespace SPH
 {
-template <typename DeviceDataType>
-class BaseDeviceParticleDataContainerType
+template <typename DataType>
+class DeviceParticleDataContainer
 {
   public: // type aliasing
-    using type = DeviceDataType *;
-    BaseDeviceParticleDataContainerType(size_t size)
-        : device_addr_(allocateDeviceData<DeviceDataType>(size)){};
-    virtual ~BaseDeviceParticleDataContainerType()
+    explicit DeviceParticleDataContainer(size_t size)
+        : device_addr_(allocateDeviceData<Device<DataType>>(size)){};
+    virtual ~DeviceParticleDataContainer()
     {
         freeDeviceData(device_addr_);
     };
 
-    DeviceDataType *VariableAddress() { return device_addr_; }
+    Device<DataType> *VariableAddress() { return device_addr_; }
 
   protected:
-    DeviceDataType *device_addr_;
+    Device<DataType> *device_addr_;
 };
-
-template <typename DataType>
-class DeviceParticleDataContainerType : public BaseDeviceParticleDataContainerType<DataType>
-{
-};
-
-template <>
-class DeviceParticleDataContainerType<Real> : public BaseDeviceParticleDataContainerType<DeviceReal>
-{
-};
-
-template <>
-class DeviceParticleDataContainerType<Vec2d> : public BaseDeviceParticleDataContainerType<DeviceVec2d>
-{
-};
-
-template <>
-class DeviceParticleDataContainerType<Vec3d> : public BaseDeviceParticleDataContainerType<DeviceVec3d>
-{
-};
-
-template <>
-class DeviceParticleDataContainerType<Mat2d> : public BaseDeviceParticleDataContainerType<DeviceMat2d>
-{
-};
-
-template <>
-struct DeviceParticleDataContainerType<Mat3d> : public BaseDeviceParticleDataContainerType<DeviceMat3d>
-{
-};
-
-template <typename DataType>
-using DeviceParticleDataContainer = typename DeviceParticleDataContainerType<DataType>::type;
 } // namespace SPH
 #endif // BASE_DEVICE_VARIABLE_H
