@@ -22,7 +22,7 @@
  * ------------------------------------------------------------------------- */
 /**
  * @file 	host_device_type_interface.h
- * @brief 	This is the date type definition for SPHinXsys.
+ * @brief 	This is the data type definition for SPHinXsys.
  * @author	Xiangyu Hu
  */
 
@@ -34,6 +34,7 @@
 
 namespace SPH
 {
+
 template <typename T>
 struct HostType
 {
@@ -81,62 +82,6 @@ struct DeviceType<Mat3d>
 
 template <typename T>
 using Device = typename DeviceType<T>::type;
-
-template <typename Type, class Enable = void>
-struct DataTypeEquivalence
-{
-    static constexpr bool type_defined = false;
-    static_assert("Type non recognized as host or device type.");
-};
-
-template <class CheckType, class Type1, class Type2>
-using enable_if_is_either_t =
-    std::enable_if_t<std::disjunction_v<std::is_same<CheckType, Type1>, std::is_same<CheckType, Type2>>>;
-
-template <class TypeReal>
-struct DataTypeEquivalence<TypeReal, enable_if_is_either_t<TypeReal, Real, DeviceReal>>
-{
-    static constexpr bool type_defined = true;
-    using host_type = Real;
-    using device_type = DeviceReal;
-};
-
-template <class TypeVec2d>
-struct DataTypeEquivalence<TypeVec2d, enable_if_is_either_t<TypeVec2d, Vec2d, DeviceVec2d>>
-{
-    static constexpr bool type_defined = true;
-    using host_type = Vec2d;
-    using device_type = DeviceVec2d;
-};
-
-template <class TypeVec3d>
-struct DataTypeEquivalence<TypeVec3d, enable_if_is_either_t<TypeVec3d, Vec3d, DeviceVec3d>>
-{
-    static constexpr bool type_defined = true;
-    using host_type = Vec3d;
-    using device_type = DeviceVec3d;
-};
-
-template <class TypeMat2d>
-struct DataTypeEquivalence<TypeMat2d, enable_if_is_either_t<TypeMat2d, Vec2d, DeviceMat2d>>
-{
-    static constexpr bool type_defined = true;
-    using host_type = Mat2d;
-    using device_type = DeviceMat2d;
-};
-
-template <class TypeMat3d>
-struct DataTypeEquivalence<TypeMat3d, enable_if_is_either_t<TypeMat3d, Mat3d, DeviceMat3d>>
-{
-    static constexpr bool type_defined = true;
-    using host_type = Mat3d;
-    using device_type = DeviceMat3d;
-};
-
-template <class CheckType, class HostOrDeviceType>
-using enable_both_host_device_t =
-    enable_if_is_either_t<CheckType, typename DataTypeEquivalence<HostOrDeviceType>::host_type,
-                          typename DataTypeEquivalence<HostOrDeviceType>::device_type>;
 
 } // namespace SPH
 
