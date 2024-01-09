@@ -29,11 +29,9 @@
 #ifndef BASE_DEVICE_DATA_TYPE_H
 #define BASE_DEVICE_DATA_TYPE_H
 
-// Specialize Eigen for device
-#define EIGEN_RUNTIME_NO_MALLOC
-#define EIGEN_NO_MALLOC
-#define EIGEN_DONT_VECTORIZE
-#define EIGEN_NO_DEBUG
+#ifndef SYCL_DEVICE_ONLY
+#define SYCL_DEVICE_ONLY
+#endif
 
 #include <Eigen/Cholesky>
 #include <Eigen/Core>
