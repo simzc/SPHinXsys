@@ -33,6 +33,34 @@
 
 namespace SPH
 {
+
+class ForcePrior : public LocalDynamics
+{
+  protected:
+    StdLargeVec<Vecd> &force_prior_, &force_, &previous_force_;
+
+  public:
+    ForcePrior(SPHBody &sph_body, const std::string &force_name);
+    virtual ~ForcePrior(){};
+    void update(size_t index_i, Real dt = 0.0);
+};
+
+class GravityForce : public ForcePrior
+{
+  private:
+    SharedPtrKeeper<Gravity> gravity_ptr_keeper_;
+
+  protected:
+    StdLargeVec<Vecd> &pos_;
+    StdLargeVec<Real> &mass_;
+    Gravity *gravity_;
+
+  public:
+    GravityForce(SPHBody &sph_body, SharedPtr<Gravity> gravity_ptr = makeShared<Gravity>(Vecd::Zero()));
+    virtual ~GravityForce(){};
+    void update(size_t index_i, Real dt = 0.0);
+};
+
 /**
  * @class BaseTimeStepInitialization
  * @brief base class for time step initialization.

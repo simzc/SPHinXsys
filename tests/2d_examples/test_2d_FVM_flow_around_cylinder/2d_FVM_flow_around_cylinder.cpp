@@ -120,7 +120,7 @@ int main(int ac, char *av[])
                                                        ghost_creation.each_boundary_type_with_all_ghosts_eij_, ghost_creation.each_boundary_type_contact_real_index_);
     SimpleDynamics<TimeStepInitialization> initialize_a_fluid_step(water_block);
     ReduceDynamics<fluid_dynamics::WCAcousticTimeStepSizeInFVM> get_fluid_time_step_size(water_block, ansys_mesh.min_distance_between_nodes_);
-    InteractionDynamics<fluid_dynamics::ViscousAccelerationInner> viscous_acceleration(water_block_inner);
+    InteractionDynamics<fluid_dynamics::ViscousForceInner> viscous_force(water_block_inner);
     //----------------------------------------------------------------------
     //	Compute the force exerted on solid body due to fluid pressure and viscosity
     //----------------------------------------------------------------------
@@ -167,7 +167,7 @@ int main(int ac, char *av[])
             initialize_a_fluid_step.exec();
             Real dt = get_fluid_time_step_size.exec();
             boundary_condition_setup.resetBoundaryConditions();
-            viscous_acceleration.exec();
+            viscous_force.exec();
             pressure_relaxation.exec(dt);
             boundary_condition_setup.resetBoundaryConditions();
             density_relaxation.exec(dt);

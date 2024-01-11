@@ -50,10 +50,11 @@ void BaseParticles::initializeOtherVariables()
     /**
      *	add restart output particle data
      */
-    addVariableToList<Vecd>(variables_to_restart_, "Position");
-    addVariableToList<Vecd>(variables_to_restart_, "Velocity");
-    addVariableToList<Vecd>(variables_to_restart_, "Force");
-    addVariableToList<Real>(variables_to_restart_, "VolumetricMeasure");
+    addVariableToRestart<Vecd>("Position");
+    addVariableToRestart<Vecd>("Velocity");
+    addVariableToRestart<Vecd>("Force");
+    addVariableToRestart<Vecd>("PriorForce");
+    addVariableToRestart<Real>("VolumetricMeasure");
     //----------------------------------------------------------------------
     //		initialize unregistered data
     //----------------------------------------------------------------------

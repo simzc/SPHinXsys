@@ -154,9 +154,9 @@ int main(int ac, char *av[])
     Dynamics1Level<fluid_dynamics::MultiPhaseIntegration2ndHalfWithWallRiemann>
         air_density_relaxation(air_inner, air_water_contact, air_wall_contact);
     /** Viscous acceleration. */
-    InteractionDynamics<ComplexInteraction<fluid_dynamics::ViscousAcceleration<Inner<>, Contact<>, Contact<Wall>>>>
+    InteractionDynamics<ComplexInteraction<fluid_dynamics::ViscousForce<Inner<>, Contact<>, Contact<Wall>>>>
         water_viscous_acceleration(water_inner, water_air_contact, water_wall_contact);
-    InteractionDynamics<ComplexInteraction<fluid_dynamics::ViscousAcceleration<Inner<>, Contact<>, Contact<Wall>>>>
+    InteractionDynamics<ComplexInteraction<fluid_dynamics::ViscousForce<Inner<>, Contact<>, Contact<Wall>>>>
         air_viscous_acceleration(air_inner, air_water_contact, air_wall_contact);
     /** Surface tension. */
     InteractionDynamics<fluid_dynamics::SurfaceTensionStress> water_surface_tension_stress(water_air_contact, StdVec<Real>{Real(1.0)});

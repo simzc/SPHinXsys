@@ -230,7 +230,8 @@ class BaseLocalDynamics
 {
   public:
     explicit BaseLocalDynamics(DynamicsIdentifier &identifier)
-        : identifier_(identifier), sph_body_(identifier.getSPHBody()){};
+        : identifier_(identifier), sph_body_(identifier.getSPHBody()),
+          base_particles_(sph_body_.getBaseParticles()){};
     virtual ~BaseLocalDynamics(){};
     SPHBody &getSPHBody() { return sph_body_; };
     DynamicsIdentifier &getDynamicsIdentifier() { return identifier_; };
@@ -238,6 +239,7 @@ class BaseLocalDynamics
   protected:
     DynamicsIdentifier &identifier_;
     SPHBody &sph_body_;
+    BaseParticles &base_particles_;
 };
 using LocalDynamics = BaseLocalDynamics<SPHBody>;
 
