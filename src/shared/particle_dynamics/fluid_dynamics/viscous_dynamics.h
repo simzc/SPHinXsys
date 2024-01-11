@@ -31,6 +31,7 @@
 #define VISCOUS_DYNAMICS_H
 
 #include "base_fluid_dynamics.h"
+#include "time_step_initialization.h"
 
 namespace SPH
 {
@@ -41,7 +42,7 @@ class ViscousForce;
 
 template <class DataDelegationType>
 class ViscousForce<DataDelegationType>
-    : public LocalDynamics, public DataDelegationType
+    : public ForcePrior, public DataDelegationType
 {
   public:
     template <class BaseRelationType>
@@ -49,8 +50,8 @@ class ViscousForce<DataDelegationType>
     virtual ~ViscousForce(){};
 
   protected:
-    StdLargeVec<Real> &rho_, &mass_;
-    StdLargeVec<Vecd> &vel_, &force_prior_;
+    StdLargeVec<Real> &rho_, &Vol_;
+    StdLargeVec<Vecd> &vel_;
     Real mu_;
     Real smoothing_length_;
 };

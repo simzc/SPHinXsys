@@ -44,7 +44,6 @@ EulerianCompressibleViscousForceInner::
 //=================================================================================================//
 void EulerianCompressibleViscousForceInner::interaction(size_t index_i, Real dt)
 {
-    Real rho_i = rho_[index_i];
     const Vecd &vel_i = vel_[index_i];
 
     Vecd force = Vecd::Zero();
@@ -55,9 +54,9 @@ void EulerianCompressibleViscousForceInner::interaction(size_t index_i, Real dt)
         size_t index_j = inner_neighborhood.j_[n];
         // viscous force
         vel_derivative = (vel_i - vel_[index_j]) / (inner_neighborhood.r_ij_[n] + 0.01 * smoothing_length_);
-        force += 2.0 * mass_[index_i] * mu_ * vel_derivative * inner_neighborhood.dW_ijV_j_[n] / rho_i;
+        force += 2.0 * mu_ * vel_derivative * inner_neighborhood.dW_ijV_j_[n];
     }
-    dmom_dt_prior_[index_i] += force;
+    dmom_dt_prior_[index_i] += force * Vol_[index_i];
     dE_dt_prior_[index_i] += force.dot(vel_[index_i]);
 }
 //=================================================================================================//
