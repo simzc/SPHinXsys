@@ -1,4 +1,4 @@
-#include "surface_tension.h"
+#include "surface_tension.hpp"
 
 namespace SPH
 {
