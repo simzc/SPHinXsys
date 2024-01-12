@@ -31,7 +31,7 @@
 #define VISCOUS_DYNAMICS_H
 
 #include "base_fluid_dynamics.h"
-#include "time_step_initialization.h"
+#include "force_prior.h"
 
 namespace SPH
 {

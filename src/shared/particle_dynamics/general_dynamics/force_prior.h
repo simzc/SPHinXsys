@@ -21,15 +21,16 @@
  *                                                                           *
  * ------------------------------------------------------------------------- */
 /**
- * @file 	time_step_initialization.h
- * @brief 	TBD
- * @author	Chi Zhang and Xiangyu Hu
+ * @file force_prior.h
+ * @brief Here, we define the base methods for force prior
+ * (all forces on particle except that due to pressure or stress)
+ * used in SPH method.
+ * @author Xiangyu Hu
  */
-#ifndef TIME_STEP_INITIALIZATION_H
-#define TIME_STEP_INITIALIZATION_H
+#ifndef FORCE_PRIOR_H
+#define FORCE_PRIOR_H
 
 #include "base_general_dynamics.h"
-#include <limits>
 
 namespace SPH
 {
@@ -47,53 +48,14 @@ class ForcePrior : public LocalDynamics
 
 class GravityForce : public ForcePrior
 {
-  private:
-    SharedPtrKeeper<Gravity> gravity_ptr_keeper_;
-
   protected:
+    Gravity &gravity_;
     StdLargeVec<Vecd> &pos_;
     StdLargeVec<Real> &mass_;
-    Gravity *gravity_;
 
   public:
-    GravityForce(SPHBody &sph_body, SharedPtr<Gravity> gravity_ptr = makeShared<Gravity>(Vecd::Zero()));
+    explicit GravityForce(SPHBody &sph_body, Gravity &gravity);
     virtual ~GravityForce(){};
-    void update(size_t index_i, Real dt = 0.0);
-};
-
-/**
- * @class BaseTimeStepInitialization
- * @brief base class for time step initialization.
- */
-class BaseTimeStepInitialization : public LocalDynamics
-{
-  private:
-    SharedPtrKeeper<Gravity> gravity_ptr_keeper_;
-
-  protected:
-    Gravity *gravity_;
-
-  public:
-    BaseTimeStepInitialization(SPHBody &sph_body, SharedPtr<Gravity> &gravity_ptr)
-        : LocalDynamics(sph_body), gravity_(gravity_ptr_keeper_.assignPtr(gravity_ptr)){};
-    virtual ~BaseTimeStepInitialization(){};
-};
-
-/**
- * @class TimeStepInitialization
- * @brief initialize a time step for a body.
- */
-class TimeStepInitialization
-    : public BaseTimeStepInitialization,
-      public GeneralDataDelegateSimple
-{
-  protected:
-    StdLargeVec<Vecd> &pos_, &force_prior_;
-    StdLargeVec<Real> &mass_;
-
-  public:
-    explicit TimeStepInitialization(SPHBody &sph_body, SharedPtr<Gravity> gravity_ptr = makeShared<Gravity>(Vecd::Zero()));
-    virtual ~TimeStepInitialization(){};
     void update(size_t index_i, Real dt = 0.0);
 };
 
@@ -116,4 +78,4 @@ class RandomizeParticlePosition
     void update(size_t index_i, Real dt = 0.0);
 };
 } // namespace SPH
-#endif // TIME_STEP_INITIALIZATION_H
+#endif // FORCE_PRIOR_H

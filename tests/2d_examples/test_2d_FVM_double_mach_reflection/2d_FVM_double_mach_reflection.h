@@ -68,15 +68,12 @@ class DMFInitialCondition
   public:
     explicit DMFInitialCondition(SPHBody &sph_body)
         : FluidInitialCondition(sph_body), pos_(particles_->pos_), vel_(particles_->vel_),
-          rho_(particles_->rho_), Vol_(particles_->Vol_), mass_(particles_->mass_), 
+          rho_(particles_->rho_), Vol_(particles_->Vol_), mass_(particles_->mass_),
           p_(*particles_->getVariableByName<Real>("Pressure"))
     {
         particles_->registerVariable(mom_, "Momentum");
-        particles_->registerVariable(dmom_dt_, "MomentumChangeRate");
-        particles_->registerVariable(dmom_dt_prior_, "OtherMomentumChangeRate");
         particles_->registerVariable(E_, "TotalEnergy");
         particles_->registerVariable(dE_dt_, "TotalEnergyChangeRate");
-        particles_->registerVariable(dE_dt_prior_, "OtherEnergyChangeRate");
         gamma_ = heat_capacity_ratio;
     };
     void update(size_t index_i, Real dt)
@@ -109,8 +106,8 @@ class DMFInitialCondition
   protected:
     StdLargeVec<Vecd> &pos_, &vel_;
     StdLargeVec<Real> &rho_, &Vol_, &mass_, &p_;
-    StdLargeVec<Vecd> mom_, dmom_dt_, dmom_dt_prior_;
-    StdLargeVec<Real> E_, dE_dt_, dE_dt_prior_;
+    StdLargeVec<Vecd> mom_;
+    StdLargeVec<Real> E_, dE_dt_;
     Real gamma_;
 };
 
@@ -122,9 +119,9 @@ class DMFBoundaryConditionSetup : public BoundaryConditionSetupInFVM
   public:
     DMFBoundaryConditionSetup(BaseInnerRelationInFVM &inner_relation, vector<vector<size_t>> each_boundary_type_with_all_ghosts_index,
                               vector<vector<Vecd>> each_boundary_type_with_all_ghosts_eij_, vector<vector<size_t>> each_boundary_type_contact_real_index)
-        : BoundaryConditionSetupInFVM(inner_relation, each_boundary_type_with_all_ghosts_index, 
-            each_boundary_type_with_all_ghosts_eij_, each_boundary_type_contact_real_index),
-            E_(*particles_->getVariableByName<Real>("TotalEnergy")){};
+        : BoundaryConditionSetupInFVM(inner_relation, each_boundary_type_with_all_ghosts_index,
+                                      each_boundary_type_with_all_ghosts_eij_, each_boundary_type_contact_real_index),
+          E_(*particles_->getVariableByName<Real>("TotalEnergy")){};
     virtual ~DMFBoundaryConditionSetup(){};
 
     // Override these methods to define the specific boundary conditions
