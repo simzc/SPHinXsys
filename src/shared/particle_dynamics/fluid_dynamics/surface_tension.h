@@ -65,7 +65,6 @@ class SurfaceTensionForce<DataDelegationType>
 
   protected:
     StdLargeVec<Real> &rho_, &Vol_;
-    StdLargeVec<Vecd> &force_prior_;
     StdLargeVec<Vecd> &color_gradient_;
     StdLargeVec<Matd> &surface_tension_stress_;
 };
