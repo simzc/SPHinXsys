@@ -4,7 +4,7 @@
 
 namespace SPH
 {
-namespace fluid_dynamics
+  namespace fluid_dynamics
 {
 //=================================================================================================//
 template <class DataDelegationType>

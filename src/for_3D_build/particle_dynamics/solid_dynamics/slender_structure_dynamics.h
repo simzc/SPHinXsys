@@ -222,7 +222,7 @@ class BarStressRelaxationFirstHalf : public BaseBarRelaxation
             size_t index_j = inner_neighborhood.j_[n];
 
             force += mass_[index_i] * (global_stress_i + global_stress_[index_j]) *
-                            inner_neighborhood.dW_ijV_j_[n] * inner_neighborhood.e_ij_[n];
+                     inner_neighborhood.dW_ijV_j_[n] * inner_neighborhood.e_ij_[n];
             pseudo_normal_acceleration += (global_moment_i + global_moment_[index_j]) *
                                           inner_neighborhood.dW_ijV_j_[n] * inner_neighborhood.e_ij_[n];
             pseudo_b_normal_acceleration += (global_b_moment_i + global_b_moment_[index_j]) *
@@ -357,32 +357,6 @@ class ConstrainBarBodyRegionAlongAxis : public BaseLocalDynamics<BodyPartByParti
     StdLargeVec<Vecd> &rotation_b_, &angular_b_vel_, &dangular_b_vel_dt_;
 };
 
-/**
- * @class DistributingPointForcesToBar
- * @brief Distribute a series of point forces to its contact Bar bodies.
- */
-class DistributingPointForcesToBar : public LocalDynamics, public BarDataSimple
-{
-  protected:
-    std::vector<Vecd> point_forces_, reference_positions_, time_dependent_point_forces_;
-    Real time_to_full_external_force_;
-    Real particle_spacing_ref_, h_spacing_ratio_;
-    StdLargeVec<Vecd> &pos0_, &force_prior_;
-    StdLargeVec<Real> &thickness_;
-    std::vector<StdLargeVec<Real>> weight_;
-    std::vector<Real> sum_of_weight_;
-
-    void getWeight();
-
-  public:
-    DistributingPointForcesToBar(SPHBody &sph_body, std::vector<Vecd> point_forces,
-                                 std::vector<Vecd> reference_positions, Real time_to_full_external_force,
-                                 Real particle_spacing_ref, Real h_spacing_ratio = 1.6);
-    virtual ~DistributingPointForcesToBar(){};
-
-    virtual void setupDynamics(Real dt = 0.0) override;
-    void update(size_t index_i, Real dt = 0.0);
-};
 } // namespace slender_structure_dynamics
 } // namespace SPH
 #endif // THIN_STRUCTURE_DYNAMICS_H
