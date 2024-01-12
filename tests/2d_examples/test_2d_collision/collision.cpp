@@ -176,9 +176,9 @@ int main(int ac, char *av[])
     //	Define the main numerical methods used in the simulation.
     //	Note that there may be data dependence on the constructors of these methods.
     //----------------------------------------------------------------------
-    SharedPtr<Gravity> gravity_ptr = makeShared<Gravity>(Vecd(0.0, -gravity_g));
-    SimpleDynamics<TimeStepInitialization> free_ball_initialize_timestep(free_ball, gravity_ptr);
-    SimpleDynamics<TimeStepInitialization> damping_ball_initialize_timestep(damping_ball, gravity_ptr);
+    Gravity gravity(Vecd(0.0, -gravity_g));
+    SimpleDynamics<GravityForce> constant_gravity_force_free_ball(free_ball, gravity);
+    SimpleDynamics<GravityForce> constant_gravity_force_damping_ball(damping_ball, gravity);
     InteractionWithUpdate<KernelCorrectionMatrixInner> free_ball_corrected_configuration(free_ball_inner);
     InteractionWithUpdate<KernelCorrectionMatrixInner> damping_ball_corrected_configuration(damping_ball_inner);
     ReduceDynamics<solid_dynamics::AcousticTimeStepSize> free_ball_get_time_step_size(free_ball);
@@ -190,9 +190,9 @@ int main(int ac, char *av[])
     Dynamics1Level<solid_dynamics::Integration2ndHalf> damping_ball_stress_relaxation_second_half(damping_ball_inner);
     /** Algorithms for solid-solid contact. */
     InteractionDynamics<solid_dynamics::ContactDensitySummation> free_ball_update_contact_density(free_ball_contact);
-    InteractionDynamics<solid_dynamics::ContactForceFromWall> free_ball_compute_solid_contact_forces(free_ball_contact);
+    InteractionWithUpdate<solid_dynamics::ContactForceFromWall> free_ball_compute_solid_contact_forces(free_ball_contact);
     InteractionDynamics<solid_dynamics::ContactDensitySummation> damping_ball_update_contact_density(damping_ball_contact);
-    InteractionDynamics<solid_dynamics::ContactForceFromWall> damping_ball_compute_solid_contact_forces(damping_ball_contact);
+    InteractionWithUpdate<solid_dynamics::ContactForceFromWall> damping_ball_compute_solid_contact_forces(damping_ball_contact);
     /** Damping for one ball */
     DampingWithRandomChoice<InteractionSplit<DampingPairwiseInner<Vec2d>>>
         damping(0.5, damping_ball_inner, "Velocity", physical_viscosity);
@@ -235,6 +235,8 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     //	Main loop starts here.
     //----------------------------------------------------------------------
+    constant_gravity_force_free_ball.exec();
+    constant_gravity_force_damping_ball.exec();
     while (GlobalStaticVariables::physical_time_ < end_time)
     {
         Real integration_time = 0.0;
@@ -243,8 +245,6 @@ int main(int ac, char *av[])
             Real relaxation_time = 0.0;
             while (relaxation_time < Dt)
             {
-                free_ball_initialize_timestep.exec();
-                damping_ball_initialize_timestep.exec();
                 if (ite % 100 == 0)
                 {
                     std::cout << "N=" << ite << " Time: "

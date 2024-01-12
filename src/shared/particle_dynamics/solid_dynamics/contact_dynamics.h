@@ -30,6 +30,7 @@
 #ifndef CONTACT_DYNAMICS_H
 #define CONTACT_DYNAMICS_H
 
+#include "force_prior.h"
 #include "general_solid_dynamics.h"
 
 namespace SPH
@@ -163,37 +164,17 @@ class ShellContactDensity : public ContactDensityAccessor, public LocalDynamics,
  * @class SelfContactForce
  * @brief Computing the self-contact force.
  */
-class SelfContactForce : public LocalDynamics, public SolidDataInner
+class SelfContactForce : public ForcePrior, public SolidDataInner
 {
   public:
     explicit SelfContactForce(SelfSurfaceContactRelation &self_contact_relation);
     virtual ~SelfContactForce(){};
-
-    inline void interaction(size_t index_i, Real dt = 0.0)
-    {
-        Real Vol_i = Vol_[index_i];
-        Vecd vel_i = vel_[index_i];
-        Real p_i = self_contact_density_[index_i] * solid_.ContactStiffness();
-
-        /** Inner interaction. */
-        Vecd force = Vecd::Zero();
-        const Neighborhood &inner_neighborhood = inner_configuration_[index_i];
-        for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
-        {
-            size_t index_j = inner_neighborhood.j_[n];
-            const Vecd &e_ij = inner_neighborhood.e_ij_[n];
-            Real p_star = 0.5 * (p_i + self_contact_density_[index_j] * solid_.ContactStiffness());
-            Real impedance_p = 0.5 * contact_impedance_ * (vel_i - vel_[index_j]).dot(-e_ij);
-            // force to mimic pressure
-            force -= 2.0 * (p_star + impedance_p) * e_ij * Vol_i * inner_neighborhood.dW_ijV_j_[n];
-        }
-        force_prior_[index_i] += force;
-    };
+    void interaction(size_t index_i, Real dt = 0.0);
 
   protected:
     Solid &solid_;
     StdLargeVec<Real> &mass_, &self_contact_density_, &Vol_;
-    StdLargeVec<Vecd> &force_prior_, &vel_;
+    StdLargeVec<Vecd> &vel_;
     Real contact_impedance_;
 };
 
@@ -201,41 +182,16 @@ class SelfContactForce : public LocalDynamics, public SolidDataInner
  * @class ContactForce
  * @brief Computing the contact force.
  */
-class ContactForce : public LocalDynamics, public ContactDynamicsData
+class ContactForce : public ForcePrior, public ContactDynamicsData
 {
   public:
     explicit ContactForce(SurfaceContactRelation &solid_body_contact_relation);
     virtual ~ContactForce(){};
-
-    inline void interaction(size_t index_i, Real dt = 0.0)
-    {
-        Real Vol_i = Vol_[index_i];
-        Real p_i = contact_density_[index_i] * solid_.ContactStiffness();
-        /** Contact interaction. */
-        Vecd force = Vecd::Zero();
-        for (size_t k = 0; k < contact_configuration_.size(); ++k)
-        {
-            StdLargeVec<Real> &contact_density_k = *(contact_contact_density_[k]);
-            Solid *solid_k = contact_solids_[k];
-
-            Neighborhood &contact_neighborhood = (*contact_configuration_[k])[index_i];
-            for (size_t n = 0; n != contact_neighborhood.current_size_; ++n)
-            {
-                size_t index_j = contact_neighborhood.j_[n];
-                Vecd e_ij = contact_neighborhood.e_ij_[n];
-
-                Real p_star = 0.5 * (p_i + contact_density_k[index_j] * solid_k->ContactStiffness());
-                // force due to pressure
-                force -= 2.0 * p_star * e_ij * Vol_i * contact_neighborhood.dW_ijV_j_[n];
-            }
-        }
-        force_prior_[index_i] += force;
-    };
+    void interaction(size_t index_i, Real dt = 0.0);
 
   protected:
     Solid &solid_;
     StdLargeVec<Real> &contact_density_, &Vol_, &mass_;
-    StdLargeVec<Vecd> &force_prior_;
     StdVec<Solid *> contact_solids_;
     StdVec<StdLargeVec<Real> *> contact_contact_density_;
 };
@@ -246,75 +202,31 @@ class ContactForce : public LocalDynamics, public ContactDynamicsData
  *  Note that the body surface of the wall should be
  *  updated before computing the contact force.
  */
-class ContactForceFromWall : public LocalDynamics, public ContactWithWallData
+class ContactForceFromWall : public ForcePrior, public ContactWithWallData
 {
   public:
     explicit ContactForceFromWall(SurfaceContactRelation &solid_body_contact_relation);
     virtual ~ContactForceFromWall(){};
-
-    inline void interaction(size_t index_i, Real dt = 0.0)
-    {
-        Real Vol_i = Vol_[index_i];
-        Real p_i = contact_density_[index_i] * solid_.ContactStiffness();
-        /** Contact interaction. */
-        Vecd force = Vecd::Zero();
-        for (size_t k = 0; k < contact_configuration_.size(); ++k)
-        {
-            Neighborhood &contact_neighborhood = (*contact_configuration_[k])[index_i];
-            for (size_t n = 0; n != contact_neighborhood.current_size_; ++n)
-            {
-                Vecd e_ij = contact_neighborhood.e_ij_[n];
-
-                // force due to pressure
-                force -= 2.0 * p_i * e_ij * Vol_i * contact_neighborhood.dW_ijV_j_[n];
-            }
-        }
-        force_prior_[index_i] += force;
-    };
+    void interaction(size_t index_i, Real dt = 0.0);
 
   protected:
     Solid &solid_;
-    StdLargeVec<Real> &contact_density_, &Vol_, &mass_;
-    StdLargeVec<Vecd> &force_prior_;
+    StdLargeVec<Real> &contact_density_, &Vol_;
 };
 
 /**
  * @class ContactForceToWall
  * @brief Computing contact force acting on a rigid wall.
  */
-class ContactForceToWall : public LocalDynamics, public ContactDynamicsData
+class ContactForceToWall : public ForcePrior, public ContactDynamicsData
 {
   public:
     explicit ContactForceToWall(SurfaceContactRelation &solid_body_contact_relation);
     virtual ~ContactForceToWall(){};
-
-    inline void interaction(size_t index_i, Real dt = 0.0)
-    {
-        Real Vol_i = Vol_[index_i];
-        /** Contact interaction. */
-        Vecd force = Vecd::Zero();
-        for (size_t k = 0; k < contact_configuration_.size(); ++k)
-        {
-            StdLargeVec<Real> &contact_density_k = *(contact_contact_density_[k]);
-            Solid *solid_k = contact_solids_[k];
-
-            Neighborhood &contact_neighborhood = (*contact_configuration_[k])[index_i];
-            for (size_t n = 0; n != contact_neighborhood.current_size_; ++n)
-            {
-                size_t index_j = contact_neighborhood.j_[n];
-                Vecd e_ij = contact_neighborhood.e_ij_[n];
-
-                Real p_star = contact_density_k[index_j] * solid_k->ContactStiffness();
-                // force due to pressure
-                force -= 2.0 * p_star * e_ij * Vol_i * contact_neighborhood.dW_ijV_j_[n];
-            }
-        }
-        force_prior_[index_i] += force;
-    };
+    void interaction(size_t index_i, Real dt = 0.0);
 
   protected:
-    StdLargeVec<Real> &Vol_, &mass_;
-    StdLargeVec<Vecd> &force_prior_;
+    StdLargeVec<Real> &Vol_;
     StdVec<Solid *> contact_solids_;
     StdVec<StdLargeVec<Real> *> contact_contact_density_;
 };
@@ -331,49 +243,7 @@ class PairwiseFrictionFromWall : public LocalDynamics, public ContactWithWallDat
   public:
     PairwiseFrictionFromWall(BaseContactRelation &contact_relation, Real eta);
     virtual ~PairwiseFrictionFromWall(){};
-
-    inline void interaction(size_t index_i, Real dt = 0.0)
-    {
-        Real Vol_i = Vol_[index_i];
-        Real mass_i = mass_[index_i];
-        Vecd &vel_i = vel_[index_i];
-
-        std::array<Real, MaximumNeighborhoodSize> parameter_b;
-
-        /** Contact interaction. */
-        for (size_t k = 0; k < contact_configuration_.size(); ++k)
-        {
-            StdLargeVec<Vecd> &vel_k = *(wall_vel_n_[k]);
-            StdLargeVec<Vecd> &n_k = *(wall_n_[k]);
-            Neighborhood &contact_neighborhood = (*contact_configuration_[k])[index_i];
-            // forward sweep
-            for (size_t n = 0; n != contact_neighborhood.current_size_; ++n)
-            {
-                size_t index_j = contact_neighborhood.j_[n];
-                Vecd &e_ij = contact_neighborhood.e_ij_[n];
-
-                parameter_b[n] = eta_ * contact_neighborhood.dW_ijV_j_[n] * Vol_i * dt / contact_neighborhood.r_ij_[n];
-
-                // only update particle i
-                Vecd vel_derivative = (vel_i - vel_k[index_j]);
-                Vecd n_j = e_ij.dot(n_k[index_j]) > 0.0 ? n_k[index_j] : -1.0 * n_k[index_j];
-                vel_derivative -= SMAX(Real(0), vel_derivative.dot(n_j)) * n_j;
-                vel_i += parameter_b[n] * vel_derivative / (mass_i - 2.0 * parameter_b[n]);
-            }
-            // backward sweep
-            for (size_t n = contact_neighborhood.current_size_; n != 0; --n)
-            {
-                size_t index_j = contact_neighborhood.j_[n - 1];
-                Vecd &e_ij = contact_neighborhood.e_ij_[n];
-
-                // only update particle i
-                Vecd vel_derivative = (vel_i - vel_k[index_j]);
-                Vecd n_j = e_ij.dot(n_k[index_j]) > 0.0 ? n_k[index_j] : -1.0 * n_k[index_j];
-                vel_derivative -= SMAX(Real(0), vel_derivative.dot(n_j)) * n_j;
-                vel_i += parameter_b[n - 1] * vel_derivative / (mass_i - 2.0 * parameter_b[n - 1]);
-            }
-        }
-    };
+    void interaction(size_t index_i, Real dt = 0.0);
 
   protected:
     Real eta_; /**< friction coefficient */
@@ -388,55 +258,17 @@ class PairwiseFrictionFromWall : public LocalDynamics, public ContactWithWallDat
  *  Note that the body surface of the wall should be
  *  updated before computing the contact force.
  */
-class DynamicContactForceWithWall : public LocalDynamics, public ContactDynamicsData
+class DynamicContactForceWithWall : public ForcePrior, public ContactDynamicsData
 {
   public:
     explicit DynamicContactForceWithWall(SurfaceContactRelation &solid_body_contact_relation, Real penalty_strength = 1.0);
     virtual ~DynamicContactForceWithWall(){};
-
-    inline void interaction(size_t index_i, Real dt = 0.0)
-    {
-        Real Vol_i = Vol_[index_i];
-        Vecd vel_i = vel_[index_i];
-
-        /** Contact interaction. */
-        Vecd force = Vecd::Zero();
-        for (size_t k = 0; k < contact_configuration_.size(); ++k)
-        {
-            Real particle_spacing_j1 = 1.0 / contact_bodies_[k]->sph_adaptation_->ReferenceSpacing();
-            Real particle_spacing_ratio2 =
-                1.0 / (sph_body_.sph_adaptation_->ReferenceSpacing() * particle_spacing_j1);
-            particle_spacing_ratio2 *= 0.1 * particle_spacing_ratio2;
-
-            StdLargeVec<Vecd> &n_k = *(contact_n_[k]);
-            StdLargeVec<Vecd> &vel_n_k = *(contact_vel_[k]);
-
-            Neighborhood &contact_neighborhood = (*contact_configuration_[k])[index_i];
-            for (size_t n = 0; n != contact_neighborhood.current_size_; ++n)
-            {
-                size_t index_j = contact_neighborhood.j_[n];
-                Vecd e_ij = contact_neighborhood.e_ij_[n];
-                Vecd n_k_j = n_k[index_j];
-
-                Real impedance_p = 0.5 * impedance_ * (vel_i - vel_n_k[index_j]).dot(-n_k_j);
-                Real overlap = contact_neighborhood.r_ij_[n] * n_k_j.dot(e_ij);
-                Real delta = 2.0 * overlap * particle_spacing_j1;
-                Real beta = delta < 1.0 ? (1.0 - delta) * (1.0 - delta) * particle_spacing_ratio2 : 0.0;
-                Real penalty_p = penalty_strength_ * beta * fabs(overlap) * reference_pressure_;
-
-                // force due to pressure
-                force -= 2.0 * (impedance_p + penalty_p) * e_ij.dot(n_k_j) *
-                         n_k_j * Vol_i * contact_neighborhood.dW_ijV_j_[n];
-            }
-        }
-
-        force_prior_[index_i] += force;
-    };
+    void interaction(size_t index_i, Real dt = 0.0);
 
   protected:
     Solid &solid_;
-    StdLargeVec<Real> &Vol_, &mass_;
-    StdLargeVec<Vecd> &vel_, &force_prior_;
+    StdLargeVec<Real> &Vol_;
+    StdLargeVec<Vecd> &vel_;
     StdVec<StdLargeVec<Vecd> *> contact_vel_, contact_n_;
     Real penalty_strength_;
     Real impedance_, reference_pressure_;
