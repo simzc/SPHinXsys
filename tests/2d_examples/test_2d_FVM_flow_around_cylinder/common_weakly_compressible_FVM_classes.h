@@ -103,7 +103,7 @@ class BasePressureForceFromFluidInFVM : public BaseForceFromFluidInFVM
           p_(*particles_->getVariableByName<Real>("Pressure")), rho_(particles_->rho_), riemann_solver_(fluid_, fluid_),
           each_boundary_type_contact_real_index_(each_boundary_type_contact_real_index)
     {
-        particles_->registerVariable(force_from_fluid_, "PressureForceFromFluid");
+        particles_->registerVariable(force_from_fluid_, "PressureForceFromFluidNoRiemann");
     };
     Fluid &fluid_;
     StdLargeVec<Vecd> &vel_;
@@ -149,7 +149,7 @@ class BaseAllForceFromFluidInFVM : public PressureForceType
         : PressureForceType(inner_relation, each_boundary_type_contact_real_index),
           viscous_force_from_fluid_(viscous_force_from_fluid.getForceFromFluid())
     {
-        this->particles_->registerVariable(this->force_from_fluid_, "AllForceFromFluid");
+        this->particles_->registerVariable(this->force_from_fluid_, "AllForceFromFluidNoRiemann");
     };
     virtual ~BaseAllForceFromFluidInFVM(){};
 

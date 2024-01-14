@@ -78,7 +78,7 @@ int main(int ac, char *av[])
     InteractionDynamics<fluid_dynamics::ViscousForceWithWall> viscous_force(water_block_inner, water_block_contact);
     /** Fluid force on structure. */
     InteractionDynamics<solid_dynamics::ViscousForceFromFluid> viscous_force_on_solid(structure_contact);
-    InteractionDynamics<solid_dynamics::AllForceFromFluid> fluid_force_on_solid(structure_contact, viscous_force_on_solid);
+    InteractionDynamics<solid_dynamics::AllForceFromFluidNoRiemann> fluid_force_on_solid(structure_contact, viscous_force_on_solid);
     //----------------------------------------------------------------------
     //	Define the multi-body system
     //----------------------------------------------------------------------

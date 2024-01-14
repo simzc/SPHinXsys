@@ -94,7 +94,7 @@ int main(int ac, char *av[])
     InteractionDynamics<fluid_dynamics::ViscousForceWithWall> viscous_force(water_block_inner, water_block_contact);
     /** Fluid force on structure. */
     InteractionDynamics<solid_dynamics::ViscousForceFromFluid> viscous_force_on_solid(structure_contact);
-    InteractionDynamics<solid_dynamics::AllForceFromFluid> fluid_force_on_structure(structure_contact, viscous_force_on_solid);
+    InteractionDynamics<solid_dynamics::AllForceFromFluidNoRiemann> fluid_force_on_structure(structure_contact, viscous_force_on_solid);
     /** constrain region of the part of wall boundary. */
     BodyRegionByParticle wave_maker(wall_boundary, makeShared<MultiPolygonShape>(createWaveMakerShape()));
     SimpleDynamics<WaveMaking> wave_making(wave_maker);

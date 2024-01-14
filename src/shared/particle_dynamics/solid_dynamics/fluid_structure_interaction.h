@@ -78,18 +78,18 @@ class ViscousForceFromFluid : public LocalDynamics, public BaseForceFromFluid
 };
 
 /**
- * @class BasePressureForceFromFluid
- * @brief Template class fro computing the pressure force from the fluid with different Riemann solvers.
+ * @class PressureForceFromFluid
+ * @brief Template class for computing the pressure force from the fluid with different Riemann solvers.
  * The pressure force is added on the viscous force of the latter is computed.
  * This class is for FSI applications to achieve smaller solid dynamics
  * time step size compared to the fluid dynamics
  */
 template <class RiemannSolverType>
-class BasePressureForceFromFluid : public ForcePrior, public BaseForceFromFluid
+class PressureForceFromFluid : public ForcePrior, public BaseForceFromFluid
 {
   public:
-    explicit BasePressureForceFromFluid(BaseContactRelation &contact_relation);
-    virtual ~BasePressureForceFromFluid(){};
+    explicit PressureForceFromFluid(BaseContactRelation &contact_relation);
+    virtual ~PressureForceFromFluid(){};
     void interaction(size_t index_i, Real dt = 0.0);
 
   protected:
@@ -99,31 +99,31 @@ class BasePressureForceFromFluid : public ForcePrior, public BaseForceFromFluid
     StdVec<StdLargeVec<Vecd> *> contact_vel_, contact_force_prior_;
     StdVec<RiemannSolverType> riemann_solvers_;
 
-    BasePressureForceFromFluid(bool mostDerived, BaseContactRelation &contact_relation);
+    PressureForceFromFluid(bool mostDerived, BaseContactRelation &contact_relation);
 };
-using PressureForceFromFluid = BasePressureForceFromFluid<NoRiemannSolver>;
-using PressureForceFromFluidRiemann = BasePressureForceFromFluid<AcousticRiemannSolver>;
+using PressureForceFromFluidNoRiemann = PressureForceFromFluid<NoRiemannSolver>;
+using PressureForceFromFluidRiemann = PressureForceFromFluid<AcousticRiemannSolver>;
 
 /**
- * @class BaseAllForceFromFluid
+ * @class AllForceFromFluid
  * @brief template class for computing force from fluid with updated viscous force
  */
 template <class PressureForceType>
-class BaseAllForceFromFluid : public PressureForceType
+class AllForceFromFluid : public PressureForceType
 {
   public:
     template <class ViscousForceFromFluidType>
-    BaseAllForceFromFluid(BaseContactRelation &contact_relation,
-                          ViscousForceFromFluidType &viscous_force_from_fluid);
-    virtual ~BaseAllForceFromFluid(){};
+    AllForceFromFluid(BaseContactRelation &contact_relation,
+                      ViscousForceFromFluidType &viscous_force_from_fluid);
+    virtual ~AllForceFromFluid(){};
 
     void interaction(size_t index_i, Real dt = 0.0);
 
   protected:
     StdLargeVec<Vecd> &viscous_force_from_fluid_;
 };
-using AllForceFromFluid = BaseAllForceFromFluid<PressureForceFromFluid>;
-using AllForceFromFluidRiemann = BaseAllForceFromFluid<PressureForceFromFluidRiemann>;
+using AllForceFromFluidNoRiemann = AllForceFromFluid<PressureForceFromFluidNoRiemann>;
+using AllForceFromFluidRiemann = AllForceFromFluid<PressureForceFromFluidRiemann>;
 
 /**
  * @class TotalForceFromFluid

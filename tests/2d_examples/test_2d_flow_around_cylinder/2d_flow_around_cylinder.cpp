@@ -124,7 +124,7 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     /** Compute the force exerted on solid body due to fluid pressure and viscosity. */
     InteractionDynamics<solid_dynamics::ViscousForceFromFluid> viscous_force_on_cylinder(cylinder_contact);
-    InteractionDynamics<solid_dynamics::PressureForceFromFluid> pressure_force_on_cylinder(cylinder_contact);
+    InteractionDynamics<solid_dynamics::PressureForceFromFluidNoRiemann> pressure_force_on_cylinder(cylinder_contact);
     /** Computing viscous force acting on wall with wall model. */
     //----------------------------------------------------------------------
     //	Define the methods for I/O operations and observations of the simulation.

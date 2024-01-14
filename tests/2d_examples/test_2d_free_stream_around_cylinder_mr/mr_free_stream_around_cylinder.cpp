@@ -159,7 +159,7 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     SimpleDynamics<NormalDirectionFromBodyShape> cylinder_normal_direction(cylinder);
     /** Compute the force exerted on solid body due to fluid pressure and viscosity. */
-    InteractionDynamics<solid_dynamics::PressureForceFromFluid> fluid_pressure_force_on_inserted_body(cylinder_contact);
+    InteractionDynamics<solid_dynamics::PressureForceFromFluidNoRiemann> fluid_pressure_force_on_inserted_body(cylinder_contact);
     InteractionDynamics<solid_dynamics::ViscousForceFromFluid> fluid_viscous_force_on_inserted_body(cylinder_contact);
     //----------------------------------------------------------------------
     //	Define the methods for I/O operations and observations of the simulation.

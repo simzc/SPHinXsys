@@ -9,16 +9,16 @@ namespace solid_dynamics
 {
 //=================================================================================================//
 template <class RiemannSolverType>
-BasePressureForceFromFluid<RiemannSolverType>::
-    BasePressureForceFromFluid(BaseContactRelation &contact_relation)
-    : BasePressureForceFromFluid(true, contact_relation)
+PressureForceFromFluid<RiemannSolverType>::
+    PressureForceFromFluid(BaseContactRelation &contact_relation)
+    : PressureForceFromFluid(true, contact_relation)
 {
-    particles_->registerVariable(force_from_fluid_, "PressureForceFromFluid");
+    particles_->registerVariable(force_from_fluid_, "PressureForceFromFluidNoRiemann");
 }
 //=================================================================================================//
 template <class RiemannSolverType>
-BasePressureForceFromFluid<RiemannSolverType>::
-    BasePressureForceFromFluid(bool mostDerived, BaseContactRelation &contact_relation)
+PressureForceFromFluid<RiemannSolverType>::
+    PressureForceFromFluid(bool mostDerived, BaseContactRelation &contact_relation)
     : ForcePrior(contact_relation.getSPHBody(), "ForceFromFluid"),
       BaseForceFromFluid(contact_relation),
       mass_(particles_->mass_), vel_ave_(*particles_->AverageVelocity()),
@@ -36,7 +36,7 @@ BasePressureForceFromFluid<RiemannSolverType>::
 }
 //=================================================================================================//
 template <class RiemannSolverType>
-void BasePressureForceFromFluid<RiemannSolverType>::interaction(size_t index_i, Real dt)
+void PressureForceFromFluid<RiemannSolverType>::interaction(size_t index_i, Real dt)
 {
     Vecd force = Vecd::Zero();
     for (size_t k = 0; k < contact_configuration_.size(); ++k)
@@ -68,17 +68,17 @@ void BasePressureForceFromFluid<RiemannSolverType>::interaction(size_t index_i, 
 //=================================================================================================//
 template <class PressureForceType>
 template <class ViscousForceFromFluidType>
-BaseAllForceFromFluid<PressureForceType>::
-    BaseAllForceFromFluid(BaseContactRelation &contact_relation,
-                          ViscousForceFromFluidType &viscous_force_from_fluid)
+AllForceFromFluid<PressureForceType>::
+    AllForceFromFluid(BaseContactRelation &contact_relation,
+                      ViscousForceFromFluidType &viscous_force_from_fluid)
     : PressureForceType(false, contact_relation),
       viscous_force_from_fluid_(viscous_force_from_fluid.getForceFromFluid())
 {
-    this->particles_->registerVariable(this->force_from_fluid_, "AllForceFromFluid");
+    this->particles_->registerVariable(this->force_from_fluid_, "AllForceFromFluidNoRiemann");
 }
 //=================================================================================================//
 template <class PressureForceType>
-void BaseAllForceFromFluid<PressureForceType>::interaction(size_t index_i, Real dt)
+void AllForceFromFluid<PressureForceType>::interaction(size_t index_i, Real dt)
 {
     PressureForceType::interaction(index_i, dt);
     this->force_from_fluid_[index_i] += viscous_force_from_fluid_[index_i];
