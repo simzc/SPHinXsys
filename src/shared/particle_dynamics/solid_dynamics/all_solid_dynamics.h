@@ -32,7 +32,7 @@
 #include "constraint_dynamics.h"
 #include "contact_dynamics.h"
 #include "elastic_dynamics.h"
-#include "fluid_structure_interaction.h"
+#include "fluid_structure_interaction.hpp"
 #include "general_solid_dynamics.h"
 #include "inelastic_dynamics.h"
 #include "loading_dynamics.h"

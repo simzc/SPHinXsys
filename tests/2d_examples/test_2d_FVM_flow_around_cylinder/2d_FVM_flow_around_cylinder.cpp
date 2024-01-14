@@ -125,7 +125,7 @@ int main(int ac, char *av[])
     //	Compute the force exerted on solid body due to fluid pressure and viscosity
     //----------------------------------------------------------------------
     InteractionDynamics<fluid_dynamics::ViscousForceFromFluidInFVM> viscous_force_on_solid(water_block_inner, ghost_creation.each_boundary_type_contact_real_index_);
-    InteractionDynamics<fluid_dynamics::AllForceAccelerationFromFluidRiemannFVM> fluid_force_on_solid_update(water_block_inner, viscous_force_on_solid, ghost_creation.each_boundary_type_contact_real_index_);
+    InteractionDynamics<fluid_dynamics::AllForceFromFluidRiemannFVM> fluid_force_on_solid_update(water_block_inner, viscous_force_on_solid, ghost_creation.each_boundary_type_contact_real_index_);
     //----------------------------------------------------------------------
     //	Define the methods for I/O operations and observations of the simulation.
     //----------------------------------------------------------------------

@@ -128,7 +128,7 @@ int main(int ac, char *av[])
     InteractionWithUpdate<KernelCorrectionMatrixInner> fish_body_corrected_configuration(fish_inner);
     /** Compute the force exerted on solid body due to fluid pressure and viscosity. */
     InteractionDynamics<solid_dynamics::ViscousForceFromFluid> viscous_force_on_solid(fish_contact);
-    InteractionDynamics<solid_dynamics::AllForceAccelerationFromFluidRiemann>
+    InteractionDynamics<solid_dynamics::AllForceFromFluidRiemann>
         fluid_force_on_fish_update(fish_contact, viscous_force_on_solid);
     /** Compute the average velocity of the insert body. */
     solid_dynamics::AverageVelocityAndAcceleration average_velocity_and_acceleration(fish_body);
