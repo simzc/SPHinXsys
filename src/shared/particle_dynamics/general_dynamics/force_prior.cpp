@@ -3,12 +3,12 @@
 namespace SPH
 {
 //=================================================================================================//
-ForcePrior::ForcePrior(SPHBody &sph_body, const std::string &force_name)
-    : LocalDynamics(sph_body), force_prior_(base_particles_.force_prior_),
-      force_(*base_particles_.registerSharedVariable<Vecd>(force_name)),
-      previous_force_(*base_particles_.registerSharedVariable<Vecd>("Previous" + force_name))
+ForcePrior::ForcePrior(BaseParticles *base_particles, const std::string &force_name)
+    : force_prior_(base_particles->force_prior_),
+      force_(*base_particles->registerSharedVariable<Vecd>(force_name)),
+      previous_force_(*base_particles->registerSharedVariable<Vecd>("Previous" + force_name))
 {
-    base_particles_.addVariableToRestart<Vecd>("Previous" + force_name);
+    base_particles->addVariableToRestart<Vecd>("Previous" + force_name);
 }
 //=================================================================================================//
 void ForcePrior::update(size_t index_i, Real dt)
@@ -18,7 +18,8 @@ void ForcePrior::update(size_t index_i, Real dt)
 }
 //=================================================================================================//
 GravityForce::GravityForce(SPHBody &sph_body, Gravity &gravity)
-    : ForcePrior(sph_body, "GravityForce"), gravity_(gravity),
+    : LocalDynamics(sph_body), ForcePrior(&base_particles_, "GravityForce"),
+      GeneralDataDelegateSimple(sph_body), gravity_(gravity),
       pos_(base_particles_.pos_), mass_(base_particles_.mass_) {}
 //=================================================================================================//
 void GravityForce::update(size_t index_i, Real dt)

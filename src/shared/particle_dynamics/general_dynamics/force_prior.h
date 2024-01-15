@@ -35,18 +35,20 @@
 namespace SPH
 {
 
-class ForcePrior : public LocalDynamics
+class ForcePrior
 {
   protected:
     StdLargeVec<Vecd> &force_prior_, &force_, &previous_force_;
 
   public:
-    ForcePrior(SPHBody &sph_body, const std::string &force_name);
+    ForcePrior(BaseParticles *base_particles, const std::string &force_name);
     virtual ~ForcePrior(){};
     void update(size_t index_i, Real dt = 0.0);
 };
 
-class GravityForce : public ForcePrior
+class GravityForce : public LocalDynamics,
+                     public ForcePrior,
+                     public GeneralDataDelegateSimple
 {
   protected:
     Gravity &gravity_;

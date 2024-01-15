@@ -19,7 +19,7 @@ PressureForceFromFluid<RiemannSolverType>::
 template <class RiemannSolverType>
 PressureForceFromFluid<RiemannSolverType>::
     PressureForceFromFluid(bool mostDerived, BaseContactRelation &contact_relation)
-    : ForcePrior(contact_relation.getSPHBody(), "ForceFromFluid"),
+    : LocalDynamics(contact_relation.getSPHBody()), ForcePrior(&base_particles_, "ForceFromFluid"),
       BaseForceFromFluid(contact_relation),
       mass_(particles_->mass_), vel_ave_(*particles_->AverageVelocity()),
       force_ave_(*particles_->AverageForce()), n_(particles_->n_)

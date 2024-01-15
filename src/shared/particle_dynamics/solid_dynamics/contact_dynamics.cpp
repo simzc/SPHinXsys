@@ -77,7 +77,7 @@ ShellContactDensity::ShellContactDensity(SurfaceContactRelation &solid_body_cont
 }
 //=================================================================================================//
 SelfContactForce::SelfContactForce(SelfSurfaceContactRelation &self_contact_relation)
-    : ForcePrior(self_contact_relation.getSPHBody(), "SelfContactForce"),
+    : LocalDynamics(self_contact_relation.getSPHBody()), ForcePrior(&base_particles_, "SelfContactForce"),
       SolidDataInner(self_contact_relation),
       solid_(particles_->solid_), mass_(particles_->mass_),
       self_contact_density_(*particles_->getVariableByName<Real>("SelfContactDensity")),
@@ -105,7 +105,7 @@ void SelfContactForce::interaction(size_t index_i, Real dt)
 }
 //=================================================================================================//
 ContactForce::ContactForce(SurfaceContactRelation &solid_body_contact_relation)
-    : ForcePrior(solid_body_contact_relation.getSPHBody(), "ContactForce"),
+    : LocalDynamics(solid_body_contact_relation.getSPHBody()), ForcePrior(&base_particles_, "ContactForce"),
       ContactDynamicsData(solid_body_contact_relation),
       solid_(particles_->solid_),
       contact_density_(*particles_->getVariableByName<Real>("ContactDensity")),
@@ -143,7 +143,8 @@ void ContactForce::interaction(size_t index_i, Real dt)
 };
 //=================================================================================================//
 ContactForceFromWall::ContactForceFromWall(SurfaceContactRelation &solid_body_contact_relation)
-    : ForcePrior(solid_body_contact_relation.getSPHBody(), "ContactForceFromWall"),
+    : LocalDynamics(solid_body_contact_relation.getSPHBody()),
+      ForcePrior(&base_particles_, "ContactForceFromWall"),
       ContactWithWallData(solid_body_contact_relation), solid_(particles_->solid_),
       contact_density_(*particles_->getVariableByName<Real>("ContactDensity")),
       Vol_(particles_->Vol_) {}
@@ -168,7 +169,8 @@ void ContactForceFromWall::interaction(size_t index_i, Real dt)
 };
 //=================================================================================================//
 ContactForceToWall::ContactForceToWall(SurfaceContactRelation &solid_body_contact_relation)
-    : ForcePrior(solid_body_contact_relation.getSPHBody(), "ContactForceToWall"),
+    : LocalDynamics(solid_body_contact_relation.getSPHBody()),
+      ForcePrior(&base_particles_, "ContactForceToWall"),
       ContactDynamicsData(solid_body_contact_relation),
       Vol_(particles_->Vol_)
 {
@@ -260,7 +262,8 @@ void PairwiseFrictionFromWall::interaction(size_t index_i, Real dt)
 //=================================================================================================//
 DynamicContactForceWithWall::
     DynamicContactForceWithWall(SurfaceContactRelation &solid_body_contact_relation, Real penalty_strength)
-    : ForcePrior(solid_body_contact_relation.getSPHBody(), "DynamicContactForceWithWall"),
+    : LocalDynamics(solid_body_contact_relation.getSPHBody()),
+      ForcePrior(&base_particles_, "DynamicContactForceWithWall"),
       ContactDynamicsData(solid_body_contact_relation),
       solid_(particles_->solid_), Vol_(particles_->Vol_), vel_(particles_->vel_),
       penalty_strength_(penalty_strength)

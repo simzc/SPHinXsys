@@ -164,7 +164,7 @@ class ShellContactDensity : public ContactDensityAccessor, public LocalDynamics,
  * @class SelfContactForce
  * @brief Computing the self-contact force.
  */
-class SelfContactForce : public ForcePrior, public SolidDataInner
+class SelfContactForce : public LocalDynamics, public ForcePrior, public SolidDataInner
 {
   public:
     explicit SelfContactForce(SelfSurfaceContactRelation &self_contact_relation);
@@ -182,7 +182,7 @@ class SelfContactForce : public ForcePrior, public SolidDataInner
  * @class ContactForce
  * @brief Computing the contact force.
  */
-class ContactForce : public ForcePrior, public ContactDynamicsData
+class ContactForce : public LocalDynamics, public ForcePrior, public ContactDynamicsData
 {
   public:
     explicit ContactForce(SurfaceContactRelation &solid_body_contact_relation);
@@ -202,7 +202,7 @@ class ContactForce : public ForcePrior, public ContactDynamicsData
  *  Note that the body surface of the wall should be
  *  updated before computing the contact force.
  */
-class ContactForceFromWall : public ForcePrior, public ContactWithWallData
+class ContactForceFromWall : public LocalDynamics, public ForcePrior, public ContactWithWallData
 {
   public:
     explicit ContactForceFromWall(SurfaceContactRelation &solid_body_contact_relation);
@@ -218,7 +218,7 @@ class ContactForceFromWall : public ForcePrior, public ContactWithWallData
  * @class ContactForceToWall
  * @brief Computing contact force acting on a rigid wall.
  */
-class ContactForceToWall : public ForcePrior, public ContactDynamicsData
+class ContactForceToWall : public LocalDynamics, public ForcePrior, public ContactDynamicsData
 {
   public:
     explicit ContactForceToWall(SurfaceContactRelation &solid_body_contact_relation);
@@ -258,7 +258,7 @@ class PairwiseFrictionFromWall : public LocalDynamics, public ContactWithWallDat
  *  Note that the body surface of the wall should be
  *  updated before computing the contact force.
  */
-class DynamicContactForceWithWall : public ForcePrior, public ContactDynamicsData
+class DynamicContactForceWithWall : public LocalDynamics, public ForcePrior, public ContactDynamicsData
 {
   public:
     explicit DynamicContactForceWithWall(SurfaceContactRelation &solid_body_contact_relation, Real penalty_strength = 1.0);

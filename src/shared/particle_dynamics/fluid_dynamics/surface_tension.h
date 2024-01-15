@@ -56,7 +56,7 @@ class SurfaceTensionForce;
 
 template <class DataDelegationType>
 class SurfaceTensionForce<DataDelegationType>
-    : public ForcePrior, public DataDelegationType
+    : public LocalDynamics, public ForcePrior, public DataDelegationType
 {
   public:
     template <class BaseRelationType>

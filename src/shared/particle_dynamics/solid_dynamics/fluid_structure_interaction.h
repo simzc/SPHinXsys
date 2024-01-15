@@ -85,7 +85,7 @@ class ViscousForceFromFluid : public LocalDynamics, public BaseForceFromFluid
  * time step size compared to the fluid dynamics
  */
 template <class RiemannSolverType>
-class PressureForceFromFluid : public ForcePrior, public BaseForceFromFluid
+class PressureForceFromFluid : public LocalDynamics, public ForcePrior, public BaseForceFromFluid
 {
   public:
     explicit PressureForceFromFluid(BaseContactRelation &contact_relation);

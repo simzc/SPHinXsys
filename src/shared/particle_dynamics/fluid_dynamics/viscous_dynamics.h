@@ -42,7 +42,7 @@ class ViscousForce;
 
 template <class DataDelegationType>
 class ViscousForce<DataDelegationType>
-    : public ForcePrior, public DataDelegationType
+    : public LocalDynamics, public ForcePrior, public DataDelegationType
 {
   public:
     template <class BaseRelationType>
