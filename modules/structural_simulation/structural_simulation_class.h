@@ -211,8 +211,8 @@ class StructuralSimulation
     // for initializeATimeStep
     StdVec<SharedPtr<SimpleDynamics<TimeStepInitialization>>> initialize_time_step_;
     StdVec<GravityPair> non_zero_gravity_;
-    // for AccelerationForBodyPartInBoundingBox
-    StdVec<SharedPtr<SimpleDynamics<solid_dynamics::AccelerationForBodyPartInBoundingBox>>> acceleration_bounding_box_;
+    // for BodyPartForceInBoundingBox
+    StdVec<SharedPtr<SimpleDynamics<solid_dynamics::BodyPartForceInBoundingBox>>> acceleration_bounding_box_;
     StdVec<AccelTuple> acceleration_bounding_box_tuple_;
     // for ForceInBodyRegion
     StdVec<SharedPtr<SimpleDynamics<solid_dynamics::ForceInBodyRegion>>> force_in_body_region_;

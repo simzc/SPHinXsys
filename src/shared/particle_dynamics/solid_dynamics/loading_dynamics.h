@@ -32,9 +32,10 @@
 
 #include "all_body_relations.h"
 #include "all_particle_dynamics.h"
+#include "base_general_dynamics.h"
 #include "base_kernel.h"
 #include "elastic_solid.h"
-#include "base_general_dynamics.h"
+#include "force_prior.h"
 #include "solid_body.h"
 #include "solid_particles.h"
 
@@ -48,25 +49,6 @@ namespace solid_dynamics
 typedef DataDelegateSimple<SolidParticles> SolidDataSimple;
 typedef DataDelegateInner<SolidParticles> SolidDataInner;
 
-/**@class ImposeExternalForce
- * @brief impose external force on a solid body part
- * by add extra acceleration
- */
-class ImposeExternalForce : public LocalDynamics, public SolidDataSimple
-{
-  public:
-    ImposeExternalForce(SPHBody &sph_body);
-    virtual ~ImposeExternalForce(){};
-    void update(size_t index_i, Real dt = 0.0);
-
-  protected:
-    StdLargeVec<Vecd> &pos0_, &vel_;
-    /**
-     * @brief acceleration will be specified by the application
-     */
-    virtual Vecd getAcceleration(Vecd &pos) = 0;
-};
-
 /**
  * @class SpringDamperConstraintParticleWise
  * @brief Exerts spring force and damping force in the form of acceleration to each particle.
@@ -74,10 +56,10 @@ class ImposeExternalForce : public LocalDynamics, public SolidDataSimple
  * The damping force is calculated based on the particle's current velocity.
  * Only for 3D applications
  */
-class SpringDamperConstraintParticleWise : public LocalDynamics, public SolidDataSimple
+class SpringDamperConstraintParticleWise : public ForcePrior, public SolidDataSimple
 {
   protected:
-    StdLargeVec<Vecd> &pos_, &pos0_, &vel_, &force_prior_;
+    StdLargeVec<Vecd> &pos_, &pos0_, &vel_;
     StdLargeVec<Real> &mass_;
     Vecd stiffness_;
     Vecd damping_coeff_; // damping component parallel to the spring force component
@@ -101,7 +83,7 @@ class SpringDamperConstraintParticleWise : public LocalDynamics, public SolidDat
  * Only for 3D applications
  * Only for uniform surface particle size.
  */
-class SpringNormalOnSurfaceParticles : public LocalDynamics, public SolidDataSimple
+class SpringNormalOnSurfaceParticles : public ForcePrior, public SolidDataSimple
 {
   public:
     SpringNormalOnSurfaceParticles(SPHBody &sph_body, bool outer_surface,
@@ -130,7 +112,7 @@ class SpringNormalOnSurfaceParticles : public LocalDynamics, public SolidDataSim
  * BodyPartByParticle define the ody part that the spring is applied to.
  * Only for uniform surface particle size.
  */
-class SpringOnSurfaceParticles : public LocalDynamics, public SolidDataSimple
+class SpringOnSurfaceParticles : public ForcePrior, public SolidDataSimple
 {
   protected:
     StdLargeVec<Vecd> &pos_, &pos0_, &vel_, &force_prior_;
@@ -146,10 +128,10 @@ class SpringOnSurfaceParticles : public LocalDynamics, public SolidDataSimple
     void update(size_t index_i, Real dt = 0.0);
 };
 /**
- * @class AccelerationForBodyPartInBoundingBox
+ * @class BodyPartForceInBoundingBox
  * @brief Adds acceleration to the part of the body that's inside a bounding box
  */
-class AccelerationForBodyPartInBoundingBox : public LocalDynamics, public SolidDataSimple
+class BodyPartForceInBoundingBox : public ForcePrior, public SolidDataSimple
 {
   protected:
     StdLargeVec<Vecd> &pos_, &force_prior_;
@@ -158,8 +140,8 @@ class AccelerationForBodyPartInBoundingBox : public LocalDynamics, public SolidD
     Vecd acceleration_;
 
   public:
-    AccelerationForBodyPartInBoundingBox(SPHBody &sph_body, BoundingBox &bounding_box, Vecd acceleration);
-    virtual ~AccelerationForBodyPartInBoundingBox(){};
+    BodyPartForceInBoundingBox(SPHBody &sph_body, BoundingBox &bounding_box, Vecd acceleration);
+    virtual ~BodyPartForceInBoundingBox(){};
 
     void update(size_t index_i, Real dt = 0.0);
 };

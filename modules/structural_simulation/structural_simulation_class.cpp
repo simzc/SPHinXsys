@@ -425,7 +425,7 @@ void StructuralSimulation::initializeAccelerationForBodyPartInBoundingBox()
     for (size_t i = 0; i < acceleration_bounding_box_tuple_.size(); i++)
     {
         SolidBody *solid_body = solid_body_list_[std::get<0>(acceleration_bounding_box_tuple_[i])]->getSolidBodyFromMesh();
-        acceleration_bounding_box_.emplace_back(makeShared<SimpleDynamics<solid_dynamics::AccelerationForBodyPartInBoundingBox>>(
+        acceleration_bounding_box_.emplace_back(makeShared<SimpleDynamics<solid_dynamics::BodyPartForceInBoundingBox>>(
             *solid_body, std::get<1>(acceleration_bounding_box_tuple_[i]), std::get<2>(acceleration_bounding_box_tuple_[i])));
     }
 }
