@@ -41,13 +41,15 @@ class Beam : public ComplexShape
 };
 
 /* define load*/
-class LoadForce : public BaseLocalDynamics<BodyPartByParticle>, public solid_dynamics::ElasticSolidDataSimple
+class LoadForce : public BaseLocalDynamics<BodyPartByParticle>,
+                  public ForcePrior,
+                  public solid_dynamics::ElasticSolidDataSimple
 {
   public:
     LoadForce(BodyPartByParticle &body_part, StdVec<std::array<Real, 2>> f_arr)
         : BaseLocalDynamics<BodyPartByParticle>(body_part),
+          ForcePrior(&base_particles_, "LoadForce"),
           solid_dynamics::ElasticSolidDataSimple(sph_body_),
-          force_prior(particles_->force_prior_),
           mass_n_(particles_->mass_),
           Vol_(particles_->Vol_),
           F_(particles_->F_),
@@ -59,7 +61,7 @@ class LoadForce : public BaseLocalDynamics<BodyPartByParticle>, public solid_dyn
             area_0_[i] = pow(particles_->Vol_[i], 2.0 / 3.0);
     }
 
-    void update(size_t index_i, Real time = 0.0)
+    void update(size_t index_i, Real dt = 0.0)
     {
         // pulling direction, i.e. positive z direction
         Vecd normal(0, 0, 1);
@@ -72,13 +74,14 @@ class LoadForce : public BaseLocalDynamics<BodyPartByParticle>, public solid_dyn
         // current_area * current_normal = det(F) * trans(inverse(F)) * area_0 * normal	   =>
         // current_area = J * area_0 * norm(trans(inverse(F)) * normal)   =>
         // current_area = J * area_0 * current_normal_norm
-        Real mean_force_ = getForce(time) * J * area_0_[index_i] * current_normal_norm;
+        Real mean_force_ = getForce(GlobalStaticVariables::physical_time_) *
+                           J * area_0_[index_i] * current_normal_norm;
 
-        force_prior[index_i] += mean_force_ * normal;
+        force_[index_i] = mean_force_ * normal;
+        ForcePrior::update(index_i, dt);
     }
 
   protected:
-    StdLargeVec<Vecd> &force_prior;
     StdLargeVec<Real> &mass_n_;
     StdLargeVec<Real> area_0_;
     StdLargeVec<Real> &Vol_;
@@ -88,7 +91,7 @@ class LoadForce : public BaseLocalDynamics<BodyPartByParticle>, public solid_dyn
     size_t particles_num_;
 
   protected:
-    virtual Real getForce(Real time)
+    virtual Real getForce(const Real &time)
     {
         for (size_t i = 1; i < force_arr_.size(); i++)
         {
@@ -129,8 +132,6 @@ int main(int ac, char *av[])
     /** topology */
     InnerRelation beam_body_inner(beam_body);
     ContactRelation beam_observer_contact(beam_observer, {&beam_body});
-    /** initialize a time step */
-    SimpleDynamics<TimeStepInitialization> beam_initialize(beam_body);
 
     /** Corrected configuration. */
     InteractionWithUpdate<KernelCorrectionMatrixInner> corrected_configuration(beam_body_inner);
@@ -204,9 +205,7 @@ int main(int ac, char *av[])
                           << dt << "\n";
             }
 
-            beam_initialize.exec();
-            pull_force.exec(GlobalStaticVariables::physical_time_);
-
+            pull_force.exec();
             /** Stress relaxation and damping. */
             stress_relaxation_first_half.exec(dt);
             constraint_holder.exec(dt);
