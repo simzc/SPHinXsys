@@ -61,7 +61,7 @@ class BaseIntegration : public LocalDynamics, public DataDelegationType
 
   protected:
     Fluid &fluid_;
-    StdLargeVec<Real> &rho_, &mass_, &p_, &drho_dt_;
+    StdLargeVec<Real> &Vol_, &rho_, &mass_, &p_, &drho_dt_;
     StdLargeVec<Vecd> &pos_, &vel_, &force_, &force_prior_;
 };
 
@@ -165,7 +165,6 @@ class Integration2ndHalf<Inner<>, RiemannSolverType>
 
   protected:
     RiemannSolverType riemann_solver_;
-    StdLargeVec<Real> &Vol_, &mass_;
 };
 using Integration2ndHalfInnerRiemann = Integration2ndHalf<Inner<>, AcousticRiemannSolver>;
 using Integration2ndHalfInnerNoRiemann = Integration2ndHalf<Inner<>, NoRiemannSolver>;
