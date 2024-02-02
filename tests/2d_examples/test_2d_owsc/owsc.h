@@ -258,7 +258,7 @@ class FlapSystemForSimbody : public SolidBodyPartForSimbody
     }
 };
 
-class WaveMaking : public solid_dynamics::BaseMotionConstraint<BodyPartByParticle>
+class WaveMaking : public solid_dynamics::MotionConstraint
 {
     Real model_scale_;
     Real gravity_;
@@ -325,7 +325,7 @@ class WaveMaking : public solid_dynamics::BaseMotionConstraint<BodyPartByParticl
 
   public:
     WaveMaking(BodyPartByParticle &body_part)
-        : solid_dynamics::BaseMotionConstraint<BodyPartByParticle>(body_part),
+        : solid_dynamics::MotionConstraint(body_part),
           model_scale_(25.0), gravity_(gravity_g), water_depth_(Water_H), wave_height_(5.0),
           wave_period_(10.0)
     {
@@ -385,10 +385,10 @@ MultiPolygon createWaveProbeShape12()
 //------------------------------------------------------------------------------
 // Case-dependent observer particle generator
 //------------------------------------------------------------------------------
-class FlapObserverParticleGenerator : public ObserverParticleGenerator
+class FlapObserverParticleGenerator : public ParticleGeneratorObserver
 {
   public:
-    explicit FlapObserverParticleGenerator(SPHBody &sph_body) : ObserverParticleGenerator(sph_body)
+    explicit FlapObserverParticleGenerator(SPHBody &sph_body) : ParticleGeneratorObserver(sph_body)
     {
         /** the measuring particle with zero volume */
         positions_.push_back(Vecd(7.862, 0.645));

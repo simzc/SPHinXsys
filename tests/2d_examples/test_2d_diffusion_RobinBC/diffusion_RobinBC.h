@@ -162,7 +162,7 @@ class RobinWallBoundaryInitialCondition
     explicit RobinWallBoundaryInitialCondition(SolidBody &diffusion_body)
         : DiffusionReactionInitialCondition<WallParticles>(diffusion_body),
           convection_(*(this->particles_->template getVariableByName<Real>("Convection"))),
-          T_infinity_(*(this->particles_->template getGlobalVariableByName<Real>("T_infinity")))
+          T_infinity_(*(this->particles_->template getSingleVariableByName<Real>("T_infinity")))
     {
         phi_ = particles_->diffusion_reaction_material_.AllSpeciesIndexMap()["Phi"];
     }
@@ -184,10 +184,10 @@ using DiffusionBodyRelaxation = DiffusionBodyRelaxationComplex<
 //----------------------------------------------------------------------
 //	An observer body to measure temperature at given positions.
 //----------------------------------------------------------------------
-class TemperatureObserverParticleGenerator : public ObserverParticleGenerator
+class TemperatureObserverParticleGenerator : public ParticleGeneratorObserver
 {
   public:
-    explicit TemperatureObserverParticleGenerator(SPHBody &sph_body) : ObserverParticleGenerator(sph_body)
+    explicit TemperatureObserverParticleGenerator(SPHBody &sph_body) : ParticleGeneratorObserver(sph_body)
     {
         /** A line of measuring points at the middle line. */
         size_t number_of_observation_points = 5;

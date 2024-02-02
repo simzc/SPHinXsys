@@ -1,4 +1,4 @@
-#include "surface_tension.h"
+#include "surface_tension.hpp"
 
 namespace SPH
 {
@@ -47,13 +47,11 @@ void SurfaceTensionStress::interaction(size_t index_i, Real dt)
     }
 }
 //=================================================================================================//
-SurfaceStressAcceleration<Inner<>>::SurfaceStressAcceleration(BaseInnerRelation &inner_relation)
-    : LocalDynamics(inner_relation.getSPHBody()), FluidDataInner(inner_relation),
-      rho_(particles_->rho_), mass_(particles_->mass_), force_prior_(particles_->force_prior_),
-      color_gradient_(*particles_->getVariableByName<Vecd>("ColorGradient")),
-      surface_tension_stress_(*particles_->getVariableByName<Matd>("SurfaceTensionStress")) {}
+SurfaceStressForce<Inner<>>::SurfaceStressForce(BaseInnerRelation &inner_relation)
+    : SurfaceStressForce<FluidDataInner>(inner_relation),
+      ForcePrior(&base_particles_, "SurfaceTensionForce") {}
 //=================================================================================================//
-void SurfaceStressAcceleration<Inner<>>::interaction(size_t index_i, Real dt)
+void SurfaceStressForce<Inner<>>::interaction(size_t index_i, Real dt)
 {
     Vecd summation = ZeroData<Vecd>::value;
     const Neighborhood &inner_neighborhood = inner_configuration_[index_i];
@@ -64,14 +62,11 @@ void SurfaceStressAcceleration<Inner<>>::interaction(size_t index_i, Real dt)
                      (surface_tension_stress_[index_i] + surface_tension_stress_[index_j]) *
                      inner_neighborhood.e_ij_[n];
     }
-    force_prior_[index_i] += summation / rho_[index_i];
+    surface_tension_force_[index_i] = summation / rho_[index_i];
 }
 //=================================================================================================//
-SurfaceStressAcceleration<Contact<>>::SurfaceStressAcceleration(BaseContactRelation &contact_relation)
-    : LocalDynamics(contact_relation.getSPHBody()), FluidContactData(contact_relation),
-      rho_(particles_->rho_), mass_(particles_->mass_), force_prior_(particles_->force_prior_),
-      color_gradient_(*particles_->getVariableByName<Vecd>("ColorGradient")),
-      surface_tension_stress_(*particles_->getVariableByName<Matd>("SurfaceTensionStress"))
+SurfaceStressForce<Contact<>>::SurfaceStressForce(BaseContactRelation &contact_relation)
+    : SurfaceStressForce<FluidContactData>(contact_relation)
 {
     Real rho0 = getSPHBody().base_material_->ReferenceDensity();
     for (size_t k = 0; k != contact_particles_.size(); ++k)
@@ -85,7 +80,7 @@ SurfaceStressAcceleration<Contact<>>::SurfaceStressAcceleration(BaseContactRelat
     }
 }
 //=================================================================================================//
-void SurfaceStressAcceleration<Contact<>>::interaction(size_t index_i, Real dt)
+void SurfaceStressForce<Contact<>>::interaction(size_t index_i, Real dt)
 {
     Vecd summation = ZeroData<Vecd>::value;
     for (size_t k = 0; k < contact_configuration_.size(); ++k)
@@ -107,7 +102,7 @@ void SurfaceStressAcceleration<Contact<>>::interaction(size_t index_i, Real dt)
                          contact_neighborhood.e_ij_[n];
         }
     }
-    force_prior_[index_i] += summation / rho_[index_i];
+    surface_tension_force_[index_i] += summation / rho_[index_i];
 }
 //=================================================================================================//
 } // namespace fluid_dynamics

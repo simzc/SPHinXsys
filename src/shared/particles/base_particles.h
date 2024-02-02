@@ -45,7 +45,6 @@ namespace SPH
 
 class SPHBody;
 class BaseMaterial;
-class ParticleGenerator;
 class BodySurface;
 template <class ReturnType>
 class BaseDynamics;
@@ -85,21 +84,21 @@ class BaseParticles
   private:
     DataContainerUniquePtrAssemble<DiscreteVariable> all_discrete_variable_ptrs_;
     DataContainerUniquePtrAssemble<StdLargeVec> shared_particle_data_ptrs_;
-    DataContainerUniquePtrAssemble<GlobalVariable> all_global_variable_ptrs_;
+    DataContainerUniquePtrAssemble<SingleVariable> all_global_variable_ptrs_;
     UniquePtrsKeeper<BaseDynamics<void>> derived_particle_data_;
 
   public:
     explicit BaseParticles(SPHBody &sph_body, BaseMaterial *base_material);
     virtual ~BaseParticles(){};
 
-    StdLargeVec<Vecd> pos_;       /**< Position */
-    StdLargeVec<Vecd> vel_;       /**< Velocity */
+    StdLargeVec<Vecd> pos_;         /**< Position */
+    StdLargeVec<Vecd> vel_;         /**< Velocity */
     StdLargeVec<Vecd> force_;       /**< Force induced by pressure- or stress */
     StdLargeVec<Vecd> force_prior_; /**< Other, such as gravity and viscous, forces computed before force_ */
 
     StdLargeVec<Real> Vol_;      /**< Volumetric measure, also area and length of surface and linear particle */
     StdLargeVec<Real> rho_;      /**< Density */
-    StdLargeVec<Real> mass_;     /**< Massive measure, also mass per-unit thickness and per-unit cross-section of surface and linear particle */
+    StdLargeVec<Real> mass_;     /**< Mass*/
     StdLargeVec<int> indicator_; /**< particle indicator: 0 for bulk, 1 for free surface indicator, other to be defined */
     //----------------------------------------------------------------------
     // Global information for defining particle groups
@@ -138,10 +137,10 @@ class BaseParticles
     ParticleVariables &AllDiscreteVariables() { return all_discrete_variables_; };
 
     template <typename DataType>
-    DataType *registerGlobalVariable(const std::string &variable_name,
+    DataType *registerSingleVariable(const std::string &variable_name,
                                      DataType initial_value = ZeroData<DataType>::value);
     template <typename DataType>
-    DataType *getGlobalVariableByName(const std::string &variable_name);
+    DataType *getSingleVariableByName(const std::string &variable_name);
     //----------------------------------------------------------------------
     //		Manage subsets of particle variables
     //----------------------------------------------------------------------
@@ -191,7 +190,7 @@ class BaseParticles
     //		Relation relate volume, surface and linear particles
     //----------------------------------------------------------------------
     virtual Real ParticleVolume(size_t index) { return Vol_[index]; }
-    virtual Real ParticleMass(size_t index) { return mass_[index]; }
+    virtual Real ParticleSpacing(size_t index) { return std::pow(Vol_[index], 1.0 / Real(Dimensions)); }
 
   protected:
     SPHBody &sph_body_;
@@ -201,7 +200,7 @@ class BaseParticles
     XmlParser reload_xml_parser_;
     ParticleData all_particle_data_;
     ParticleVariables all_discrete_variables_;
-    GlobalVariables all_global_variables_;
+    SingleVariables all_single_variables_;
     ParticleVariables variables_to_write_;
     ParticleVariables variables_to_restart_;
     ParticleVariables variables_to_reload_;

@@ -18,6 +18,17 @@ SimTK::ContactGeometry::TriangleMesh *TriangleMeshShape::generateTriangleMesh(co
     return triangle_mesh;
 }
 //=================================================================================================//
+SimTK::ContactGeometry::TriangleMesh *TriangleMeshShape::getTriangleMesh()
+{
+    if (triangle_mesh_ == nullptr)
+    {
+        std::cout << "\n Error: TriangleMesh not setup yet! \n";
+        std::cout << __FILE__ << ':' << __LINE__ << std::endl;
+        exit(1);
+    }
+    return triangle_mesh_;
+}
+//=================================================================================================//
 bool TriangleMeshShape::checkContain(const Vec3d &probe_point, bool BOUNDARY_INCLUDED)
 {
     SimTKVec2 uv_coordinate;
@@ -73,7 +84,7 @@ BoundingBox TriangleMeshShape::findBounds()
     int number_of_vertices = triangle_mesh_->getNumVertices();
     // initial reference values
     Vec3d lower_bound = SimTKToEigen(SimTKVec3(MaxReal));
-    Vec3d upper_bound = SimTKToEigen(SimTKVec3(-MaxReal));
+    Vec3d upper_bound = SimTKToEigen(SimTKVec3(MinReal));
     for (int i = 0; i != number_of_vertices; ++i)
     {
         Vec3d vertex_position = SimTKToEigen(triangle_mesh_->getVertexPosition(i));

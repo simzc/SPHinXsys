@@ -3,10 +3,10 @@
  * @brief This is the case setup for plastic taylor bar.
  * @author Xiaojing Tang, Dong Wu and Xiangyu Hu
  * @ref 	doi.org/10.1007/s40571-019-00277-6
+ * //TODO: Seems that the wall contact force should be improved.
  */
-#include "sphinxsys.h"
-
 #include "taylor_bar.h" /**< Case setup for this example. */
+#include "sphinxsys.h"
 
 using namespace SPH;
 
@@ -25,11 +25,11 @@ int main(int ac, char *av[])
     /** create a body with corresponding material, particles and reaction model. */
     SolidBody column(sph_system, makeShared<Column>("Column"));
     column.defineAdaptationRatios(1.3, 1.0);
-    column.defineBodyLevelSetShape()->writeLevelSet(io_environment);
+    column.defineBodyLevelSetShape()->writeLevelSet(sph_system);
     column.defineParticlesAndMaterial<ElasticSolidParticles, HardeningPlasticSolid>(
         rho0_s, Youngs_modulus, poisson, yield_stress, hardening_modulus);
     (!sph_system.RunParticleRelaxation() && sph_system.ReloadParticles())
-        ? column.generateParticles<ParticleGeneratorReload>(io_environment, column.getName())
+        ? column.generateParticles<ParticleGeneratorReload>(column.getName())
         : column.generateParticles<ParticleGeneratorLattice>();
     column.addBodyStateForRecording<Vecd>("NormalDirection");
 
@@ -46,22 +46,20 @@ int main(int ac, char *av[])
     ContactRelation my_observer_contact(my_observer, {&column});
     SurfaceContactRelation column_wall_contact(column, {&wall});
     /**define simple data file input and outputs functions. */
-    BodyStatesRecordingToVtp write_states(io_environment, sph_system.real_bodies_);
+    BodyStatesRecordingToVtp write_states(sph_system.real_bodies_);
 
     if (sph_system.RunParticleRelaxation())
     {
-        /**
-         * @brief 	Methods used for particle relaxation.
-         */
+        using namespace relax_dynamics;
         /** Random reset the insert body particle position. */
         SimpleDynamics<RandomizeParticlePosition> random_column_particles(column);
         /** Write the body state to Vtp file. */
-        BodyStatesRecordingToVtp write_column_to_vtp(io_environment, column);
+        BodyStatesRecordingToVtp write_column_to_vtp(column);
         /** Write the particle reload files. */
 
-        ReloadParticleIO write_particle_reload_files(io_environment, column);
+        ReloadParticleIO write_particle_reload_files(column);
         /** A  Physics relaxation step. */
-        relax_dynamics::RelaxationStepInner relaxation_step_inner(column_inner);
+        RelaxationStepInner relaxation_step_inner(column_inner);
         /**
          * @brief 	Particle relaxation starts here.
          */
@@ -91,7 +89,7 @@ int main(int ac, char *av[])
     //----------------------------------------------------------------------
     Dynamics1Level<solid_dynamics::DecomposedPlasticIntegration1stHalf> stress_relaxation_first_half(column_inner);
     Dynamics1Level<solid_dynamics::Integration2ndHalf> stress_relaxation_second_half(column_inner);
-    InteractionDynamics<solid_dynamics::DynamicContactForceWithWall> column_wall_contact_force(column_wall_contact);
+    InteractionDynamics<DynamicContactForceWithWall> column_wall_contact_force(column_wall_contact);
     SimpleDynamics<NormalDirectionFromBodyShape> wall_normal_direction(wall);
     SimpleDynamics<InitialCondition> initial_condition(column);
     InteractionWithUpdate<KernelCorrectionMatrixInner> corrected_configuration(column_inner);
@@ -100,7 +98,7 @@ int main(int ac, char *av[])
     //	Output
     //----------------------------------------------------------------------
     RegressionTestDynamicTimeWarping<ObservedQuantityRecording<Vecd>>
-        write_displacement("Position", io_environment, my_observer_contact);
+        write_displacement("Position", my_observer_contact);
 
     //----------------------------------------------------------------------
     // From here the time stepping begins.
@@ -168,7 +166,7 @@ int main(int ac, char *av[])
 
     TimeInterval tt;
     tt = t4 - t1 - interval;
-    std::cout << "Total wall time for computation: " << tt.seconds() << " seconds." << std::endl; 
+    std::cout << "Total wall time for computation: " << tt.seconds() << " seconds." << std::endl;
 
     if (sph_system.GenerateRegressionData())
     {
@@ -178,7 +176,6 @@ int main(int ac, char *av[])
     {
         write_displacement.testResult();
     }
-
 
     return 0;
 }
