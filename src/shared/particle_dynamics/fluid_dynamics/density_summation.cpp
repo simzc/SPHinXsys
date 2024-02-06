@@ -78,7 +78,7 @@ DensitySummation<Contact<Wall>>::DensitySummation(BaseContactRelation &contact_r
     {
         Real dp_2 = contact_relation.contact_bodies_[k]->sph_adaptation_->ReferenceSpacing();
         Real distance = 0.5 * dp_1 + 0.5 * dp_2;
-        offset_W_ij_[k] = contact_relation.getSPHBody().sph_adaptation_->getKernel()->W(distance, ZeroVecd);
+        offset_W_ij_.push_back(contact_relation.getSPHBody().sph_adaptation_->getKernel()->W(distance, ZeroVecd));
     }
 }
 //=================================================================================================//
