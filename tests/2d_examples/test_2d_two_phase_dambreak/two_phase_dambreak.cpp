@@ -26,6 +26,7 @@ int main(int ac, char *av[])
     FluidBody air_block(sph_system, makeShared<AirBlock>("AirBody"));
     air_block.defineParticlesAndMaterial<BaseParticles, WeaklyCompressibleFluid>(rho0_a, c_f);
     air_block.generateParticles<ParticleGeneratorLattice>();
+    air_block.addBodyStateForRecording<Real>("Density");
 
     SolidBody wall_boundary(sph_system, makeShared<WallBoundary>("Wall"));
     wall_boundary.defineParticlesAndMaterial<SolidParticles, Solid>();

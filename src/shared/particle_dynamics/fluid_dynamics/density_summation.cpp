@@ -94,7 +94,7 @@ void DensitySummation<Contact<Wall>>::interaction(size_t index_i, Real dt)
         for (size_t n = 0; n != contact_neighborhood.current_size_; ++n)
         {
             Real corrected_W_ij = SMAX(contact_neighborhood.W_ij_[n] - offset_W_ij_[k], Real(0));
-            sigma += corrected_W_ij * contact_inv_rho0_k * contact_mass_k[contact_neighborhood.j_[n]];
+            sigma += 20.0 * corrected_W_ij * contact_inv_rho0_k * contact_mass_k[contact_neighborhood.j_[n]];
         }
     }
     rho_sum_[index_i] += sigma * rho0_ * rho0_ * inv_sigma0_ / mass_[index_i];
