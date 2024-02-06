@@ -66,7 +66,7 @@ int main(int ac, char *av[])
     /** Evaluation of density by summation approach. */
     InteractionWithUpdate<fluid_dynamics::DensitySummationComplexFreeSurface>
         update_water_density_by_summation(water_inner, water_wall_contact);
-    InteractionWithUpdate<fluid_dynamics::BaseDensitySummationComplex<Inner<>, Contact<>, Contact<>>>
+    InteractionWithUpdate<fluid_dynamics::BaseDensitySummationComplex<Inner<>, Contact<>, Contact<Wall>>>
         update_air_density_by_summation(air_inner, air_water_contact, air_wall_contact);
     InteractionWithUpdate<fluid_dynamics::MultiPhaseTransportVelocityCorrectionComplex<AllParticles>>
         air_transport_correction(air_inner, air_water_contact, air_wall_contact);
@@ -82,7 +82,7 @@ int main(int ac, char *av[])
     Dynamics1Level<fluid_dynamics::MultiPhaseIntegration2ndHalfWithWallRiemann>
         water_density_relaxation(water_inner, water_air_contact, water_wall_contact);
     /** Extend Pressure relaxation is used for air. */
-    Dynamics1Level<fluid_dynamics::ExtendedMultiPhaseIntegration1stHalfWithWallRiemann>
+    Dynamics1Level<fluid_dynamics::MultiPhaseIntegration1stHalfWithWallRiemann>
         air_pressure_relaxation(air_inner, air_water_contact, ConstructorArgs(air_wall_contact, 2.0));
     Dynamics1Level<fluid_dynamics::MultiPhaseIntegration2ndHalfWithWallRiemann>
         air_density_relaxation(air_inner, air_water_contact, air_wall_contact);

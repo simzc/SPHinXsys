@@ -119,6 +119,18 @@ class DensitySummation<Contact<>> : public DensitySummation<Contact<Base>>
 };
 
 template <>
+class DensitySummation<Contact<Wall>> : public DensitySummation<Contact<Base>>
+{
+  public:
+    explicit DensitySummation(BaseContactRelation &contact_relation);
+    virtual ~DensitySummation(){};
+    void interaction(size_t index_i, Real dt = 0.0);
+
+  protected:
+    StdVec<Real> offset_W_ij_;
+};
+
+template <>
 class DensitySummation<Contact<Adaptive>> : public DensitySummation<Contact<Base>>
 {
   public:
@@ -169,6 +181,8 @@ using DensitySummationComplexFreeSurface = BaseDensitySummationComplex<Inner<Fre
 using DensitySummationFreeSurfaceComplexAdaptive = BaseDensitySummationComplex<Inner<FreeSurface, Adaptive>, Contact<Adaptive>>;
 using DensitySummationFreeStreamComplex = BaseDensitySummationComplex<Inner<FreeStream>, Contact<>>;
 using DensitySummationFreeStreamComplexAdaptive = BaseDensitySummationComplex<Inner<FreeStream, Adaptive>, Contact<Adaptive>>;
+
+using MultiDensitySummationWithWall = ComplexInteraction<DensitySummation<Inner<>, Contact<>, Contact<Wall>>>;
 } // namespace fluid_dynamics
 } // namespace SPH
 #endif // DENSITY_SUMMATION_INNER_H

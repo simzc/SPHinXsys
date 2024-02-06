@@ -65,6 +65,41 @@ void DensitySummation<Contact<>>::interaction(size_t index_i, Real dt)
     rho_sum_[index_i] += sigma * rho0_ * rho0_ * inv_sigma0_ / mass_[index_i];
 }
 //=================================================================================================//
+DensitySummation<Contact<Wall>>::DensitySummation(BaseContactRelation &contact_relation)
+    : DensitySummation<Contact<Base>>(contact_relation)
+{
+    // we modify the default formulation by an offset, so that exactly touching bodies produce 0 initial force
+    // subtract summation of the kernel function of 2 particles at 1 particle distance, and if the result is negative, we take 0
+    // different resolution: distance = 0.5 * dp1 + 0.5 * dp2
+    // dp1, dp2 half reference spacing
+    Real dp_1 = contact_relation.getSPHBody().sph_adaptation_->ReferenceSpacing();
+    // different resolution: distance = 0.5 * dp1 + 0.5 * dp2
+    for (size_t k = 0; k < contact_configuration_.size(); ++k)
+    {
+        Real dp_2 = contact_relation.contact_bodies_[k]->sph_adaptation_->ReferenceSpacing();
+        Real distance = 0.5 * dp_1 + 0.5 * dp_2;
+        offset_W_ij_[k] = contact_relation.getSPHBody().sph_adaptation_->getKernel()->W(distance, ZeroVecd);
+    }
+}
+//=================================================================================================//
+void DensitySummation<Contact<Wall>>::interaction(size_t index_i, Real dt)
+{
+    Real sigma = DensitySummation<Contact<Base>>::ContactSummation(index_i);
+    for (size_t k = 0; k < contact_configuration_.size(); ++k)
+    {
+        StdLargeVec<Real> &contact_mass_k = *(contact_mass_[k]);
+        Real contact_inv_rho0_k = contact_inv_rho0_[k];
+        Neighborhood &contact_neighborhood = (*contact_configuration_[k])[index_i];
+
+        for (size_t n = 0; n != contact_neighborhood.current_size_; ++n)
+        {
+            Real corrected_W_ij = SMAX(contact_neighborhood.W_ij_[n] - offset_W_ij_[k], Real(0));
+            sigma += corrected_W_ij * contact_inv_rho0_k * contact_mass_k[contact_neighborhood.j_[n]];
+        }
+    }
+    rho_sum_[index_i] += sigma * rho0_ * rho0_ * inv_sigma0_ / mass_[index_i];
+}
+//=================================================================================================//
 DensitySummation<Contact<Adaptive>>::
     DensitySummation(BaseContactRelation &contact_relation)
     : DensitySummation<Contact<Base>>(contact_relation),
