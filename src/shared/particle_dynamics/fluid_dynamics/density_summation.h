@@ -169,6 +169,18 @@ using DensitySummationComplexFreeSurface = BaseDensitySummationComplex<Inner<Fre
 using DensitySummationFreeSurfaceComplexAdaptive = BaseDensitySummationComplex<Inner<FreeSurface, Adaptive>, Contact<Adaptive>>;
 using DensitySummationFreeStreamComplex = BaseDensitySummationComplex<Inner<FreeStream>, Contact<>>;
 using DensitySummationFreeStreamComplexAdaptive = BaseDensitySummationComplex<Inner<FreeStream, Adaptive>, Contact<Adaptive>>;
+
+class MixtureDensity : public LocalDynamics, public FluidContactData
+{
+  public:
+    MixtureDensity(BaseContactRelation &contact_relation);
+    void interaction(size_t index_i, Real dt = 0.0);
+
+  protected:
+    Real W0_;
+    StdLargeVec<Real> &rho_, &Vol_, &rho_mix_;
+    StdVec<StdLargeVec<Real> *> contact_rho_, contact_Vol_;
+};
 } // namespace fluid_dynamics
 } // namespace SPH
 #endif // DENSITY_SUMMATION_INNER_H

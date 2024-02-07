@@ -78,5 +78,40 @@ void DensitySummation<Contact<Adaptive>>::interaction(size_t index_i, Real dt)
                          sph_adaptation_.NumberDensityScaleFactor(h_ratio_[index_i]);
 }
 //=================================================================================================//
+MixtureDensity::MixtureDensity(BaseContactRelation &contact_relation)
+    : LocalDynamics(contact_relation.getSPHBody()), FluidContactData(contact_relation),
+      W0_(sph_body_.sph_adaptation_->getKernel()->W0(ZeroVecd)),
+      rho_(particles_->rho_), Vol_(particles_->Vol_),
+      rho_mix_(*particles_->registerSharedVariable<Real>("MixtureDensity"))
+{
+    for (size_t k = 0; k != this->contact_particles_.size(); ++k)
+    {
+        contact_rho_.push_back(&(this->contact_particles_[k]->rho_));
+        contact_Vol_.push_back(&(this->contact_particles_[k]->Vol_));
+    }
+}
+//=================================================================================================//
+void MixtureDensity::interaction(size_t index_i, Real dt)
+{
+    Real ttl_weight = W0_ * Vol_[index_i];
+    Real rho_mix = rho_[index_i] * ttl_weight;
+
+    for (size_t k = 0; k < this->contact_configuration_.size(); ++k)
+    {
+        StdLargeVec<Real> &contact_rho_k = *(this->contact_rho_[k]);
+        StdLargeVec<Real> &contact_Vol_k = *(this->contact_Vol_[k]);
+        Neighborhood &contact_neighborhood = (*this->contact_configuration_[k])[index_i];
+        for (size_t n = 0; n != contact_neighborhood.current_size_; ++n)
+        {
+            size_t index_j = contact_neighborhood.j_[n];
+
+            Real weight = contact_neighborhood.W_ij_[n] * contact_Vol_k[index_j];
+            rho_mix += contact_rho_k[index_j] * weight;
+            ttl_weight += weight;
+        }
+    }
+    rho_mix_[index_i] = rho_mix / ttl_weight;
+}
+//=================================================================================================//
 } // namespace fluid_dynamics
 } // namespace SPH

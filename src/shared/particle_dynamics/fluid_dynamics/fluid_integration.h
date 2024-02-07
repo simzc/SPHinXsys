@@ -91,8 +91,28 @@ using Integration1stHalfCorrectionInnerRiemann = Integration1stHalf<Inner<>, Aco
 // Please refer: https://developercommunity.visualstudio.com/t/c-invalid-template-argument-for-template-parameter/831128
 using BaseIntegrationWithWall = InteractionWithWall<BaseIntegration>;
 
-template <class RiemannSolverType, class KernelCorrectionType>
-class Integration1stHalf<Contact<Wall>, RiemannSolverType, KernelCorrectionType>
+template <typename... T>
+struct DensityInWall;
+class MixtureDensity;
+template <>
+struct DensityInWall<>
+{
+    StdLargeVec<Real> &rho_;
+    DensityInWall(BaseParticles *base_particles) : rho_(base_particles->rho_){};
+    Real operator()(size_t index_i) { return rho_[index_i]; };
+};
+
+template <>
+struct DensityInWall<MixtureDensity>
+{
+    StdLargeVec<Real> &rho_mix_;
+    DensityInWall(BaseParticles *base_particles)
+        : rho_mix_(*base_particles->getVariableByName<Real>("MixtureDensity")){};
+    Real operator()(size_t index_i) { return rho_mix_[index_i]; };
+};
+
+template <class RiemannSolverType, class KernelCorrectionType, typename... DensityInWallParameters>
+class Integration1stHalf<Contact<Wall, DensityInWallParameters...>, RiemannSolverType, KernelCorrectionType>
     : public BaseIntegrationWithWall
 {
   public:
@@ -103,6 +123,7 @@ class Integration1stHalf<Contact<Wall>, RiemannSolverType, KernelCorrectionType>
   protected:
     KernelCorrectionType correction_;
     RiemannSolverType riemann_solver_;
+    DensityInWall<DensityInWallParameters...> density_in_wall_;
 };
 
 template <class RiemannSolverType, class KernelCorrectionType>

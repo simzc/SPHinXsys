@@ -86,6 +86,9 @@ int main(int ac, char *av[])
         air_pressure_relaxation(air_inner, air_water_contact, ConstructorArgs(air_wall_contact, 2.0));
     Dynamics1Level<fluid_dynamics::MultiPhaseIntegration2ndHalfWithWallRiemann>
         air_density_relaxation(air_inner, air_water_contact, air_wall_contact);
+
+    InteractionDynamics<fluid_dynamics::MixtureDensity> update_air_mixture_density(air_water_contact);
+    air_block.addBodyStateForRecording<Real>("MixtureDensity");
     //----------------------------------------------------------------------
     //	Define the methods for I/O operations, observations
     //	and regression tests of the simulation.
