@@ -177,7 +177,6 @@ class MixtureDensity : public LocalDynamics, public FluidContactData
     void interaction(size_t index_i, Real dt = 0.0);
 
   protected:
-    Real W0_;
     StdLargeVec<Real> &rho_, &Vol_, &rho_mix_;
     StdVec<StdLargeVec<Real> *> contact_rho_, contact_Vol_;
 };

@@ -80,7 +80,6 @@ void DensitySummation<Contact<Adaptive>>::interaction(size_t index_i, Real dt)
 //=================================================================================================//
 MixtureDensity::MixtureDensity(BaseContactRelation &contact_relation)
     : LocalDynamics(contact_relation.getSPHBody()), FluidContactData(contact_relation),
-      W0_(sph_body_.sph_adaptation_->getKernel()->W0(ZeroVecd)),
       rho_(particles_->rho_), Vol_(particles_->Vol_),
       rho_mix_(*particles_->registerSharedVariable<Real>("MixtureDensity"))
 {
@@ -93,8 +92,8 @@ MixtureDensity::MixtureDensity(BaseContactRelation &contact_relation)
 //=================================================================================================//
 void MixtureDensity::interaction(size_t index_i, Real dt)
 {
-    Real ttl_weight = W0_ * Vol_[index_i];
-    Real rho_mix = rho_[index_i] * ttl_weight;
+    Real ttl_weight = TinyReal;
+    Real rho_mix(0.0);
 
     for (size_t k = 0; k < this->contact_configuration_.size(); ++k)
     {

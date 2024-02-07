@@ -49,6 +49,7 @@ int main(int ac, char *av[])
     ContactRelation air_water_contact(air_block, {&water_block});
     ContactRelation air_wall_contact(air_block, {&wall_boundary});
     ContactRelation fluid_observer_contact(fluid_observer, RealBodyVector{&water_block, &air_block});
+    ContactRelation wall_fluid_contact(wall_boundary, RealBodyVector{&water_block, &air_block});
     //----------------------------------------------------------------------
     // Combined relations built from basic relations
     //----------------------------------------------------------------------
@@ -87,8 +88,8 @@ int main(int ac, char *av[])
     Dynamics1Level<fluid_dynamics::MultiPhaseIntegration2ndHalfWithWallRiemann>
         air_density_relaxation(air_inner, air_water_contact, air_wall_contact);
 
-    InteractionDynamics<fluid_dynamics::MixtureDensity> update_air_mixture_density(air_water_contact);
-    air_block.addBodyStateForRecording<Real>("MixtureDensity");
+    InteractionDynamics<fluid_dynamics::MixtureDensity> update_density_in_wall(wall_fluid_contact);
+    wall_boundary.addBodyStateForRecording<Real>("MixtureDensity");
     //----------------------------------------------------------------------
     //	Define the methods for I/O operations, observations
     //	and regression tests of the simulation.
@@ -148,6 +149,7 @@ int main(int ac, char *av[])
 
             update_water_density_by_summation.exec();
             update_air_density_by_summation.exec();
+            update_density_in_wall.exec();
             air_transport_correction.exec();
 
             interval_computing_time_step += TickCount::now() - time_instance;
@@ -195,6 +197,7 @@ int main(int ac, char *av[])
             water_air_complex.updateConfiguration();
             air_water_complex.updateConfiguration();
             fluid_observer_contact.updateConfiguration();
+            wall_fluid_contact.updateConfiguration();
 
             interval_updating_configuration += TickCount::now() - time_instance;
         }
