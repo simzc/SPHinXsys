@@ -80,8 +80,13 @@ template <class RiemannSolverType, class KernelCorrectionType, typename... Densi
 Integration1stHalf<Contact<Wall, DensityInWallParameters...>, RiemannSolverType, KernelCorrectionType>::
     Integration1stHalf(BaseContactRelation &wall_contact_relation)
     : BaseIntegrationWithWall(wall_contact_relation),
-      correction_(particles_), riemann_solver_(fluid_, fluid_),
-      density_in_wall_(&base_particles_) {}
+      correction_(particles_), riemann_solver_(fluid_, fluid_)
+{
+    for (size_t k = 0; k != contact_particles_.size(); ++k)
+    {
+        density_in_wall_.push_back(DensityInWall<DensityInWallParameters...>(particles_, contact_particles_[k]));
+    }
+}
 //=================================================================================================//
 template <class RiemannSolverType, class KernelCorrectionType, typename... DensityInWallParameters>
 void Integration1stHalf<Contact<Wall, DensityInWallParameters...>, RiemannSolverType, KernelCorrectionType>::
@@ -93,6 +98,7 @@ void Integration1stHalf<Contact<Wall, DensityInWallParameters...>, RiemannSolver
     {
         StdLargeVec<Vecd> &force_ave_k = *(wall_force_ave_[k]);
         StdLargeVec<Real> &wall_mass_k = *(wall_mass_[k]);
+        DensityInWall<DensityInWallParameters...> &density_in_wall_k = density_in_wall_[k];
         Neighborhood &wall_neighborhood = (*contact_configuration_[k])[index_i];
         for (size_t n = 0; n != wall_neighborhood.current_size_; ++n)
         {
@@ -102,7 +108,7 @@ void Integration1stHalf<Contact<Wall, DensityInWallParameters...>, RiemannSolver
             Real r_ij = wall_neighborhood.r_ij_[n];
 
             Vecd face_wall_external_acceleration = force_prior_[index_i] / mass_[index_i] - force_ave_k[index_j] / wall_mass_k[index_j];
-            Real p_in_wall = p_[index_i] + density_in_wall_(index_i) * r_ij * SMAX(Real(0), face_wall_external_acceleration.dot(-e_ij));
+            Real p_in_wall = p_[index_i] + density_in_wall_k(index_i, index_j) * r_ij * SMAX(Real(0), face_wall_external_acceleration.dot(-e_ij));
             force -= mass_[index_i] * (p_[index_i] + p_in_wall) * correction_(index_i) * dW_ijV_j * e_ij;
             rho_dissipation += riemann_solver_.DissipativeUJump(p_[index_i] - p_in_wall) * dW_ijV_j;
         }
