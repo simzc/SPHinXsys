@@ -120,6 +120,27 @@ void FreeSurfaceIndication<Contact<NonWetting>>::interaction(size_t index_i, Rea
         }
     }
     pos_div_[index_i] += pos_div;
-};
+}
+//=================================================================================================//
+DiscreteIndication::DiscreteIndication(BaseInnerRelation &inner_relation)
+    : LocalDynamics(inner_relation.getSPHBody()), GeneralDataDelegateInner(inner_relation),
+      indicator_(particles_->indicator_)
+{
+    Real dp_1 = sph_body_.sph_adaptation_->ReferenceSpacing();
+    offset_W_ij_ = sph_body_.sph_adaptation_->getKernel()->W(dp_1, ZeroVecd);
+}
+//=================================================================================================//
+void DiscreteIndication::interaction(size_t index_i, Real dt)
+{
+    Real sum(0.0);
+    const Neighborhood &inner_neighborhood = inner_configuration_[index_i];
+    for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
+        sum += inner_neighborhood.W_ij_[n];
+
+    if (sum < offset_W_ij_)
+    {
+        indicator_[index_i] = -1;
+    }
+}
 //=================================================================================================//
 } // namespace SPH

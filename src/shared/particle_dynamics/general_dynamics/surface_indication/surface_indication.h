@@ -128,5 +128,17 @@ using SpatialTemporalFreeSurfaceIndicationComplex =
 
 using WettingCoupledSpatialTemporalFreeSurfaceIndicationComplex =
     ComplexInteraction<FreeSurfaceIndication<Inner<SpatialTemporal>, Contact<NonWetting>>>;
+
+class DiscreteIndication : public LocalDynamics, public GeneralDataDelegateInner
+{
+  public:
+    explicit DiscreteIndication(BaseInnerRelation &inner_relation);
+    virtual ~DiscreteIndication(){};
+    void interaction(size_t index_i, Real dt = 0.0);
+
+  protected:
+    StdLargeVec<int> &indicator_;
+    Real offset_W_ij_;
+};
 } // namespace SPH
 #endif // SURFACE_INDICATION_H
