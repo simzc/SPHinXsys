@@ -132,6 +132,11 @@ DiscreteIndication::DiscreteIndication(BaseInnerRelation &inner_relation)
 //=================================================================================================//
 void DiscreteIndication::interaction(size_t index_i, Real dt)
 {
+    if (indicator_[index_i] == -1)
+    {
+        indicator_[index_i] = 0;
+    }
+
     Real sum(0.0);
     const Neighborhood &inner_neighborhood = inner_configuration_[index_i];
     for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
