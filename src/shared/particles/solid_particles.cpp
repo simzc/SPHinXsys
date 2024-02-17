@@ -51,9 +51,9 @@ void ElasticSolidParticles::initializeOtherVariables()
      *	add restart output particle data
      */
     addVariableToWrite<Vecd>("NormalDirection");
-    addDerivedVariableToWrite<Displacement>();
-    addDerivedVariableToWrite<VonMisesStress>();
-    addDerivedVariableToWrite<VonMisesStrain>();
+    addDiagnosticVariableToWrite<Displacement>();
+    addDiagnosticVariableToWrite<VonMisesStress>();
+    addDiagnosticVariableToWrite<VonMisesStrain>();
     addVariableToRestart<Matd>("DeformationGradient");
     // get which stress measure is relevant for the material
     stress_measure_ = elastic_solid_.getRelevantStressMeasureName();
@@ -316,12 +316,12 @@ void ShellParticles::initializeOtherVariables()
      * add basic output particle data
      */
     addVariableToWrite<Vecd>("NormalDirection");
-    addDerivedVariableToWrite<Displacement>();
-    addDerivedVariableToWrite<VonMisesStress>();
-    addDerivedVariableToWrite<VonMisesStrain>();
+    addDiagnosticVariableToWrite<Displacement>();
+    addDiagnosticVariableToWrite<VonMisesStress>();
+    addDiagnosticVariableToWrite<VonMisesStrain>();
     addVariableToRestart<Matd>("DeformationGradient");
     addVariableToWrite<Vecd>("Rotation");
-    addDerivedVariableToWrite<MidSurfaceVonMisesStress>();
+    addDiagnosticVariableToWrite<MidSurfaceVonMisesStress>();
     /**
      * initialize transformation matrix
      */

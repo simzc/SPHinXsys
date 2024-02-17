@@ -21,10 +21,10 @@
  *                                                                           *
  * ------------------------------------------------------------------------- */
 /**
- * @file 	base_particles.h
- * @brief 	This is the base class of SPH particles. The basic data of the particles
- *			is saved in separated large vectors. Each derived class will introduce several extra
- * 			vectors for the new data. Note that there is no class of single particle.
+ * @file base_particles.h
+ * @brief This is the base class of SPH particles. The basic data of the particles
+ * is saved in separated large vectors. Each derived class will introduce several extra
+ * vectors for the new data. Note that there is no class of single particle.
  * @author	Chi Zhang, Chenxi Zhao and Xiangyu Hu
  */
 
@@ -52,33 +52,36 @@ class BaseDynamics;
 /**
  * @class BaseParticles
  * @brief Particles with essential (geometric and kinematic) data.
- * 		  There are three types of particles， all particles of a same type are saved with continuous memory segments.
- * 		  The first type is real particles whose states are updated by particle dynamics.
- * 		  One is buffer particles whose state are not updated by particle dynamics.
- * 		  Buffer particles are saved behind real particles.
- * 		  The global value of total_real_particles_ separate the real and buffer particles.
- * 		  They may be switched from real particles or switch to real particles.
- * 		  As the memory for both particles are continuous, such switch is achieved at the memory boundary sequentially.
- * 		  The basic idea is swap the data of the last real particle with the one will be switched particle,
- * 		  and then switch this swapped last particle as buffer particle by decrease the total_real_particles_ by one.
- * 		  Switch from buffer particle to real particle is easy. One just need to assign expect state to
- * 		  the first buffer particle and increase total_real_particles_ by one.
- * 		  The other is ghost particles whose states are updated according to
- * 		  boundary condition if their indices are included in the neighbor particle list.
- * 		  Ghost particles whose states are updated according to
- *      boundary condition if their indices are included in the neighbor particle list.
- *      The ghost particles are saved behind the buffer particles in the form of one or more ghost bounds.
- *      All particles are bounded by particle_bound_, which is the total number of particles in all types.
- * 		  It will be initialized to zero before a time step.
- * 		  In SPHinXsys, the discrete variables (state of each particle) registered in general particle data
- *      (ParticleData) belong to a hierarchy of two layers.
- * 		  The first is for the basic physical states to describe the physical process.
- * 		  These variables are defined within the classes of particles.
- * 		  The second is for the local, dynamics-method-related variables, which are defined in specific methods,
- * 		  and are only used by the relevant methods. Generally, a discrete variable is defined
- *      and the corresponding data owned by one object so that other objects can use it by the function
- *      getVariableByName. A shared discrete variable can also be defined by several objects.
- *      In this case, the data is owned by BaseParticles within all_shared_data_ptrs_.
+ * @details There are three types of particles， all particles of a same type are saved with continuous memory segments.
+ * The first is real particle whose states are updated by particle dynamics.
+ * The second is buffer particle whose states are not updated by particle dynamics.
+ * Buffer particles are saved behind real particles.
+ * The global value of total_real_particles_ separate the real and buffer particles.
+ * Buffer particles may be switched from real particles or to real particles.
+ * The total number of real particles and buffer particles gives the real_particles_bound_,
+ * i.e. the maximum possible number of real particles.
+ * As the memory for both particles are continuous, such switch is achieved at the memory boundary sequentially.
+ * The basic idea is swap the data of the last real particle with the one will be switched,
+ * and then switch this swapped last particle as buffer particle by decrease the total_real_particles_ by one.
+ * Switch from buffer particle to real particle is easy. One just need to assign expect state to
+ * the first buffer particle and increase total_real_particles_ by one.
+ * The third is ghost particle which is created according to a corresponding real particle.
+ * The states of ghost particle are updated according to boundary condition and those of the real particle.
+ * The ghost particles are saved behind the buffer particles within one or more ghost bounds.
+ * All particles are bounded by particle_bound_, which is the total number of particles in all types.
+ * In SPHinXsys, the discrete variables (state of each particle) and single variables (state for all particles)
+ * registered in general particle data (ParticleData).
+ * Generally, all discrete variable should be owned by a BaseParticles object
+ * so that other objects can use it by the function getVariableByName.
+ * A shared discrete variable can also be defined by several objects
+ * and a unique discrete variable is only used by the object who registers the variable.
+ * According the memory span of the variable, the discrete variable can be classified into
+ * sortable variable and derivable variables.
+ * Sortable variables keep their memories from the beginning to the end of the simulation,
+ * that is why they keeps their values after particle sorting.
+ * Derivable variables are updated from sortable variables and other derivable variables.
+ * Therefore, the memory span of derivable variables is only from its updating to the end of a single simulation step.
+ * There are also (diagnostic) variables which are derived and not used for evolution of the system but only for output or visualization.
  */
 class BaseParticles
 {
@@ -86,7 +89,7 @@ class BaseParticles
     DataContainerUniquePtrAssemble<DiscreteVariable> all_discrete_variable_ptrs_;
     DataContainerUniquePtrAssemble<StdLargeVec> shared_particle_data_ptrs_;
     DataContainerUniquePtrAssemble<SingleVariable> all_global_variable_ptrs_;
-    UniquePtrsKeeper<BaseDynamics<void>> derived_particle_data_;
+    UniquePtrsKeeper<BaseDynamics<void>> diagnostic_particle_data_;
 
   public:
     explicit BaseParticles(SPHBody &sph_body, BaseMaterial *base_material);
@@ -104,9 +107,9 @@ class BaseParticles
     //----------------------------------------------------------------------
     // Global information for defining particle groups
     //----------------------------------------------------------------------
-    size_t total_real_particles_;
-    size_t real_particles_bound_; /**< Maximum possible number of real particles. Also starting index for ghost particles. */
-    size_t particles_bound_;      /**< Total number of particles in all types. */
+    size_t total_real_particles_; /**< Global value of the present number of real particles. */
+    size_t real_particles_bound_; /**< Maximum possible number of real particles. */
+    size_t total_bound_;          /**< Total number of particles for all types. */
 
     SPHBody &getSPHBody() { return sph_body_; };
     BaseMaterial &getBaseMaterial() { return base_material_; };
@@ -156,9 +159,9 @@ class BaseParticles
     void addVariableToReload(const std::string &variable_name);
     inline const ParticleVariables &getVariablesToReload() const { return variables_to_reload_; }
 
-    template <class DerivedVariableMethod, class... Ts>
-    void addDerivedVariableToWrite(Ts &&...);
-    void computeDerivedVariables();
+    template <class DiagnosticVariableMethod, class... Ts>
+    void addDiagnosticVariableToWrite(Ts &&...);
+    void computeDiagnosticVariables();
     //----------------------------------------------------------------------
     //		Particle data for sorting
     //----------------------------------------------------------------------
@@ -176,8 +179,8 @@ class BaseParticles
     //----------------------------------------------------------------------
     //		Particle data ouput functions
     //----------------------------------------------------------------------
-    template <typename OutStreamType>
-    void writeParticlesToVtk(OutStreamType &output_stream);
+    template <typename StreamType>
+    void writeParticlesToVtk(StreamType &output_stream);
     void writeParticlesToPltFile(std::ofstream &output_file);
     virtual void writeSurfaceParticlesToVtuFile(std::ostream &output_file, BodySurface &surface_particles);
     void resizeXmlDocForParticles(XmlParser &xml_parser);
@@ -205,10 +208,12 @@ class BaseParticles
     ParticleVariables variables_to_write_;
     ParticleVariables variables_to_restart_;
     ParticleVariables variables_to_reload_;
-    StdVec<BaseDynamics<void> *> derived_variables_;
+    StdVec<BaseDynamics<void> *> diagnostic_variables_;
 
     virtual void writePltFileHeader(std::ofstream &output_file);
     virtual void writePltFileParticleData(std::ofstream &output_file, size_t index);
+    void writeParticlesToXml(XmlParser &xml_parser, ParticleVariables &particle_variables);
+    void readParticleFromXml(XmlParser &xml_parser, ParticleVariables &particle_variables);
     //----------------------------------------------------------------------
     //		Small structs for generalize particle operations
     //----------------------------------------------------------------------
@@ -275,21 +280,22 @@ struct ReadAParticleVariableFromXml
 };
 
 /**
- * @class BaseDerivedVariable
- * @brief computing displacement from current and initial particle position
+ * @class DiagnosticVariable
+ * @brief Variable whose value is derived from other variables
+ * and not used for evolution of the system.
  */
 template <typename DataType>
-class BaseDerivedVariable
+class DiagnosticVariable
 {
   public:
-    using DerivedDataType = DataType;
+    using DiagnosticDataType = DataType;
     std::string variable_name_;
 
-    BaseDerivedVariable(SPHBody &sph_body, const std::string &variable_name);
-    virtual ~BaseDerivedVariable(){};
+    DiagnosticVariable(SPHBody &sph_body, const std::string &variable_name);
+    virtual ~DiagnosticVariable(){};
 
   protected:
-    StdLargeVec<DataType> derived_variable_;
+    StdLargeVec<DataType> diagnostic_variable_;
 };
 } // namespace SPH
 #endif // BASE_PARTICLES_H

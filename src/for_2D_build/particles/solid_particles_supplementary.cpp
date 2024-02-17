@@ -47,7 +47,7 @@ void VonMisesStress::update(size_t index_i, Real dt)
     Real sigmayy = sigma(1, 1);
     Real sigmaxy = sigma(0, 1);
 
-    derived_variable_[index_i] =
+    diagnostic_variable_[index_i] =
         sqrt(sigmaxx * sigmaxx + sigmayy * sigmayy - sigmaxx * sigmayy + 3.0 * sigmaxy * sigmaxy);
 }
 //=============================================================================================//
@@ -59,7 +59,7 @@ void MidSurfaceVonMisesStress::update(size_t index_i, Real dt)
     Real sigmayy = sigma(1, 1);
     Real sigmaxy = sigma(0, 1);
 
-    derived_variable_[index_i] =
+    diagnostic_variable_[index_i] =
         sqrt(sigmaxx * sigmaxx + sigmayy * sigmayy - sigmaxx * sigmayy + 3.0 * sigmaxy * sigmaxy);
 }
 //=============================================================================================//

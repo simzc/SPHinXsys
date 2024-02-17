@@ -59,10 +59,10 @@ IndexRange Ghost<Base>::getGhostParticleRange(const ParticlesBound &ghost_bound)
 //=================================================================================================//
 size_t Ghost<Base>::allocateGhostParticles(BaseParticles &base_particles, size_t ghost_size)
 {
-    size_t ghost_lower_bound = base_particles.particles_bound_;
-    base_particles.particles_bound_ += ghost_size;
-    base_particles.resize_particle_data_(base_particles.particles_bound_);
-    base_particles.unsorted_id_.resize(base_particles.particles_bound_, 0);
+    size_t ghost_lower_bound = base_particles.total_bound_;
+    base_particles.total_bound_ += ghost_size;
+    base_particles.resize_particle_data_(base_particles.total_bound_);
+    base_particles.unsorted_id_.resize(base_particles.total_bound_, 0);
     return ghost_lower_bound;
 }
 //=================================================================================================//

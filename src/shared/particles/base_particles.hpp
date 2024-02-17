@@ -22,7 +22,7 @@ void BaseParticles::registerVariable(StdLargeVec<DataType> &variable_addrs,
 
     if (variable == nullptr)
     {
-        variable_addrs.resize(particles_bound_, initial_value);
+        variable_addrs.resize(total_bound_, initial_value);
 
         constexpr int type_index = DataTypeIndex<DataType>::value;
         std::get<type_index>(all_particle_data_).push_back(&variable_addrs);
@@ -44,7 +44,7 @@ void BaseParticles::registerVariable(StdLargeVec<DataType> &variable_addrs,
                                      const std::string &variable_name, const InitializationFunction &initialization)
 {
     registerVariable(variable_addrs, variable_name);
-    for (size_t i = 0; i != particles_bound_; ++i)
+    for (size_t i = 0; i != total_bound_; ++i)
     {
         variable_addrs[i] = initialization(i); // Here, lambda function is applied for initialization.
     }
@@ -147,14 +147,14 @@ void BaseParticles::addVariableToWrite(const std::string &variable_name)
     addVariableToList<DataType>(variables_to_write_, variable_name);
 }
 //=================================================================================================//
-template <class DerivedVariableMethod, class... Ts>
-void BaseParticles::addDerivedVariableToWrite(Ts &&...args)
+template <class DiagnosticVariableMethod, class... Ts>
+void BaseParticles::addDiagnosticVariableToWrite(Ts &&...args)
 {
-    SimpleDynamics<DerivedVariableMethod> *derived_data =
-        derived_particle_data_.createPtr<SimpleDynamics<DerivedVariableMethod>>(sph_body_, std::forward<Ts>(args)...);
-    derived_variables_.push_back(derived_data);
-    using DerivedDataType = typename DerivedVariableMethod::DerivedDataType;
-    addVariableToList<DerivedDataType>(variables_to_write_, derived_data->variable_name_);
+    SimpleDynamics<DiagnosticVariableMethod> *diagnostic_data =
+        diagnostic_particle_data_.createPtr<SimpleDynamics<DiagnosticVariableMethod>>(sph_body_, std::forward<Ts>(args)...);
+    diagnostic_variables_.push_back(diagnostic_data);
+    using DiagnosticDataType = typename DiagnosticVariableMethod::DiagnosticDataType;
+    addVariableToList<DiagnosticDataType>(variables_to_write_, diagnostic_data->variable_name_);
 }
 //=================================================================================================//
 template <typename DataType>
@@ -356,11 +356,11 @@ operator()(const std::string &variable_name, StdLargeVec<DataType> &variable) co
 }
 //=================================================================================================//
 template <typename DataType>
-BaseDerivedVariable<DataType>::
-    BaseDerivedVariable(SPHBody &sph_body, const std::string &variable_name)
+DiagnosticVariable<DataType>::
+    DiagnosticVariable(SPHBody &sph_body, const std::string &variable_name)
     : variable_name_(variable_name)
 {
-    sph_body.getBaseParticles().registerVariable(derived_variable_, variable_name_);
+    sph_body.getBaseParticles().registerVariable(diagnostic_variable_, variable_name_);
 };
 //=================================================================================================//
 } // namespace SPH

@@ -190,10 +190,10 @@ class SPHBody
         base_particles_->template addVariableToWrite<VariableType>(variable_name);
     };
 
-    template <class DerivedVariableMethod, typename... Args>
+    template <class DiagnosticVariableMethod, typename... Args>
     void addDerivedBodyStateForRecording(Args &&...args)
     {
-        base_particles_->template addDerivedVariableToWrite<DerivedVariableMethod>(std::forward<Args>(args)...);
+        base_particles_->template addDiagnosticVariableToWrite<DiagnosticVariableMethod>(std::forward<Args>(args)...);
     };
 
     template <typename VariableType>

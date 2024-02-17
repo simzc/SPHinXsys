@@ -11,7 +11,7 @@ namespace SPH
 {
 //=================================================================================================//
 BaseParticles::BaseParticles(SPHBody &sph_body, BaseMaterial *base_material)
-    : total_real_particles_(0), real_particles_bound_(0), particles_bound_(0),
+    : total_real_particles_(0), real_particles_bound_(0), total_bound_(0),
       particle_sorting_(*this),
       sph_body_(sph_body), body_name_(sph_body.getName()),
       base_material_(*base_material),
@@ -59,7 +59,7 @@ void BaseParticles::initializeOtherVariables()
     //----------------------------------------------------------------------
     //		initialize unregistered data
     //----------------------------------------------------------------------
-    for (size_t i = 0; i != particles_bound_; ++i)
+    for (size_t i = 0; i != total_bound_; ++i)
     {
         sorted_id_.push_back(sequence_.size());
         sequence_.push_back(0);
@@ -69,13 +69,13 @@ void BaseParticles::initializeOtherVariables()
 void BaseParticles::initializeAllParticlesBounds()
 {
     real_particles_bound_ = total_real_particles_;
-    particles_bound_ = real_particles_bound_;
+    total_bound_ = real_particles_bound_;
 }
 //=================================================================================================//
 void BaseParticles::increaseAllParticlesBounds(size_t buffer_size)
 {
     real_particles_bound_ += buffer_size;
-    particles_bound_ += buffer_size;
+    total_bound_ += buffer_size;
 }
 //=================================================================================================//
 void BaseParticles::copyFromAnotherParticle(size_t index, size_t another_index)
@@ -129,11 +129,11 @@ void BaseParticles::writePltFileHeader(std::ofstream &output_file)
     };
 }
 //=================================================================================================//
-void BaseParticles::computeDerivedVariables()
+void BaseParticles::computeDiagnosticVariables()
 {
-    for (auto &derived_variable : derived_variables_)
+    for (auto &diagnostic_variable : diagnostic_variables_)
     {
-        derived_variable->exec();
+        diagnostic_variable->exec();
     }
 }
 //=================================================================================================//
@@ -306,27 +306,19 @@ void BaseParticles::resizeXmlDocForParticles(XmlParser &xml_parser)
 //=================================================================================================//
 void BaseParticles::writeParticlesToXmlForRestart(std::string &filefullpath)
 {
-    resizeXmlDocForParticles(restart_xml_parser_);
-    WriteAParticleVariableToXml write_variable_to_xml(restart_xml_parser_, total_real_particles_);
-    DataAssembleOperation<loopParticleVariables> loop_variable_namelist;
-    loop_variable_namelist(all_particle_data_, variables_to_restart_, write_variable_to_xml);
+    writeParticlesToXml(restart_xml_parser_, variables_to_restart_);
     restart_xml_parser_.writeToXmlFile(filefullpath);
 }
 //=================================================================================================//
 void BaseParticles::readParticleFromXmlForRestart(std::string &filefullpath)
 {
     restart_xml_parser_.loadXmlFile(filefullpath);
-    ReadAParticleVariableFromXml read_variable_from_xml(restart_xml_parser_, total_real_particles_);
-    DataAssembleOperation<loopParticleVariables> loop_variable_namelist;
-    loop_variable_namelist(all_particle_data_, variables_to_restart_, read_variable_from_xml);
+    readParticleFromXml(restart_xml_parser_, variables_to_restart_);
 }
 //=================================================================================================//
 void BaseParticles::writeToXmlForReloadParticle(std::string &filefullpath)
 {
-    resizeXmlDocForParticles(reload_xml_parser_);
-    WriteAParticleVariableToXml write_variable_to_xml(reload_xml_parser_, total_real_particles_);
-    DataAssembleOperation<loopParticleVariables> loop_variable_namelist;
-    loop_variable_namelist(all_particle_data_, variables_to_reload_, write_variable_to_xml);
+    writeParticlesToXml(reload_xml_parser_, variables_to_reload_);
     reload_xml_parser_.writeToXmlFile(filefullpath);
 }
 //=================================================================================================//
@@ -339,9 +331,22 @@ void BaseParticles::readFromXmlForReloadParticle(std::string &filefullpath)
         unsorted_id_.push_back(i);
     };
     resize_particle_data_(total_real_particles_);
-    ReadAParticleVariableFromXml read_variable_from_xml(reload_xml_parser_, total_real_particles_);
+    readParticleFromXml(reload_xml_parser_, variables_to_reload_);
+}
+//=================================================================================================//
+void BaseParticles::writeParticlesToXml(XmlParser &xml_parser, ParticleVariables &particle_variables)
+{
+    resizeXmlDocForParticles(xml_parser);
+    WriteAParticleVariableToXml write_variable_to_xml(xml_parser, total_real_particles_);
     DataAssembleOperation<loopParticleVariables> loop_variable_namelist;
-    loop_variable_namelist(all_particle_data_, variables_to_reload_, read_variable_from_xml);
+    loop_variable_namelist(all_particle_data_, particle_variables, write_variable_to_xml);
+}
+//=================================================================================================//
+void BaseParticles::readParticleFromXml(XmlParser &xml_parser, ParticleVariables &particle_variables)
+{
+    ReadAParticleVariableFromXml read_variable_from_xml(xml_parser, total_real_particles_);
+    DataAssembleOperation<loopParticleVariables> loop_variable_namelist;
+    loop_variable_namelist(all_particle_data_, particle_variables, read_variable_from_xml);
 }
 //=================================================================================================//
 } // namespace SPH

@@ -46,7 +46,7 @@ typedef DataDelegateSimple<SolidParticles> SolidDataSimple;
  * @class Displacement
  * @brief computing displacement from current and initial particle position
  */
-class Displacement : public BaseDerivedVariable<Vecd>,
+class Displacement : public DiagnosticVariable<Vecd>,
                      public SolidDataSimple,
                      public LocalDynamics
 {
@@ -98,7 +98,7 @@ class TranslationAndRotation : public SolidDataSimple,
 //----------------------------------------------------------------------
 typedef DataDelegateSimple<ElasticSolidParticles> ElasticSolidDataSimple;
 
-class GreenLagrangeStrain : public BaseDerivedVariable<Matd>,
+class GreenLagrangeStrain : public DiagnosticVariable<Matd>,
                             public ElasticSolidDataSimple,
                             public LocalDynamics
 {
@@ -115,7 +115,7 @@ class GreenLagrangeStrain : public BaseDerivedVariable<Matd>,
  * @class VonMisesStress
  * @brief computing von_Mises_stress
  */
-class VonMisesStress : public BaseDerivedVariable<Real>,
+class VonMisesStress : public DiagnosticVariable<Real>,
                        public ElasticSolidDataSimple,
                        public LocalDynamics
 {
@@ -135,7 +135,7 @@ class VonMisesStress : public BaseDerivedVariable<Real>,
  * @class VonMisesStrain
  * @brief computing von Mises strain
  */
-class VonMisesStrain : public BaseDerivedVariable<Real>,
+class VonMisesStrain : public DiagnosticVariable<Real>,
                        public ElasticSolidDataSimple,
                        public LocalDynamics
 {
@@ -149,7 +149,7 @@ class VonMisesStrain : public BaseDerivedVariable<Real>,
  * @class VonMisesStrain
  * @brief update von Mises strain
  */
-class VonMisesStrainDynamic : public BaseDerivedVariable<Real>,
+class VonMisesStrainDynamic : public DiagnosticVariable<Real>,
                               public ElasticSolidDataSimple,
                               public LocalDynamics
 {
@@ -170,9 +170,9 @@ typedef DataDelegateSimple<ShellParticles> ShellSolidDataSimple;
  * @class MidSurfaceVonMisesStress
  * @brief computing mid-surface von Mises stress of shells
  */
-class MidSurfaceVonMisesStress : public BaseDerivedVariable<Real>,
-                                         public ShellSolidDataSimple,
-                                         public LocalDynamics
+class MidSurfaceVonMisesStress : public DiagnosticVariable<Real>,
+                                 public ShellSolidDataSimple,
+                                 public LocalDynamics
 {
   public:
     explicit MidSurfaceVonMisesStress(SPHBody &sph_body);
