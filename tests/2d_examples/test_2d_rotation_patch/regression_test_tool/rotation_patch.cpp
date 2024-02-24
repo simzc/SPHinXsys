@@ -18,8 +18,8 @@ BoundingBox system_domain_bounds(Vec2d(-BW, -BW), Vec2d(LL + BW, LH + BW));
 //----------------------------------------------------------------------
 //	Material parameters.
 //----------------------------------------------------------------------
-Real rho0_f = 1.0;          /**< Reference density of fluid. */
-Real U_max = 1.0;           /**< Characteristic velocity. */
+Real rho0_f = 1.0;       /**< Reference density of fluid. */
+Real U_max = 1.0;        /**< Characteristic velocity. */
 Real c_f = 40.0 * U_max; /**< Reference sound speed. */
 
 Vec2d DamP_lb(-LL / 2, -LH / 2); /**< Left bottom. */
@@ -223,6 +223,7 @@ int main(int ac, char *av[])
                 fluid_density_relaxation.exec(acoustic_dt);
                 relaxation_time += acoustic_dt;
                 integration_time += acoustic_dt;
+                inner_ite_dt++;
                 GlobalStaticVariables::physical_time_ += acoustic_dt;
             }
             interval_computing_fluid_pressure_relaxation += TickCount::now() - time_instance;

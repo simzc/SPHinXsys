@@ -27,8 +27,6 @@ TransportVelocityCorrection<Inner<ResolutionType>, CommonControlTypes...>::
 {
     this->particles_->registerVariable(correction_faction_, "CorrectionFaction");
     this->particles_->template addVariableToWrite<Real>("CorrectionFaction");
-    this->particles_->template addVariableToWrite<Real>("PositionDivergence");
-    this->particles_->template addVariableToWrite<Real>("DensitySummation");
 }
 //=================================================================================================//
 template <class ResolutionType, typename... CommonControlTypes>
