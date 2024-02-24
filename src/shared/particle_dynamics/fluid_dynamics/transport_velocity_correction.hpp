@@ -19,13 +19,17 @@ template <class ResolutionType, typename... CommonControlTypes>
 TransportVelocityCorrection<Inner<ResolutionType>, CommonControlTypes...>::
     TransportVelocityCorrection(BaseInnerRelation &inner_relation, Real coefficient)
     : TransportVelocityCorrection<Base, FluidDataInner, CommonControlTypes...>(inner_relation),
+      rho0_(this->sph_body_.getBaseMaterial().ReferenceDensity()),
       h_ref_(this->sph_body_.sph_adaptation_->ReferenceSmoothingLength()),
       correction_scaling_(coefficient * h_ref_ * h_ref_),
-      pos_(this->particles_->pos_), h_ratio_(this->particles_)
-      {
-        this->particles_->registerVariable(correction_faction_, "CorrectionFaction");
-        this->particles_->template addVariableToWrite<Real>("CorrectionFaction");
-      }
+      pos_(this->particles_->pos_), h_ratio_(this->particles_),
+      rho_sum_(*this->particles_->template getVariableByName<Real>("DensitySummation"))
+{
+    this->particles_->registerVariable(correction_faction_, "CorrectionFaction");
+    this->particles_->template addVariableToWrite<Real>("CorrectionFaction");
+    this->particles_->template addVariableToWrite<Real>("PositionDivergence");
+    this->particles_->template addVariableToWrite<Real>("DensitySummation");
+}
 //=================================================================================================//
 template <class ResolutionType, typename... CommonControlTypes>
 void TransportVelocityCorrection<Inner<ResolutionType>, CommonControlTypes...>::
@@ -50,13 +54,14 @@ template <class ResolutionType, typename... CommonControlTypes>
 void TransportVelocityCorrection<Inner<ResolutionType>, CommonControlTypes...>::
     update(size_t index_i, Real dt)
 {
+    correction_faction_[index_i] = 0.0;
     if (this->checkWithinScope(index_i))
     {
         Real inv_h_ratio = 1.0 / h_ratio_(index_i);
-        Real error_scale = this->transport_acc_[index_i].squaredNorm() * h_ref_ * h_ref_;
+        Real error_scale = ABS(rho_sum_[index_i] - rho0_) / rho0_;
         correction_faction_[index_i] = SMIN(1.0e2 * error_scale, Real(1));
         pos_[index_i] += correction_scaling_ * correction_faction_[index_i] *
-        this->transport_acc_[index_i] * inv_h_ratio * inv_h_ratio;
+                         this->transport_acc_[index_i] * inv_h_ratio * inv_h_ratio;
     }
 }
 //=================================================================================================//
