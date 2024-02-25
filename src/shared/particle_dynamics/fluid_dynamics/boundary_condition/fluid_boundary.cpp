@@ -41,15 +41,14 @@ EmitterInflowCondition::
       updated_transform_(aligned_box_.getTransform()),
       old_transform_(updated_transform_) {}
 //=================================================================================================//
-void EmitterInflowCondition ::update(size_t unsorted_index_i, Real dt)
+void EmitterInflowCondition ::update(size_t index_i, Real dt)
 {
-    size_t sorted_index_i = sorted_id_[unsorted_index_i];
-    Vecd frame_position = old_transform_.shiftBaseStationToFrame(pos_[sorted_index_i]);
-    Vecd frame_velocity = old_transform_.xformBaseVecToFrame(vel_[sorted_index_i]);
-    pos_[sorted_index_i] = updated_transform_.shiftFrameStationToBase(frame_position);
-    vel_[sorted_index_i] = updated_transform_.xformFrameVecToBase(getTargetVelocity(frame_position, frame_velocity));
-    rho_[sorted_index_i] = rho0_;
-    p_[sorted_index_i] = fluid_.getPressure(rho0_);
+    Vecd frame_position = old_transform_.shiftBaseStationToFrame(pos_[index_i]);
+    Vecd frame_velocity = old_transform_.xformBaseVecToFrame(vel_[index_i]);
+    pos_[index_i] = updated_transform_.shiftFrameStationToBase(frame_position);
+    vel_[index_i] = updated_transform_.xformFrameVecToBase(getTargetVelocity(frame_position, frame_velocity));
+    rho_[index_i] = rho0_;
+    p_[index_i] = fluid_.getPressure(rho0_);
 }
 //=================================================================================================//
 EmitterInflowInjection::
@@ -63,23 +62,22 @@ EmitterInflowInjection::
     buffer_.checkParticlesReserved();
 }
 //=================================================================================================//
-void EmitterInflowInjection::update(size_t unsorted_index_i, Real dt)
+void EmitterInflowInjection::update(size_t index_i, Real dt)
 {
-    size_t sorted_index_i = sorted_id_[unsorted_index_i];
-    if (aligned_box_.checkUpperBound(axis_, pos_[sorted_index_i]))
+    if (aligned_box_.checkUpperBound(axis_, pos_[index_i]))
     {
         mutex_switch_to_real_.lock();
         buffer_.checkEnoughBuffer(*particles_);
         /** Buffer Particle state copied from real particle. */
-        particles_->copyFromAnotherParticle(particles_->total_real_particles_, sorted_index_i);
+        particles_->copyFromAnotherParticle(particles_->total_real_particles_, index_i);
         /** Realize the buffer particle by increasing the number of real particle in the body.  */
         particles_->total_real_particles_ += 1;
         mutex_switch_to_real_.unlock();
 
         /** Periodic bounding. */
-        pos_[sorted_index_i] = aligned_box_.getUpperPeriodic(axis_, pos_[sorted_index_i]);
-        rho_[sorted_index_i] = fluid_.ReferenceDensity();
-        p_[sorted_index_i] = fluid_.getPressure(rho_[sorted_index_i]);
+        pos_[index_i] = aligned_box_.getUpperPeriodic(axis_, pos_[index_i]);
+        rho_[index_i] = fluid_.ReferenceDensity();
+        p_[index_i] = fluid_.getPressure(rho_[index_i]);
     }
 }
 //=================================================================================================//

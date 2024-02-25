@@ -87,7 +87,7 @@ class SelfSurfaceContactRelation : public BaseInnerRelation
     virtual void updateConfiguration() override;
 
   protected:
-    IndexVector &body_part_particles_;
+    UnSortedIndexVector &body_part_particles_;
     SearchDepthSingleResolution get_single_search_depth_;
     NeighborBuilderSelfContact get_self_contact_neighbor_;
     CellLinkedList &cell_linked_list_;

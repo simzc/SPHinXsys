@@ -171,7 +171,7 @@ NeighborBuilderContactBodyPart::NeighborBuilderContactBodyPart(SPHBody &body, Bo
 {
     contact_body_part.getSPHBody().getBaseParticles().registerVariable(part_indicator_, "BodyPartByParticleIndicator");
     BodyPartByParticle &contact_body_part_by_particle = DynamicCast<BodyPartByParticle>(this, contact_body_part);
-    IndexVector part_particles = contact_body_part_by_particle.body_part_particles_;
+    IndexVector part_particles = contact_body_part_by_particle.LoopRange();
 
     for (size_t i = 0; i != part_particles.size(); ++i)
     {

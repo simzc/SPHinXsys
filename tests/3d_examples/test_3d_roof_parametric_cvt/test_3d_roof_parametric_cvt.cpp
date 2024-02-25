@@ -379,7 +379,7 @@ return_data roof_under_self_weight(Real dp, bool cvt = true, int particle_number
                 ids.push_back(i);
         return ids;
     }();
-    constrained_edges.body_part_particles_ = constrained_edge_ids;
+    constrained_edges.LoopRange() = constrained_edge_ids;
 
     SimpleDynamics<solid_dynamics::FixedInAxisDirection> constrain_holder(constrained_edges, length_vec);
     DampingWithRandomChoice<InteractionSplit<DampingBySplittingInner<Vec3d>>>

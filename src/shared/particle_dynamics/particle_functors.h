@@ -76,6 +76,22 @@ class NotIndicatedParticles
     };
 };
 //----------------------------------------------------------------------
+// Sorted and unsorted particle functors
+//----------------------------------------------------------------------
+class UnSortedIndexVector : public IndexVector
+{
+    StdLargeVec<size_t> &sorted_id_;
+
+  public:
+    UnSortedIndexVector(BaseParticles *base_particles)
+        : IndexVector(), sorted_id_(base_particles->sorted_id_){};
+
+    size_t SortedID(size_t i) const
+    {
+        return sorted_id_[(*this)[i]];
+    };
+};
+//----------------------------------------------------------------------
 // Particle average functors
 //----------------------------------------------------------------------
 template <typename T>

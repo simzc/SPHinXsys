@@ -182,7 +182,7 @@ void BaseParticles::writeParticlesToPltFile(std::ofstream &output_file)
 //=================================================================================================//
 void BaseParticles::writeSurfaceParticlesToVtuFile(std::ostream &output_file, BodySurface &surface_particles)
 {
-    size_t total_surface_particles = surface_particles.body_part_particles_.size();
+    size_t total_surface_particles = surface_particles.LoopRange().size();
 
     // write current/final particle positions first
     output_file << "   <Points>\n";
@@ -190,7 +190,7 @@ void BaseParticles::writeSurfaceParticlesToVtuFile(std::ostream &output_file, Bo
     output_file << "    ";
     for (size_t i = 0; i != total_surface_particles; ++i)
     {
-        size_t particle_i = surface_particles.body_part_particles_[i];
+        size_t particle_i = surface_particles.LoopRange()[i];
         Vec3d particle_position = upgradeToVec3d(pos_[particle_i]);
         output_file << particle_position[0] << " " << particle_position[1] << " " << particle_position[2] << " ";
     }
@@ -206,7 +206,7 @@ void BaseParticles::writeSurfaceParticlesToVtuFile(std::ostream &output_file, Bo
     output_file << "    ";
     for (size_t i = 0; i != total_surface_particles; ++i)
     {
-        size_t particle_i = surface_particles.body_part_particles_[i];
+        size_t particle_i = surface_particles.LoopRange()[i];
         output_file << particle_i << " ";
     }
     output_file << std::endl;
@@ -217,7 +217,7 @@ void BaseParticles::writeSurfaceParticlesToVtuFile(std::ostream &output_file, Bo
     output_file << "    ";
     for (size_t i = 0; i != total_surface_particles; ++i)
     {
-        size_t particle_i = surface_particles.body_part_particles_[i];
+        size_t particle_i = surface_particles.LoopRange()[i];
         output_file << unsorted_id_[particle_i] << " ";
     }
     output_file << std::endl;
@@ -232,7 +232,7 @@ void BaseParticles::writeSurfaceParticlesToVtuFile(std::ostream &output_file, Bo
         output_file << "    ";
         for (size_t i = 0; i != total_surface_particles; ++i)
         {
-            size_t particle_i = surface_particles.body_part_particles_[i];
+            size_t particle_i = surface_particles.LoopRange()[i];
             Mat3d matrix_value = upgradeToMat3d(variable_data[particle_i]);
             for (int k = 0; k != 3; ++k)
             {
@@ -253,7 +253,7 @@ void BaseParticles::writeSurfaceParticlesToVtuFile(std::ostream &output_file, Bo
         output_file << "    ";
         for (size_t i = 0; i != total_surface_particles; ++i)
         {
-            size_t particle_i = surface_particles.body_part_particles_[i];
+            size_t particle_i = surface_particles.LoopRange()[i];
             Vec3d vector_value = upgradeToVec3d(variable_data[particle_i]);
             output_file << std::fixed << std::setprecision(9) << vector_value[0] << " " << vector_value[1] << " " << vector_value[2] << " ";
         }
@@ -270,7 +270,7 @@ void BaseParticles::writeSurfaceParticlesToVtuFile(std::ostream &output_file, Bo
         output_file << "    ";
         for (size_t i = 0; i != total_surface_particles; ++i)
         {
-            size_t particle_i = surface_particles.body_part_particles_[i];
+            size_t particle_i = surface_particles.LoopRange()[i];
             output_file << std::fixed << std::setprecision(9) << variable_data[particle_i] << " ";
         }
         output_file << std::endl;
@@ -286,7 +286,7 @@ void BaseParticles::writeSurfaceParticlesToVtuFile(std::ostream &output_file, Bo
         output_file << "    ";
         for (size_t i = 0; i != total_surface_particles; ++i)
         {
-            size_t particle_i = surface_particles.body_part_particles_[i];
+            size_t particle_i = surface_particles.LoopRange()[i];
             output_file << std::fixed << std::setprecision(9) << variable_data[particle_i] << " ";
         }
         output_file << std::endl;

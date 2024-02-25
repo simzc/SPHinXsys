@@ -106,7 +106,7 @@ class SurfaceContactRelation : public ContactRelationCrossResolution
     virtual void updateConfiguration() override;
 
   protected:
-    IndexVector &body_part_particles_;
+    UnSortedIndexVector &body_part_particles_;
     StdVec<NeighborBuilderSurfaceContact *> get_contact_neighbors_;
 
     virtual void resetNeighborhoodCurrentSize() override;

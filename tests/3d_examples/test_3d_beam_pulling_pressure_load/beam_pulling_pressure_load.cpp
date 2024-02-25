@@ -52,7 +52,7 @@ class PullingForce : public solid_dynamics::BaseLoadingForce<BodyPartByParticle>
           Vol_(particles_->Vol_),
           F_(particles_->F_),
           force_arr_(f_arr),
-          particles_num_(body_part.body_part_particles_.size())
+          particles_num_(body_part.LoopRange().size())
     {
         area_0_.resize(particles_->total_real_particles_);
         for (size_t i = 0; i < particles_->total_real_particles_; ++i)
@@ -154,7 +154,7 @@ int main(int ac, char *av[])
         {Real(0.4) * end_time, load_total_force},
         {Real(end_time), Real(load_total_force)}};
     SimpleDynamics<PullingForce> pull_force(load_surface, force_over_time);
-    std::cout << "load surface particle number: " << load_surface.body_part_particles_.size() << std::endl;
+    std::cout << "load surface particle number: " << load_surface.LoopRange().size() << std::endl;
 
     //=== define constraint ===
     /* create a brick to tag the region */

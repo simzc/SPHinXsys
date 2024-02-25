@@ -186,7 +186,7 @@ class EmitterInflowCondition : public BaseLocalDynamics<BodyPartByParticle>, pub
     virtual ~EmitterInflowCondition(){};
 
     virtual void setupDynamics(Real dt = 0.0) override { updateTransform(); };
-    void update(size_t unsorted_index_i, Real dt = 0.0);
+    void update(size_t index_i, Real dt = 0.0);
 
   protected:
     Fluid &fluid_;

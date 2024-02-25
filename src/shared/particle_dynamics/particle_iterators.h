@@ -77,7 +77,7 @@ inline void particle_for(const ParallelPolicy &par, const IndexRange &particles_
  * Bodypart By Particle-wise iterators (for sequential and parallel computing).
  */
 template <class LocalDynamicsFunction>
-inline void particle_for(const SequencedPolicy &seq, const IndexVector &body_part_particles,
+inline void particle_for(const SequencedPolicy &seq, const UnSortedIndexVector &body_part_particles,
                          const LocalDynamicsFunction &local_dynamics_function)
 {
     for (size_t i = 0; i < body_part_particles.size(); ++i)
@@ -85,7 +85,7 @@ inline void particle_for(const SequencedPolicy &seq, const IndexVector &body_par
 };
 
 template <class LocalDynamicsFunction>
-inline void particle_for(const ParallelPolicy &par, const IndexVector &body_part_particles,
+inline void particle_for(const ParallelPolicy &par, const UnSortedIndexVector &body_part_particles,
                          const LocalDynamicsFunction &local_dynamics_function)
 {
     parallel_for(
@@ -94,7 +94,8 @@ inline void particle_for(const ParallelPolicy &par, const IndexVector &body_part
         {
             for (size_t i = r.begin(); i < r.end(); ++i)
             {
-                local_dynamics_function(body_part_particles[i]);
+                size_t index_i = body_part_particles.SortedID(i);
+                local_dynamics_function(index_i);
             }
         },
         ap);

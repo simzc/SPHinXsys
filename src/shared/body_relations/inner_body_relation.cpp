@@ -51,7 +51,7 @@ SelfSurfaceContactRelation::
     SelfSurfaceContactRelation(RealBody &real_body)
     : BaseInnerRelation(real_body),
       body_surface_layer_(real_body),
-      body_part_particles_(body_surface_layer_.body_part_particles_),
+      body_part_particles_(body_surface_layer_.LoopRange()),
       get_self_contact_neighbor_(real_body),
       cell_linked_list_(DynamicCast<CellLinkedList>(this, real_body.getCellLinkedList())) {}
 //=================================================================================================//

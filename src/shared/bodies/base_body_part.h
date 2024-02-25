@@ -31,8 +31,7 @@
 #define BASE_BODY_PART_H
 
 #include "base_body.h"
-
-#include <string>
+#include "particle_functors.h"
 
 namespace SPH
 {
@@ -63,15 +62,15 @@ class BodyPart
 class BodyPartByParticle : public BodyPart
 {
   public:
-    IndexVector body_part_particles_; /**< Collection particle in this body part. */
-    BaseParticles &getBaseParticles() { return base_particles_; };
-    IndexVector &LoopRange() { return body_part_particles_; };
-    size_t SizeOfLoopRange() { return body_part_particles_.size(); };
-
     BodyPartByParticle(SPHBody &sph_body, const std::string &body_part_name)
         : BodyPart(sph_body, body_part_name), base_particles_(sph_body.getBaseParticles()),
+          body_part_particles_(&base_particles_),
           body_part_bounds_(Vecd::Zero(), Vecd::Zero()), body_part_bounds_set_(false){};
     virtual ~BodyPartByParticle(){};
+
+    BaseParticles &getBaseParticles() { return base_particles_; };
+    UnSortedIndexVector &LoopRange() { return body_part_particles_; };
+    size_t SizeOfLoopRange() { return body_part_particles_.size(); };
 
     void setBodyPartBounds(BoundingBox bbox)
     {
@@ -88,6 +87,7 @@ class BodyPartByParticle : public BodyPart
 
   protected:
     BaseParticles &base_particles_;
+    UnSortedIndexVector body_part_particles_;
     BoundingBox body_part_bounds_;
     bool body_part_bounds_set_;
 

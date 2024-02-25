@@ -57,7 +57,7 @@ SpringNormalOnSurfaceParticles::
 {
     BodySurface surface_layer(sph_body);
 
-    for (size_t particle_i : surface_layer.body_part_particles_)
+    for (size_t particle_i : surface_layer.LoopRange())
     {
         Vecd vector_to_particle = source_point - pos0_[particle_i];
         Vecd normal = n0_[particle_i];
@@ -123,7 +123,7 @@ SpringOnSurfaceParticles::
     BodySurface surface_layer(sph_body);
     // select which particles the spring is applied to
     // if the particle is in the surface layer, the force is applied
-    for (size_t particle_i : surface_layer.body_part_particles_)
+    for (size_t particle_i : surface_layer.LoopRange())
         apply_spring_force_to_particle_[particle_i] = true;
 
     // scale stiffness and damping by area here, so it's not necessary in each iteration
@@ -171,7 +171,7 @@ ForceInBodyRegion::
       pos0_(particles_->pos0_), force_vector_(Vecd::Zero()), end_time_(end_time)
 {
     Real total_mass_in_region(0);
-    for (size_t particle_i : body_part.body_part_particles_)
+    for (size_t particle_i : body_part.LoopRange())
         total_mass_in_region += particles_->mass_[particle_i];
     force_vector_ = force;
 }
@@ -193,7 +193,7 @@ SurfacePressureFromSource::
 {
     BodySurface surface_layer(sph_body_);
 
-    for (size_t particle_i : surface_layer.body_part_particles_)
+    for (size_t particle_i : surface_layer.LoopRange())
     {
         Vecd vector_to_particle = source_point - particles_->pos0_[particle_i];
         Vecd normal = particles_->n0_[particle_i];

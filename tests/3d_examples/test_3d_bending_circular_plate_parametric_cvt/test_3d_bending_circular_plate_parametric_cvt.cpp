@@ -270,7 +270,7 @@ return_data bending_circular_plate(Real dp_ratio)
                 ids.push_back(i);
         return ids;
     }();
-    constrained_edges.body_part_particles_ = constrained_edge_ids;
+    constrained_edges.LoopRange() = constrained_edge_ids;
 
     SimpleDynamics<thin_structure_dynamics::ConstrainShellBodyRegion> constrain_holder(constrained_edges);
     DampingWithRandomChoice<InteractionSplit<DampingBySplittingInner<Vec3d>>>
