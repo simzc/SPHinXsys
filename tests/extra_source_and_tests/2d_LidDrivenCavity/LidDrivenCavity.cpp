@@ -21,8 +21,8 @@ Real min_shear_rate = 1e-2; // cutoff low shear rate
 Real max_shear_rate = 1e+3; // cutoff high shear rate
 
 // material properties
-Real rho = 1000.0;                            // reference density
-Real u_lid = 1.0;                             // lid velocity
+Real rho = 1000.0;       // reference density
+Real u_lid = 1.0;        // lid velocity
 Real SOS = 10.0 * u_lid; // numerical speed of sound
 
 // geometry data
@@ -76,7 +76,6 @@ class BoundaryVelocity : public solid_dynamics::MotionConstraint
     BoundaryVelocity(BodyPartByParticle &body_part)
         : solid_dynamics::MotionConstraint(body_part) {}
 
-
     void update(size_t index_i, Real dt = 0.0)
     {
         Vec2d velocity{Vecd::Zero()};
@@ -88,7 +87,7 @@ class BoundaryVelocity : public solid_dynamics::MotionConstraint
 class ChangingBoundaryVelocity : public fluid_dynamics::FluidInitialCondition
 {
   public:
-    ChangingBoundaryVelocity(SPHBody &sph_body) 
+    ChangingBoundaryVelocity(SPHBody &sph_body)
         : fluid_dynamics::FluidInitialCondition(sph_body){};
     void update(size_t index_i, Real dt)
     {
@@ -147,14 +146,14 @@ int main(int ac, char *av[])
 
     //	Define the numerical methods used in the simulation
     InteractionWithUpdate<KernelCorrectionMatrixComplex> corrected_configuration_fluid(ConstructorArgs(fluid_inner, 0.3), fluid_all_walls);
-    Dynamics1Level<fluid_dynamics::Integration1stHalfWithWall<AcousticRiemannSolver, KernelCorrection>> pressure_relaxation(fluid_inner, fluid_all_walls);
+    Dynamics1Level<fluid_dynamics::Integration1stHalfWithWall<AcousticRiemannSolver, FirstConsistencyCorrection>> pressure_relaxation(fluid_inner, fluid_all_walls);
     Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWall<NoRiemannSolver>> density_relaxation(fluid_inner, fluid_all_walls);
     InteractionWithUpdate<fluid_dynamics::DensitySummationComplex> update_density_by_summation(fluid_inner, fluid_all_walls);
 
-    InteractionDynamics<fluid_dynamics::VelocityGradientWithWall> vel_grad_calculation(fluid_inner, fluid_all_walls);
+    InteractionDynamics<fluid_dynamics::VelocityGradientWithWall<FirstConsistencyCorrection>> vel_grad_calculation(fluid_inner, fluid_all_walls);
     InteractionDynamics<fluid_dynamics::ShearRateDependentViscosity> shear_rate_calculation(fluid_inner);
     InteractionWithUpdate<fluid_dynamics::GeneralizedNewtonianViscousForceWithWall> viscous_acceleration(fluid_inner, fluid_all_walls);
-    InteractionWithUpdate<fluid_dynamics::BaseTransportVelocityCorrectionComplex<SingleResolution, ZerothInconsistencyLimiter, NoKernelCorrection, AllParticles>> transport_velocity_correction(fluid_inner, fluid_all_walls);
+    InteractionWithUpdate<fluid_dynamics::BaseTransportVelocityCorrectionComplex<SingleResolution, ZerothConsistencyLimiter, NoKernelCorrection, AllParticles>> transport_velocity_correction(fluid_inner, fluid_all_walls);
 
     ReduceDynamics<fluid_dynamics::AdvectionTimeStepSize> get_fluid_advection_time_step_size(fluid, u_lid);
     ReduceDynamics<fluid_dynamics::AcousticTimeStepSize> get_acoustic_time_step_size(fluid);
@@ -162,7 +161,7 @@ int main(int ac, char *av[])
 
     InteractionDynamics<fluid_dynamics::VorticityInner> compute_vorticity(fluid_inner);
     BodyRegionByParticle lid_boundary(no_slip_boundary, makeShared<Lid_Boundary>("LidWall"));
-    SimpleDynamics<BoundaryVelocity> lid_veloicty(lid_boundary);
+    SimpleDynamics<BoundaryVelocity> lid_velocity(lid_boundary);
     SimpleDynamics<NormalDirectionFromBodyShape> wall_boundary_normal_direction(no_slip_boundary);
 
     //	Define the methods for I/O operations, observations
@@ -173,7 +172,7 @@ int main(int ac, char *av[])
     //	Prepare the simulation
     sph_system.initializeSystemCellLinkedLists();
     sph_system.initializeSystemConfigurations();
-    lid_veloicty.exec();
+    lid_velocity.exec();
     wall_boundary_normal_direction.exec();
 
     //	Setup for time-stepping control
@@ -220,10 +219,11 @@ int main(int ac, char *av[])
 
         if (iteration % 100 == 0 || output_counter * output_interval < GlobalStaticVariables::physical_time_)
         {
-            std::cout << "Iteration: " << iteration << " | sim time in %: " << GlobalStaticVariables::physical_time_ / end_time * 100 
-                << " | physical time in s: " << GlobalStaticVariables::physical_time_ 
-                << " | computation time in s: " << tt.seconds() << " | dt_adv: " << Dt_adv << " | dt_visc: " << Dt_visc 
-                << " | dt_aco: " << Dt_aco << "\n" << std::flush;
+            std::cout << "Iteration: " << iteration << " | sim time in %: " << GlobalStaticVariables::physical_time_ / end_time * 100
+                      << " | physical time in s: " << GlobalStaticVariables::physical_time_
+                      << " | computation time in s: " << tt.seconds() << " | dt_adv: " << Dt_adv << " | dt_visc: " << Dt_visc
+                      << " | dt_aco: " << Dt_aco << "\n"
+                      << std::flush;
         }
 
         if (output_counter * output_interval < GlobalStaticVariables::physical_time_)
