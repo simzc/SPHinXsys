@@ -161,15 +161,15 @@ using GeneralizedNewtonianViscousForceWithWall = ComplexInteraction<GeneralizedN
 /**
  * @class ShearRateDependentViscosity
  * @brief computes the viscosity based on the generalized Newtonian fluid model specified
- * @note needs VelocityGradient to work and is needed for GenearlizedNewtonianViscousForce
+ * @note needs VelocityGradient to work and is needed for GeneralizedNewtonianViscousForce
  */
-class ShearRateDependentViscosity : public LocalDynamics, public FluidDataInner
+class ShearRateDependentViscosity : public LocalDynamics, public FluidDataSimple
 {
   public:
-    explicit ShearRateDependentViscosity(BaseInnerRelation &inner_relation);
+    explicit ShearRateDependentViscosity(SPHBody &sph_body);
     virtual ~ShearRateDependentViscosity(){};
 
-    void interaction(size_t index_i, Real dt = 0.0);
+    void update(size_t index_i, Real dt = 0.0);
 
   protected:
     StdLargeVec<Matd> &vel_grad_;

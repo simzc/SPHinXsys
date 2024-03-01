@@ -151,9 +151,9 @@ int main(int ac, char *av[])
     InteractionWithUpdate<fluid_dynamics::DensitySummationComplex> update_density_by_summation(fluid_inner, fluid_all_walls);
 
     InteractionWithUpdate<fluid_dynamics::VelocityGradientWithWall<FirstConsistencyCorrection>> vel_grad_calculation(fluid_inner, fluid_all_walls);
-    InteractionDynamics<fluid_dynamics::ShearRateDependentViscosity> shear_rate_calculation(fluid_inner);
+    SimpleDynamics<fluid_dynamics::ShearRateDependentViscosity> shear_dependent_viscosity(fluid);
     InteractionWithUpdate<fluid_dynamics::GeneralizedNewtonianViscousForceWithWall> viscous_acceleration(fluid_inner, fluid_all_walls);
-    InteractionWithUpdate<fluid_dynamics::BaseTransportVelocityCorrectionComplex<SingleResolution, ZerothConsistencyLimiter, NoKernelCorrection, AllParticles>> transport_velocity_correction(fluid_inner, fluid_all_walls);
+    InteractionWithUpdate<fluid_dynamics::TransportVelocityLimitedCorrectionComplex<AllParticles>> transport_velocity_correction(fluid_inner, fluid_all_walls);
 
     ReduceDynamics<fluid_dynamics::AdvectionTimeStepSize> get_fluid_advection_time_step_size(fluid, u_lid);
     ReduceDynamics<fluid_dynamics::AcousticTimeStepSize> get_acoustic_time_step_size(fluid);
@@ -202,7 +202,7 @@ int main(int ac, char *av[])
         update_density_by_summation.exec();
         corrected_configuration_fluid.exec();
         vel_grad_calculation.exec();
-        shear_rate_calculation.exec();
+        shear_dependent_viscosity.exec();
         viscous_acceleration.exec();
         transport_velocity_correction.exec();
 

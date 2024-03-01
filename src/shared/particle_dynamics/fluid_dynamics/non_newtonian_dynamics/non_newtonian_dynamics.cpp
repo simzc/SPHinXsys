@@ -146,9 +146,8 @@ void GeneralizedNewtonianViscousForce<Contact<Wall>>::interaction(size_t index_i
     viscous_force_[index_i] += force / rho_[index_i];
 }
 //=================================================================================================//
-ShearRateDependentViscosity::ShearRateDependentViscosity(BaseInnerRelation &inner_relation)
-    : LocalDynamics(inner_relation.getSPHBody()),
-      FluidDataInner(inner_relation),
+ShearRateDependentViscosity::ShearRateDependentViscosity(SPHBody &sph_body)
+    : LocalDynamics(sph_body), FluidDataSimple(sph_body),
       vel_grad_(*particles_->getVariableByName<Matd>("VelocityGradient")),
       generalized_newtonian_fluid_(DynamicCast<GeneralizedNewtonianFluid>(this, this->particles_->getBaseMaterial()))
 {
@@ -157,8 +156,8 @@ ShearRateDependentViscosity::ShearRateDependentViscosity(BaseInnerRelation &inne
     particles_->registerVariable(scalar_shear_rate_, "ScalarShearRate");
     particles_->addVariableToWrite<Real>("ScalarShearRate");
 }
-
-void ShearRateDependentViscosity::interaction(size_t index_i, Real dt)
+//=================================================================================================//
+void ShearRateDependentViscosity::update(size_t index_i, Real dt)
 {
     //* Viscosity Calculation *//
     Real min_shear_rate = generalized_newtonian_fluid_.getMinShearRate();
