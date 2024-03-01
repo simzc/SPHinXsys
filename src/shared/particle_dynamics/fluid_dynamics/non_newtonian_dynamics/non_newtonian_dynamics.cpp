@@ -90,6 +90,62 @@ void Oldroyd_BIntegration2ndHalf<Inner<>>::update(size_t index_i, Real dt)
     tau_[index_i] += dtau_dt_[index_i] * dt * 0.5;
 }
 //=================================================================================================//
+GeneralizedNewtonianViscousForce<Inner<>>::GeneralizedNewtonianViscousForce(BaseInnerRelation &inner_relation)
+    : GeneralizedNewtonianViscousForce<FluidDataInner>(inner_relation),
+      ForcePrior(&base_particles_, "ViscousForce"),
+      mu_srd_(*particles_->getVariableByName<Real>("SRDViscosity")) {}
+//=================================================================================================//
+void GeneralizedNewtonianViscousForce<Inner<>>::interaction(size_t index_i, Real dt)
+{
+    Vecd force = Vecd::Zero();
+    Neighborhood &inner_neighborhood = inner_configuration_[index_i];
+    for (size_t n = 0; n != inner_neighborhood.current_size_; ++n)
+    {
+        size_t index_j = inner_neighborhood.j_[n];
+        Vecd &e_ij = inner_neighborhood.e_ij_[n];
+        Real r_ij = inner_neighborhood.r_ij_[n];
+
+        //* Monaghan 2005 (Rep. Prog. Phys.) with averaged viscosity
+        Real v_r_ij = (vel_[index_i] - vel_[index_j]).dot(r_ij * e_ij);
+        Real avg_visc = 2.0 * (mu_srd_[index_i] * mu_srd_[index_j]) / (mu_srd_[index_i] + mu_srd_[index_j]);
+        Real eta_ij = 2.0 * Real(Dimensions + 2) * avg_visc * v_r_ij / (r_ij * r_ij + 0.01 * smoothing_length_);
+        force += eta_ij * mass_[index_i] * inner_neighborhood.dW_ijV_j_[n] * e_ij;
+    }
+    viscous_force_[index_i] = force / rho_[index_i];
+}
+//=================================================================================================//
+GeneralizedNewtonianViscousForce<Contact<Wall>>::GeneralizedNewtonianViscousForce(BaseContactRelation &contact_relation)
+    : BaseGeneralizedNewtonianViscousForceWithWall(contact_relation),
+      mu_srd_(*particles_->getVariableByName<Real>("SRDViscosity"))
+{
+    for (size_t k = 0; k != contact_particles_.size(); ++k)
+    {
+        contact_vel_.push_back(&(contact_particles_[k]->vel_));
+    }
+}
+//=================================================================================================//
+void GeneralizedNewtonianViscousForce<Contact<Wall>>::interaction(size_t index_i, Real dt)
+{
+    //* Force Calculation *//
+    Vecd force = Vecd::Zero();
+    for (size_t k = 0; k < contact_configuration_.size(); ++k)
+    {
+        StdLargeVec<Vecd> &vel_k = *(wall_vel_ave_[k]);
+        Neighborhood &wall_neighborhood = (*contact_configuration_[k])[index_i];
+        for (size_t n = 0; n != wall_neighborhood.current_size_; ++n)
+        {
+            size_t index_j = wall_neighborhood.j_[n];
+            Real r_ij = wall_neighborhood.r_ij_[n];
+            Vecd &e_ij = wall_neighborhood.e_ij_[n];
+
+            Real v_r_ij = 2.0 * (vel_[index_i] - vel_k[index_j]).dot(r_ij * e_ij);
+            Real eta_ij = 2.0 * Real(Dimensions + 2) * mu_srd_[index_i] * v_r_ij / (r_ij * r_ij + 0.01 * smoothing_length_);
+            force += eta_ij * mass_[index_i] * wall_neighborhood.dW_ijV_j_[n] * e_ij;
+        }
+    }
+    viscous_force_[index_i] += force / rho_[index_i];
+}
+//=================================================================================================//
 ShearRateDependentViscosity::ShearRateDependentViscosity(BaseInnerRelation &inner_relation)
     : LocalDynamics(inner_relation.getSPHBody()),
       FluidDataInner(inner_relation),

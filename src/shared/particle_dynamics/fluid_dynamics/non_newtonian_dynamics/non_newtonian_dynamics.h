@@ -126,7 +126,8 @@ class GeneralizedNewtonianViscousForce<DataDelegationType>
 };
 
 template <>
-class GeneralizedNewtonianViscousForce<Inner<>> : public GeneralizedNewtonianViscousForce<FluidDataInner>, public ForcePrior
+class GeneralizedNewtonianViscousForce<Inner<>>
+    : public GeneralizedNewtonianViscousForce<FluidDataInner>, public ForcePrior
 {
   public:
     explicit GeneralizedNewtonianViscousForce(BaseInnerRelation &inner_relation);
@@ -141,7 +142,8 @@ using GeneralizedNewtonianViscousForceInner = GeneralizedNewtonianViscousForce<I
 
 using BaseGeneralizedNewtonianViscousForceWithWall = InteractionWithWall<GeneralizedNewtonianViscousForce>;
 template <>
-class GeneralizedNewtonianViscousForce<Contact<Wall>> : BaseGeneralizedNewtonianViscousForceWithWall, public ForcePrior
+class GeneralizedNewtonianViscousForce<Contact<Wall>>
+    : BaseGeneralizedNewtonianViscousForceWithWall
 {
   public:
     explicit GeneralizedNewtonianViscousForce(BaseContactRelation &contact_relation);
@@ -155,56 +157,6 @@ class GeneralizedNewtonianViscousForce<Contact<Wall>> : BaseGeneralizedNewtonian
 };
 using GeneralizedNewtonianViscousForceWall = GeneralizedNewtonianViscousForce<Contact<Wall>>;
 using GeneralizedNewtonianViscousForceWithWall = ComplexInteraction<GeneralizedNewtonianViscousForce<Inner<>, Contact<Wall>>>;
-
-/**
- * @class VelocityGradient
- * @brief computes the shear rate of the fluid
- * @note this is needed for the ShearRateDependentViscosity (and therefore also the GeneralizedNewtonianViscousForce)
- */
-template <typename... InteractionTypes>
-class VelocityGradient;
-
-template <class DataDelegationType>
-class VelocityGradient<DataDelegationType>
-    : public LocalDynamics, public DataDelegationType
-{
-  public:
-    template <class BaseRelationType>
-    explicit VelocityGradient(BaseRelationType &base_relation);
-    virtual ~VelocityGradient(){};
-
-  protected:
-    StdLargeVec<Vecd> &vel_;
-    StdLargeVec<Matd> vel_grad_;
-};
-
-template <>
-class VelocityGradient<Inner<>> : public VelocityGradient<FluidDataInner>
-{
-  public:
-    explicit VelocityGradient(BaseInnerRelation &inner_relation);
-    virtual ~VelocityGradient(){};
-
-    void interaction(size_t index_i, Real dt = 0.0);
-
-  protected:
-    StdLargeVec<Matd> &vel_grad_;
-};
-
-template <>
-class VelocityGradient<Contact<Wall>> : InteractionWithWall<VelocityGradient>
-{
-  public:
-    explicit VelocityGradient(BaseContactRelation &contact_relation);
-    virtual ~VelocityGradient(){};
-
-    void interaction(size_t index_i, Real dt = 0.0);
-
-  protected:
-    StdVec<StdLargeVec<Vecd> *> contact_vel_;
-    StdLargeVec<Matd> &vel_grad_;
-};
-using VelocityGradientWithWall = ComplexInteraction<VelocityGradient<Inner<>, Contact<Wall>>>;
 
 /**
  * @class ShearRateDependentViscosity
