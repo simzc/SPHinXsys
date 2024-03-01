@@ -8,7 +8,7 @@
 using namespace SPH;
 
 // setup properties
-Real particle_spacing = 0.005;
+Real particle_spacing = 0.01;
 Real end_time = 50.0;
 int nmbr_of_outputs = 500;
 
@@ -146,7 +146,8 @@ int main(int ac, char *av[])
     ComplexRelation fluid_walls_complex(fluid_inner, fluid_all_walls);
 
     //	Define the numerical methods used in the simulation
-    Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> pressure_relaxation(fluid_inner, fluid_all_walls);
+    InteractionWithUpdate<KernelCorrectionMatrixComplex> corrected_configuration_fluid(ConstructorArgs(fluid_inner, 0.3), fluid_all_walls);
+    Dynamics1Level<fluid_dynamics::Integration1stHalfWithWall<AcousticRiemannSolver, KernelCorrection>> pressure_relaxation(fluid_inner, fluid_all_walls);
     Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWall<NoRiemannSolver>> density_relaxation(fluid_inner, fluid_all_walls);
     InteractionWithUpdate<fluid_dynamics::DensitySummationComplex> update_density_by_summation(fluid_inner, fluid_all_walls);
 
@@ -200,6 +201,7 @@ int main(int ac, char *av[])
         Dt = SMIN(Dt_visc, Dt_adv);
 
         update_density_by_summation.exec();
+        corrected_configuration_fluid.exec();
         vel_grad_calculation.exec();
         shear_rate_calculation.exec();
         viscous_acceleration.exec();
