@@ -90,33 +90,5 @@ void Oldroyd_BIntegration2ndHalf<Inner<>>::update(size_t index_i, Real dt)
     tau_[index_i] += dtau_dt_[index_i] * dt * 0.5;
 }
 //=================================================================================================//
-ShearRateDependentViscosity::ShearRateDependentViscosity(BaseInnerRelation &inner_relation)
-    : LocalDynamics(inner_relation.getSPHBody()),
-      FluidDataInner(inner_relation),
-      combined_velocity_gradient_(*particles_->getVariableByName<Matd>("CombinedVelocityGradient")),
-      generalized_newtonian_fluid_(DynamicCast<GeneralizedNewtonianFluid>(this, this->particles_->getBaseMaterial()))
-{
-    particles_->registerVariable(mu_srd_, "SRDViscosity");
-    particles_->addVariableToWrite<Real>("SRDViscosity");
-    particles_->registerVariable(scalar_shear_rate_, "ScalarShearRate");
-    particles_->addVariableToWrite<Real>("ScalarShearRate");
-}
-
-void ShearRateDependentViscosity::interaction(size_t index_i, Real dt)
-{
-    //* Viscosity Calculation *//
-    Real min_shear_rate = generalized_newtonian_fluid_.getMinShearRate();
-    Real max_shear_rate = generalized_newtonian_fluid_.getMaxShearRate();
-
-    Matd D_ij = 0.5 * (combined_velocity_gradient_[index_i] + combined_velocity_gradient_[index_i].transpose());
-    D_ij = D_ij.cwiseProduct(D_ij);
-    Real second_invariant = D_ij.sum();
-    second_invariant = (Real)std::sqrt(2 * second_invariant);
-
-    Real capped_shear_rate = std::max(second_invariant, min_shear_rate);
-    capped_shear_rate = std::min(capped_shear_rate, max_shear_rate);
-    scalar_shear_rate_[index_i] = capped_shear_rate;
-    mu_srd_[index_i] = generalized_newtonian_fluid_.getViscosity(capped_shear_rate);
-}
 } // namespace fluid_dynamics
 } // namespace SPH

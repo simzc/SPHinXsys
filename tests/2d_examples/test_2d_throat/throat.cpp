@@ -171,6 +171,7 @@ int main(int ac, char *av[])
     // pressure relaxation using verlet time stepping
     Dynamics1Level<fluid_dynamics::Oldroyd_BIntegration1stHalfWithWall> pressure_relaxation(fluid_block_inner, fluid_block_contact);
     pressure_relaxation.pre_processes_.push_back(&periodic_condition.ghost_update_);
+    InteractionWithUpdate<fluid_dynamics::VelocityGradientComplex> update_velocity_gradient(fluid_block_inner, fluid_block_contact);
     Dynamics1Level<fluid_dynamics::Oldroyd_BIntegration2ndHalfWithWall> density_relaxation(fluid_block_inner, fluid_block_contact);
     density_relaxation.pre_processes_.push_back(&periodic_condition.ghost_update_);
     // define external force
@@ -181,7 +182,7 @@ int main(int ac, char *av[])
     InteractionSplit<DampingPairwiseWithWall<Vec2d, DampingPairwiseInner>>
         implicit_viscous_damping(fluid_block_inner, fluid_block_contact, "Velocity", mu_f);
     // impose transport velocity
-    InteractionWithUpdate<fluid_dynamics::TransportVelocityCorrectionComplex<AllParticles>>
+    InteractionWithUpdate<fluid_dynamics::TransportVelocityLimitedCorrectionComplex<AllParticles>>
         transport_velocity_correction(fluid_block_inner, fluid_block_contact);
     // computing vorticity in the flow
     InteractionDynamics<fluid_dynamics::VorticityInner> compute_vorticity(fluid_block_inner);
@@ -211,9 +212,9 @@ int main(int ac, char *av[])
     size_t number_of_iterations = 0;
     int screen_output_interval = 10;
     int observation_sample_interval = screen_output_interval * 2;
-    Real end_time = 20.0;
+    Real end_time = 40.0;
     // time step size for ouput file
-    Real output_interval = end_time / 20.0;
+    Real output_interval = end_time / 40.0;
     Real dt = 0.0; // default acoustic time step sizes
     // statistics for computing time
     TickCount t1 = TickCount::now();
@@ -242,6 +243,7 @@ int main(int ac, char *av[])
                 dt = SMIN(get_fluid_time_step_size.exec(), Dt);
                 implicit_viscous_damping.exec(dt);
                 pressure_relaxation.exec(dt);
+                update_velocity_gradient.exec();
                 density_relaxation.exec(dt);
 
                 relaxation_time += dt;
