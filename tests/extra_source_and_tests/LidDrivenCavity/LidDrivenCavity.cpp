@@ -8,7 +8,7 @@
 using namespace SPH;
 
 // setup properties
-Real particle_spacing = 0.01;
+Real particle_spacing = 0.005;
 Real end_time = 50.0;
 int nmbr_of_outputs = 500;
 
@@ -147,7 +147,7 @@ int main(int ac, char *av[])
 
     //	Define the numerical methods used in the simulation
     Dynamics1Level<fluid_dynamics::Integration1stHalfWithWallRiemann> pressure_relaxation(fluid_inner, fluid_all_walls);
-    Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWall<AcousticRiemannSolver>> density_relaxation(fluid_inner, fluid_all_walls);
+    Dynamics1Level<fluid_dynamics::Integration2ndHalfWithWall<NoRiemannSolver>> density_relaxation(fluid_inner, fluid_all_walls);
     InteractionWithUpdate<fluid_dynamics::DensitySummationComplex> update_density_by_summation(fluid_inner, fluid_all_walls);
 
     InteractionDynamics<fluid_dynamics::VelocityGradientWithWall> vel_grad_calculation(fluid_inner, fluid_all_walls);
@@ -159,6 +159,7 @@ int main(int ac, char *av[])
     ReduceDynamics<fluid_dynamics::AcousticTimeStepSize> get_acoustic_time_step_size(fluid);
     ReduceDynamics<fluid_dynamics::SRDViscousTimeStepSize> get_viscous_time_step_size(fluid);
 
+    InteractionDynamics<fluid_dynamics::VorticityInner> compute_vorticity(fluid_inner);
     BodyRegionByParticle lid_boundary(no_slip_boundary, makeShared<Lid_Boundary>("LidWall"));
     SimpleDynamics<BoundaryVelocity> lid_veloicty(lid_boundary);
     SimpleDynamics<NormalDirectionFromBodyShape> wall_boundary_normal_direction(no_slip_boundary);
@@ -183,7 +184,7 @@ int main(int ac, char *av[])
     Real Dt_adv = 0;
     Real Dt_aco = 0;
     int iteration = 0;
-    int output_counter = 100;
+    int output_counter = 0;
 
     //	First output before the main loop.
     write_fluid_states.writeToFile(0);
@@ -198,12 +199,11 @@ int main(int ac, char *av[])
         Dt_visc = get_viscous_time_step_size.exec();
         Dt = SMIN(Dt_visc, Dt_adv);
 
-        update_density_by_summation.exec(Dt);
-
-        vel_grad_calculation.exec(Dt);
-        shear_rate_calculation.exec(Dt);
-        viscous_acceleration.exec(Dt);
-        transport_velocity_correction.exec(Dt);
+        update_density_by_summation.exec();
+        vel_grad_calculation.exec();
+        shear_rate_calculation.exec();
+        viscous_acceleration.exec();
+        transport_velocity_correction.exec();
 
         Real relaxation_time = 0.0;
         while (relaxation_time < Dt)
@@ -226,6 +226,7 @@ int main(int ac, char *av[])
 
         if (output_counter * output_interval < GlobalStaticVariables::physical_time_)
         {
+            compute_vorticity.exec();
             write_fluid_states.writeToFile();
             output_counter++;
         }
