@@ -175,7 +175,7 @@ class VelocityGradient<DataDelegationType>
 
   protected:
     StdLargeVec<Vecd> &vel_;
-    StdLargeVec<Matd> combined_velocity_gradient_;
+    StdLargeVec<Matd> vel_grad_;
 };
 
 template <>
@@ -188,7 +188,7 @@ class VelocityGradient<Inner<>> : public VelocityGradient<FluidDataInner>
     void interaction(size_t index_i, Real dt = 0.0);
 
   protected:
-    StdLargeVec<Matd> &combined_velocity_gradient_;
+    StdLargeVec<Matd> &vel_grad_;
 };
 
 template <>
@@ -202,7 +202,7 @@ class VelocityGradient<Contact<Wall>> : InteractionWithWall<VelocityGradient>
 
   protected:
     StdVec<StdLargeVec<Vecd> *> contact_vel_;
-    StdLargeVec<Matd> &combined_velocity_gradient_;
+    StdLargeVec<Matd> &vel_grad_;
 };
 using VelocityGradientWithWall = ComplexInteraction<VelocityGradient<Inner<>, Contact<Wall>>>;
 
@@ -220,7 +220,7 @@ class ShearRateDependentViscosity : public LocalDynamics, public FluidDataInner
     void interaction(size_t index_i, Real dt = 0.0);
 
   protected:
-    StdLargeVec<Matd> &combined_velocity_gradient_;
+    StdLargeVec<Matd> &vel_grad_;
     GeneralizedNewtonianFluid &generalized_newtonian_fluid_;
     StdLargeVec<Real> mu_srd_;
     StdLargeVec<Real> scalar_shear_rate_;
