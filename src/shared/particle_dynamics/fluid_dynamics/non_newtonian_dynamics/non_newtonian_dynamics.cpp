@@ -164,12 +164,10 @@ void ShearRateDependentViscosity::interaction(size_t index_i, Real dt)
     Real min_shear_rate = generalized_newtonian_fluid_.getMinShearRate();
     Real max_shear_rate = generalized_newtonian_fluid_.getMaxShearRate();
 
-    Matd D_ij = 0.5 * (vel_grad_[index_i] + vel_grad_[index_i].transpose());
-    D_ij = D_ij.cwiseProduct(D_ij);
-    Real second_invariant = D_ij.sum();
-    second_invariant = (Real)std::sqrt(2 * second_invariant);
+    Matd D = 0.5 * (vel_grad_[index_i] + vel_grad_[index_i].transpose());
+    Real shear_rate = (Real)std::sqrt(2.0 * (D * D).trace());
 
-    Real capped_shear_rate = std::max(second_invariant, min_shear_rate);
+    Real capped_shear_rate = SMAX(shear_rate, min_shear_rate);
     capped_shear_rate = std::min(capped_shear_rate, max_shear_rate);
     scalar_shear_rate_[index_i] = capped_shear_rate;
     mu_srd_[index_i] = generalized_newtonian_fluid_.getViscosity(capped_shear_rate);
