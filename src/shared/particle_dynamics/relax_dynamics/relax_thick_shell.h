@@ -169,7 +169,7 @@ class ShellRelaxationStep : public BaseDynamics<void>
     RealBody &real_body_;
     BaseInnerRelation &inner_relation_;
     NearShapeSurface near_shape_surface_;
-    InteractionDynamics<RelaxationResidue<Inner<>>> relaxation_residue_;
+    InteractionDynamics<RelaxationResidue<Inner<>, NoKernelCorrection>> relaxation_residue_;
     ReduceDynamics<RelaxationScaling> relaxation_scaling_;
     SimpleDynamics<PositionRelaxation> position_relaxation_;
     SimpleDynamics<ShellMidSurfaceBounding> mid_surface_bounding_;

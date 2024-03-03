@@ -20,16 +20,28 @@
  * copy of the License at http://www.apache.org/licenses/LICENSE-2.0.        *
  *                                                                           *
  * ------------------------------------------------------------------------- */
-/**
- * @file    all_relax_dynamics.h
- * @brief   This is the header file that user code should include to pick up all
- *          relax dynamics used in SPHinXsys.
- * @author	Chi Zhang and Xiangyu Hu
- */
+ /**
+  * @file relax_dynamics.h
+  * @brief Particle relax is the process to produce body fitted
+  * particle distribution with zero-order consistency.
+  * @author	Bo Zhang, Xiangyu Hu
+  */
 
-#pragma once
+#ifndef RELAX_DYNAMICS_H
+#define RELAX_DYNAMICS_H
 
 #include "base_relax_dynamics.h"
-#include "relax_stepping.hpp"
-#include "relax_dynamics.hpp"
-#include "relax_thick_shell.h"
+#include "general_constraint.h"
+
+namespace SPH
+{
+class GemoteryShape;
+class LevelSetShape;
+
+namespace relax_dynamics
+{
+
+}
+}
+
+#endif // RELAX_DYNAMICS_H
