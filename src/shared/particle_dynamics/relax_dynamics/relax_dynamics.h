@@ -40,8 +40,79 @@ class LevelSetShape;
 
 namespace relax_dynamics
 {
+template <class DataDelegationType>
+class BaseIntegration : public LocalDynamics, public DataDelegationType
+{
+  public:
+    template <class BaseRelationType>
+    explicit BaseIntegration(BaseRelationType &base_relation);
+    virtual ~BaseIntegration(){};
 
-}
-}
+  protected:
+    SPHAdaptation *sph_adaptation_;
+    StdLargeVec<Vecd> &residue_;
+};
 
+template <typename... RelaxtionTypes>
+class RelaxationIntegration;
+
+template <class KernelCorrectionType>
+class RelaxationIntegration<Inner<>, KernelCorrectionType>
+    : public BaseIntegration<RelaxDataDelegateInner>
+{
+  public:
+    explicit RelaxationIntegration(BaseInnerRelation &inner_relation);
+    RelaxationIntegration(BaseInnerRelation &inner_relation, std::string sub_shape_name);
+    virtual ~RelaxationIntegration(){};
+    Shape &getRelaxShape() { return relax_shape_; };
+    void interaction(size_t index_i, Real dt = 0.0);
+    void update£¨size_t index_i, Real dt = 0.0);
+
+  protected:
+    Shape &relax_shape_;
+    KernelCorrectionType correction_;
+};
+
+template <class KernelCorrectionType>
+class RelaxationIntegration<Inner<LevelSetCorrection>, KernelCorrectionType> : 
+    public RelaxationIntegration<Inner<>, KernelCorrectionType>
+{
+  public:
+    template <typename... Args>
+    RelaxationIntegration(Args &&...args);
+    template <typename BodyRelationType, typename FirstArg>
+    explicit RelaxationIntegration(ConstructorArgs<BodyRelationType, FirstArg> parameters)
+        : RelaxationIntegration(parameters.body_relation_, std::get<0>(parameters.others_)){};
+    virtual ~RelaxationIntegration(){};
+    void interaction(size_t index_i, Real dt = 0.0);
+
+  protected:
+    StdLargeVec<Vecd> &pos_;
+    LevelSetShape &level_set_shape_;
+};
+
+template <class KernelCorrectionType>
+class RelaxationIntegration<Contact<>, KernelCorrectionType>
+    : public BaseIntegration<RelaxDataDelegateContact>
+{
+  public:
+    explicit RelaxationResidue(BaseContactRelation &contact_relation)
+        : RelaxationResidue<Base, RelaxDataDelegateContact>(contact_relation){};
+    virtual ~RelaxationResidue(){};
+    void interaction(size_t index_i, Real dt = 0.0);
+
+  protected:
+    KernelCorrectionType correction_;
+    StdLargeVecd<KernelCorrectionType> contact_corrections_;
+};
+
+using RelaxationInner = RelaxationIntegration<Inner<>, NoKernelCorrection>;
+using RelaxationWithLevelSetInner = RelaxationIntegration<Inner<LevelSetCorrection>, NoKernelCorrection>;
+using RelaxationComplex = ComplexInteraction<RelaxationIntegration<Inner<>, Contact<>>, NoKernelCorrection>;
+using RelaxationWithLevelSetComplex = ComplexInteraction<RelaxationIntegration<Inner<LevelSetCorrection>, Contact<>>, NoKernelCorrection>;
+using RelaxationCorrectionInner = RelaxationIntegration<Inner<>, KernelCorrection>;
+using RelaxationCorrectionWithLevelSetInner= RelaxationIntegration<Inner<LevelSetCorrection>, KernelCorrection>;
+using RelaxationCorrectionComplex = ComplexInteraction<RelaxationIntegration<Inner<>, Contact<>>, KernelCorrection>;
+using RelaxationCorrectionWithLevelSetComplex = ComplexInteraction<RelaxationIntegration<Inner<LevelSetCorrection>, Contact<>>, KernelCorrection>;
+}
 #endif // RELAX_DYNAMICS_H
