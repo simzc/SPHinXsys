@@ -85,7 +85,7 @@ class Integration1stHalf<Inner<>, RiemannSolverType, KernelCorrectionType>
 };
 using Integration1stHalfInnerNoRiemann = Integration1stHalf<Inner<>, NoRiemannSolver, NoKernelCorrection>;
 using Integration1stHalfInnerRiemann = Integration1stHalf<Inner<>, AcousticRiemannSolver, NoKernelCorrection>;
-using Integration1stHalfCorrectionInnerRiemann = Integration1stHalf<Inner<>, AcousticRiemannSolver, KernelCorrection>;
+using Integration1stHalfCorrectionInnerRiemann = Integration1stHalf<Inner<>, AcousticRiemannSolver, FirstConsistencyCorrection>;
 
 // The following is used to avoid the C3200 error triggered in Visual Studio.
 // Please refer: https://developercommunity.visualstudio.com/t/c-invalid-template-argument-for-template-parameter/831128
@@ -142,7 +142,7 @@ using Integration1stHalfWithWall = ComplexInteraction<Integration1stHalf<Inner<>
 
 using Integration1stHalfWithWallNoRiemann = Integration1stHalfWithWall<NoRiemannSolver, NoKernelCorrection>;
 using Integration1stHalfWithWallRiemann = Integration1stHalfWithWall<AcousticRiemannSolver, NoKernelCorrection>;
-using Integration1stHalfCorrectionWithWallRiemann = Integration1stHalfWithWall<AcousticRiemannSolver, KernelCorrection>;
+using Integration1stHalfCorrectionWithWallRiemann = Integration1stHalfWithWall<AcousticRiemannSolver, FirstConsistencyCorrection>;
 
 using MultiPhaseIntegration1stHalfWithWallRiemann =
     ComplexInteraction<Integration1stHalf<Inner<>, Contact<>, Contact<Wall>>, AcousticRiemannSolver, NoKernelCorrection>;
@@ -157,6 +157,8 @@ class Integration2ndHalf<Inner<>, RiemannSolverType>
     : public BaseIntegration<FluidDataInner>
 {
   public:
+    typedef RiemannSolverType RiemannSolver;
+
     explicit Integration2ndHalf(BaseInnerRelation &inner_relation);
     virtual ~Integration2ndHalf(){};
     void initialization(size_t index_i, Real dt = 0.0);
