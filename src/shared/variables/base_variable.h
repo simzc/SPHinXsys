@@ -34,15 +34,32 @@
 
 namespace SPH
 {
-class BaseVariable
+template <typename... Parameters>
+class Variable;
+
+template <>
+class Variable<Base>
 {
   public:
-    explicit BaseVariable(const std::string &name) : name_(name){};
-    virtual ~BaseVariable(){};
+    explicit Variable(const std::string &name) : name_(name){};
+    virtual ~Variable(){};
     std::string Name() const { return name_; };
 
   private:
     const std::string name_;
+};
+
+template <typename DataType>
+class Variable<StdVec<DataType>> : public Variable<Base>
+{
+  public:
+    explicit Variable(const std::string &name) : Variable<Base>(name){};
+    virtual ~Variable(){};
+
+    DataType *ValueAddress() { return &value_; };
+
+  private:
+    StdVec<DataType> value_;
 };
 
 template <typename DataType>
