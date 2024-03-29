@@ -37,12 +37,11 @@ namespace SPH
 template <typename... Parameters>
 class Variable;
 
-template <>
-class Variable<Base>
+class BaseVariable
 {
   public:
-    explicit Variable(const std::string &name) : name_(name){};
-    virtual ~Variable(){};
+    explicit BaseVariable(const std::string &name) : name_(name){};
+    virtual ~BaseVariable(){};
     std::string Name() const { return name_; };
 
   private:
@@ -50,16 +49,71 @@ class Variable<Base>
 };
 
 template <typename DataType>
-class Variable<StdVec<DataType>> : public Variable<Base>
+class Variable<StdLargeVec<DataType>> : public BaseVariable
 {
   public:
-    explicit Variable(const std::string &name) : Variable<Base>(name){};
+    explicit Variable(const std::string &name) : BaseVariable(name){};
     virtual ~Variable(){};
 
-    DataType *ValueAddress() { return &value_; };
+    StdLargeVec<DataType> *ValueAddress() { return &value_; };
 
   private:
-    StdVec<DataType> value_;
+    StdLargeVec<DataType> value_;
+};
+
+template <typename ContainedValueType>
+using ValueAddressKeeper = StdVec<ContainedValueType *>;
+
+template <typename ContainedValueType>
+using VariableAddressKeeper = StdVec<Variable<ContainedValueType> *>;
+
+template <typename ContainedValueType>
+using VariableUniquePtrsKeeper = UniquePtrsKeeper<Variable<ContainedValueType>>;
+
+template <template <typename> typename KeeperType, template <typename> typename ContainerType>
+using DataAssemble = std::tuple<KeeperType<ContainerType<Real>>,
+                                KeeperType<ContainerType<Vec2d>>,
+                                KeeperType<ContainerType<Vec3d>>,
+                                KeeperType<ContainerType<Mat2d>>,
+                                KeeperType<ContainerType<Mat3d>>,
+                                KeeperType<ContainerType<int>>>;
+
+template <template <typename> typename ContainerType>
+using ValueAddressAssemble = DataAssemble<ValueAddressKeeper, ContainerType>;
+
+template <template <typename> typename ContainerType>
+using VariableAddressAssemble = DataAssemble<VariableAddressKeeper, ContainerType>;
+
+template <template <typename> typename ContainerType>
+using VariableUniquePtrAssemble = DataAssemble<VariableUniquePtrsKeeper, ContainerType>;
+
+template <typename DataType, template <typename> class ContainerType>
+Variable<ContainerType<DataType>> *findVariableByName(VariableAddressAssemble<ContainerType> &variable_addrs_assemble,
+                                                      const std::string &name)
+{
+    constexpr int type_index = DataTypeIndex<DataType>::value;
+    auto &variables = std::get<type_index>(variable_addrs_assemble);
+    auto result = std::find_if(variables.begin(), variables.end(),
+                               [&](auto &variable) -> bool
+                               { return variable->Name() == name; });
+
+    return result != variables.end() ? *result : nullptr;
+};
+
+template <typename DataType, template <typename> class ContainerType, typename... Args>
+ContainerType<DataType> *addVariableToAssemble(ValueAddressAssemble<ContainerType> &value_addrs_assemble,
+                                               VariableAddressAssemble<ContainerType> &variable_addrs_assemble,
+                                               VariableUniquePtrAssemble<ContainerType> &variable_ptr_assemble,
+                                               const std::string &name, Args &&...args)
+{
+    constexpr int type_index = DataTypeIndex<DataType>::value;
+    UniquePtrsKeeper<Variable<ContainerType<DataType>>> &variable_ptrs = std::get<type_index>(variable_ptr_assemble);
+    Variable<ContainerType<DataType>> *new_variable =
+        variable_ptrs.template createPtr<Variable<ContainerType<DataType>>>(name, std::forward<Args>(args)...);
+    std::get<type_index>(variable_addrs_assemble).push_back(new_variable);
+    ContainerType<DataType> *new_value_addrs = new_variable->ValueAddress();
+    std::get<type_index>(value_addrs_assemble).push_back(new_value_addrs);
+    return new_value_addrs;
 };
 
 template <typename DataType>

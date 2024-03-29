@@ -8,7 +8,9 @@ namespace SPH
 {
 //=================================================================================================//
 ParticleGenerator<Base>::ParticleGenerator(SPHBody &sph_body)
-    : base_particles_(sph_body.getBaseParticles()),
+    : position_(*registerGeometricVariable<Vecd>("Position")),
+      volumetric_measure_(*registerGeometricVariable<Real>("VolumetricMeasure")),
+      base_particles_(sph_body.getBaseParticles()),
       particle_spacing_ref_(sph_body.sph_adaptation_->ReferenceSpacing()),
       pos_(base_particles_.pos_), Vol_(base_particles_.Vol_),
       unsorted_id_(base_particles_.unsorted_id_) {}

@@ -61,6 +61,11 @@ class GeneratingMethod;
 template <> // default volume metric particle generator
 class ParticleGenerator<Base>
 {
+  private:
+    ValueAddressAssemble<StdLargeVec> geometric_data_;
+    VariableAddressAssemble<StdLargeVec> geometric_variables_;
+    VariableUniquePtrAssemble<StdLargeVec> geometric_variables_ptrs_;
+
   public:
     explicit ParticleGenerator(SPHBody &sph_body);
     virtual ~ParticleGenerator(){};
@@ -68,6 +73,28 @@ class ParticleGenerator<Base>
     void generateParticlesWithBasicVariables();
 
   protected:
+    //----------------------------------------------------------------------
+    // Geometric variables used for particle generation
+    //----------------------------------------------------------------------
+    StdLargeVec<Vecd> &position_;
+    StdLargeVec<Real> &volumetric_measure_;
+
+    template <typename DataType>
+    StdLargeVec<DataType> *registerGeometricVariable(const std::string &variable_name)
+    {
+        auto *variable = findVariableByName<DataType, StdLargeVec>(geometric_variables_, variable_name);
+        if (variable == nullptr)
+        {
+            return addVariableToAssemble<DataType, StdLargeVec>(geometric_data_, geometric_variables_, geometric_variables_ptrs_, variable_name);
+        }
+        else
+        {
+            return variable->ValueAddress();
+        }
+    };
+    //----------------------------------------------------------------------
+    // Corresponding variables in particle data for computation
+    //----------------------------------------------------------------------
     BaseParticles &base_particles_;
     Real particle_spacing_ref_;
     StdLargeVec<Vecd> &pos_;
