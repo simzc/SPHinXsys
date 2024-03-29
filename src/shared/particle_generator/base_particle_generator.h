@@ -29,6 +29,9 @@
  * with three keywords. The first indicates volume (default), surface and line particles,
  * the second generating methods, and the third the control parameters,
  * such as adaptive for adaptive resolution.
+ * There are geometric dynamically allocating variables for particle generation.
+ * After particle generation, their values are copied to corresponding
+ * fix allcoated particle variables for numerical simulations.
  * @author	Chi Zhang and Xiangyu Hu
  */
 
@@ -73,33 +76,13 @@ class ParticleGenerator<Base>
     void generateParticlesWithBasicVariables();
 
   protected:
-    //----------------------------------------------------------------------
-    // Geometric variables used for particle generation
-    //----------------------------------------------------------------------
     StdLargeVec<Vecd> &position_;
     StdLargeVec<Real> &volumetric_measure_;
-
-    template <typename DataType>
-    StdLargeVec<DataType> *registerGeometricVariable(const std::string &variable_name)
-    {
-        auto *variable = findVariableByName<DataType, StdLargeVec>(geometric_variables_, variable_name);
-        if (variable == nullptr)
-        {
-            return addVariableToAssemble<DataType, StdLargeVec>(geometric_data_, geometric_variables_, geometric_variables_ptrs_, variable_name);
-        }
-        else
-        {
-            return variable->ValueAddress();
-        }
-    };
-    //----------------------------------------------------------------------
-    // Corresponding variables in particle data for computation
-    //----------------------------------------------------------------------
     BaseParticles &base_particles_;
     Real particle_spacing_ref_;
-    StdLargeVec<Vecd> &pos_;
-    StdLargeVec<Real> &Vol_;
-    StdLargeVec<size_t> &unsorted_id_;
+
+    template <typename DataType>
+    StdLargeVec<DataType> *registerGeometricVariable(const std::string &name);
     virtual void initializePosition(const Vecd &position);
     virtual void initializePositionAndVolumetricMeasure(const Vecd &position, Real volumetric_measure);
 };
@@ -112,8 +95,11 @@ class ParticleGenerator<Surface> : public ParticleGenerator<Base>
     virtual ~ParticleGenerator(){};
 
   protected:
-    StdLargeVec<Vecd> &n_;         /**< surface normal */
-    StdLargeVec<Real> &thickness_; /**< surface thickness */
+    //----------------------------------------------------------------------
+    // Geometric dynamically allocating variables for particle generation
+    //----------------------------------------------------------------------
+    StdLargeVec<Vecd> &surface_normal_;
+    StdLargeVec<Real> &surface_thickness_;
     virtual void initializeSurfaceProperties(const Vecd &surface_normal, Real thickness);
 };
 
@@ -123,13 +109,9 @@ class ParticleGenerator<Observer> : public ParticleGenerator<Base>
   public:
     explicit ParticleGenerator(SPHBody &sph_body)
         : ParticleGenerator<Base>(sph_body){};
-    ParticleGenerator(SPHBody &sph_body, const StdVec<Vecd> &positions)
-        : ParticleGenerator<Base>(sph_body), positions_(positions){};
+    ParticleGenerator(SPHBody &sph_body, const StdVec<Vecd> &positions);
     virtual ~ParticleGenerator(){};
     virtual void initializeGeometricVariables() override;
-
-  protected:
-    StdVec<Vecd> positions_;
 };
 
 template <> // generate particles by reloading dynamically relaxed particles
