@@ -34,6 +34,9 @@
 
 namespace SPH
 {
+template <typename... Parameters>
+class Variable;
+
 class BaseVariable
 {
   public:
@@ -45,19 +48,23 @@ class BaseVariable
     const std::string name_;
 };
 
-template <typename DataType>
-class SingleVariable : public BaseVariable
+template <typename ContainedDataType>
+class Variable<ContainedDataType> : public BaseVariable
 {
   public:
-    SingleVariable(const std::string &name, DataType &value)
-        : BaseVariable(name), value_(value){};
-    virtual ~SingleVariable(){};
+    template <typename... Args>
+    explicit Variable(const std::string &name, Args &&...args)
+        : BaseVariable(name), value_(std::forward<Args>(args)...){};
+    virtual ~Variable(){};
 
-    DataType *ValueAddress() { return &value_; };
+    ContainedDataType *ValueAddress() { return &value_; };
 
   private:
-    DataType value_;
+    ContainedDataType value_;
 };
+
+template <typename DataType>
+using SingleValueVariable = Variable<DataType>;
 
 template <typename DataType>
 class DiscreteVariable : public BaseVariable
@@ -66,6 +73,20 @@ class DiscreteVariable : public BaseVariable
     DiscreteVariable(const std::string &name, size_t index)
         : BaseVariable(name), index_in_container_(index){};
     virtual ~DiscreteVariable(){};
+
+    size_t IndexInContainer() const { return index_in_container_; };
+
+  private:
+    size_t index_in_container_;
+};
+
+template <typename DataType>
+class MeshVariable : public BaseVariable
+{
+  public:
+    MeshVariable(const std::string &name, size_t index)
+        : BaseVariable(name), index_in_container_(index){};
+    virtual ~MeshVariable(){};
 
     size_t IndexInContainer() const { return index_in_container_; };
 

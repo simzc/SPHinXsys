@@ -72,11 +72,9 @@ typedef DataContainerAddressAssemble<StdLargeVec> ParticleData;
 /** Generalized particle variable type*/
 typedef DataContainerAddressAssemble<DiscreteVariable> ParticleVariables;
 /** Generalized particle variable type*/
-typedef DataContainerAddressAssemble<SingleVariable> SingleVariables;
+typedef DataContainerAddressAssemble<SingleValueVariable> SingleValueVariables;
 
 /** Generalized mesh data type */
-template <typename DataType>
-using MeshVariable = DiscreteVariable<DataType>;
 typedef DataContainerAddressAssemble<MeshVariable> MeshVariableAssemble;
 
 } // namespace SPH

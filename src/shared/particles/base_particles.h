@@ -85,7 +85,7 @@ class BaseParticles
   private:
     DataContainerUniquePtrAssemble<DiscreteVariable> all_discrete_variable_ptrs_;
     DataContainerUniquePtrAssemble<StdLargeVec> shared_particle_data_ptrs_;
-    DataContainerUniquePtrAssemble<SingleVariable> all_global_variable_ptrs_;
+    DataContainerUniquePtrAssemble<SingleValueVariable> single_value_variable_ptrs_;
     UniquePtrsKeeper<BaseDynamics<void>> derived_particle_data_;
 
   public:
@@ -201,7 +201,7 @@ class BaseParticles
     XmlParser reload_xml_parser_;
     ParticleData all_particle_data_;
     ParticleVariables all_discrete_variables_;
-    SingleVariables all_single_variables_;
+    SingleValueVariables single_value_variables_;
     ParticleVariables variables_to_write_;
     ParticleVariables variables_to_restart_;
     ParticleVariables variables_to_reload_;
