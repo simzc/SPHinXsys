@@ -178,12 +178,6 @@ class SPHBody
         generateParticles<ReserveType, Parameters...>(particle_reserve, std::forward<Args>(args)...);
     };
 
-    template <typename DataType>
-    void addBodyState(StdLargeVec<DataType> &variable_addrs, const std::string &variable_name)
-    {
-        base_particles_->template registerVariable<DataType>(variable_addrs, variable_name);
-    };
-
     template <typename VariableType>
     void addBodyStateForRecording(const std::string &variable_name)
     {

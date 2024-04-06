@@ -176,7 +176,7 @@ void DiffusionRelaxation<Dirichlet<CommonControlTypes...>>::
     for (size_t k = 0; k < this->contact_configuration_.size(); ++k)
     {
         StdVec<StdLargeVec<Real> *> &gradient_species_k = this->contact_gradient_species_[k];
-        StdLargeVec<Real>& wall_Vol_k = *(contact_Vol_[k]);
+        StdLargeVec<Real> &wall_Vol_k = *(contact_Vol_[k]);
         Neighborhood &contact_neighborhood = (*this->contact_configuration_[k])[index_i];
         for (size_t n = 0; n != contact_neighborhood.current_size_; ++n)
         {
@@ -229,7 +229,7 @@ void DiffusionRelaxation<Neumann<CommonControlTypes...>>::
     {
         StdLargeVec<Real> &heat_flux_k = *(contact_heat_flux_[k]);
         StdLargeVec<Vecd> &n_k = *(contact_n_[k]);
-        StdLargeVec<Real>& Vol_k = *(contact_Vol_[k]);
+        StdLargeVec<Real> &Vol_k = *(contact_Vol_[k]);
         Neighborhood &contact_neighborhood = (*this->contact_configuration_[k])[index_i];
         for (size_t n = 0; n != contact_neighborhood.current_size_; ++n)
         {
@@ -261,7 +261,7 @@ DiffusionRelaxation<Robin<CommonControlTypes...>>::
             contact_n_.push_back(&(this->contact_particles_[k]->n_));
             contact_Vol_.push_back(&(this->contact_particles_[k]->Vol_));
             contact_convection_[k] = this->contact_particles_[k]->template registerSharedVariable<Real>("Convection");
-            contact_T_infinity_[m] = this->contact_particles_[k]->template registerSingleVariable<Real>("T_infinity");
+            contact_T_infinity_[m] = this->contact_particles_[k]->template registerSingleValueVariable<Real>("T_infinity");
         }
     }
 }
@@ -285,7 +285,7 @@ void DiffusionRelaxation<Robin<CommonControlTypes...>>::
     for (size_t k = 0; k < this->contact_configuration_.size(); ++k)
     {
         StdLargeVec<Vecd> &n_k = *(contact_n_[k]);
-        StdLargeVec<Real>& Vol_k = *(contact_Vol_[k]);
+        StdLargeVec<Real> &Vol_k = *(contact_Vol_[k]);
         StdLargeVec<Real> &convection_k = *(contact_convection_[k]);
         Real &T_infinity_k = *(contact_T_infinity_[k]);
 

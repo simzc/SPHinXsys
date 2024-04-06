@@ -22,13 +22,10 @@ BaseParticles::BaseParticles(SPHBody &sph_body, BaseMaterial *base_material)
       write_restart_variable_to_xml_(variables_to_restart_, restart_xml_parser_),
       write_reload_variable_to_xml_(variables_to_reload_, reload_xml_parser_),
       read_restart_variable_from_xml_(variables_to_restart_, restart_xml_parser_),
-      read_reload_variable_from_xml_(variables_to_reload_, reload_xml_parser_)
+      read_reload_variable_from_xml_(variables_to_reload_, reload_xml_parser_),
+      pos_(*registerSharedVariable<Vecd>("Position")),
+      Vol_(*registerSharedVariable<Real>("VolumetricMeasure"))
 {
-    //----------------------------------------------------------------------
-    //		register geometric data only
-    //----------------------------------------------------------------------
-    registerVariable(pos_, "Position");
-    registerVariable(Vol_, "VolumetricMeasure");
     //----------------------------------------------------------------------
     //		add particle reload data on geometries
     //----------------------------------------------------------------------
@@ -41,14 +38,12 @@ void BaseParticles::initializeOtherVariables()
     //----------------------------------------------------------------------
     //		register non-geometric data
     //----------------------------------------------------------------------
-    registerVariable(vel_, "Velocity");
-    registerVariable(force_, "Force");
-    registerVariable(force_prior_, "ForcePrior");
-    registerVariable(rho_, "Density", base_material_.ReferenceDensity());
-    registerVariable(mass_, "Mass",
-                     [&](size_t i) -> Real
-                     { return rho_[i] * ParticleVolume(i); });
-    registerVariable(indicator_, "Indicator");
+    registerSharedVariable<Vecd>("Velocity");
+    StdLargeVec<Real> &rho = *registerSharedVariable<Real>("Density", base_material_.ReferenceDensity());
+    registerSharedVariable<Real>([&](size_t i) -> Real
+                                 { return rho[i] * ParticleVolume(i); },
+                                 "Mass");
+    registerSharedVariable<Real>("Indicator"); // 0 for bulk, 1 for free surface indicator, other to be defined
     /**
      *	add basic output particle data
      */
@@ -152,14 +147,14 @@ void BaseParticles::writePltFileParticleData(std::ofstream &output_file, size_t 
     constexpr int type_index_int = DataTypeIndex<int>::value;
     for (DiscreteVariable<int> *variable : std::get<type_index_int>(variables_to_write_))
     {
-        StdLargeVec<int> &variable_data = *(std::get<type_index_int>(all_particle_data_)[variable->IndexInContainer()]);
+        StdLargeVec<int> &variable_data = *variable->ValueAddress();
         output_file << variable_data[index] << " ";
     };
 
     constexpr int type_index_Vecd = DataTypeIndex<Vecd>::value;
     for (DiscreteVariable<Vecd> *variable : std::get<type_index_Vecd>(variables_to_write_))
     {
-        StdLargeVec<Vecd> &variable_data = *(std::get<type_index_Vecd>(all_particle_data_)[variable->IndexInContainer()]);
+        StdLargeVec<Vecd> &variable_data = *variable->ValueAddress();
         Vec3d vector_value = upgradeToVec3d(variable_data[index]);
         output_file << vector_value[0] << " " << vector_value[1] << " " << vector_value[2] << " ";
     };
@@ -167,7 +162,7 @@ void BaseParticles::writePltFileParticleData(std::ofstream &output_file, size_t 
     constexpr int type_index_Real = DataTypeIndex<Real>::value;
     for (DiscreteVariable<Real> *variable : std::get<type_index_Real>(variables_to_write_))
     {
-        StdLargeVec<Real> &variable_data = *(std::get<type_index_Real>(all_particle_data_)[variable->IndexInContainer()]);
+        StdLargeVec<Real> &variable_data = *variable->ValueAddress();
         output_file << variable_data[index] << " ";
     };
 }
@@ -232,7 +227,7 @@ void BaseParticles::writeSurfaceParticlesToVtuFile(std::ostream &output_file, Bo
     constexpr int type_index_Matd = DataTypeIndex<Matd>::value;
     for (DiscreteVariable<Matd> *variable : std::get<type_index_Matd>(variables_to_write_))
     {
-        StdLargeVec<Matd> &variable_data = *(std::get<type_index_Matd>(all_particle_data_)[variable->IndexInContainer()]);
+        StdLargeVec<Matd> &variable_data = *variable->ValueAddress();
         output_file << "    <DataArray Name=\"" << variable->Name() << "\" type=\"Float32\"  NumberOfComponents=\"9\" Format=\"ascii\">\n";
         output_file << "    ";
         for (size_t i = 0; i != total_surface_particles; ++i)
@@ -253,7 +248,7 @@ void BaseParticles::writeSurfaceParticlesToVtuFile(std::ostream &output_file, Bo
     constexpr int type_index_Vecd = DataTypeIndex<Vecd>::value;
     for (DiscreteVariable<Vecd> *variable : std::get<type_index_Vecd>(variables_to_write_))
     {
-        StdLargeVec<Vecd> &variable_data = *(std::get<type_index_Vecd>(all_particle_data_)[variable->IndexInContainer()]);
+        StdLargeVec<Vecd> &variable_data = *variable->ValueAddress();
         output_file << "    <DataArray Name=\"" << variable->Name() << "\" type=\"Float32\"  NumberOfComponents=\"3\" Format=\"ascii\">\n";
         output_file << "    ";
         for (size_t i = 0; i != total_surface_particles; ++i)
@@ -270,7 +265,7 @@ void BaseParticles::writeSurfaceParticlesToVtuFile(std::ostream &output_file, Bo
     constexpr int type_index_Real = DataTypeIndex<Real>::value;
     for (DiscreteVariable<Real> *variable : std::get<type_index_Real>(variables_to_write_))
     {
-        StdLargeVec<Real> &variable_data = *(std::get<type_index_Real>(all_particle_data_)[variable->IndexInContainer()]);
+        StdLargeVec<Real> &variable_data = *variable->ValueAddress();
         output_file << "    <DataArray Name=\"" << variable->Name() << "\" type=\"Float32\" Format=\"ascii\">\n";
         output_file << "    ";
         for (size_t i = 0; i != total_surface_particles; ++i)
@@ -286,7 +281,7 @@ void BaseParticles::writeSurfaceParticlesToVtuFile(std::ostream &output_file, Bo
     constexpr int type_index_int = DataTypeIndex<int>::value;
     for (DiscreteVariable<int> *variable : std::get<type_index_int>(variables_to_write_))
     {
-        StdLargeVec<int> &variable_data = *(std::get<type_index_int>(all_particle_data_)[variable->IndexInContainer()]);
+        StdLargeVec<int> &variable_data = *variable->ValueAddress();
         output_file << "    <DataArray Name=\"" << variable->Name() << "\" type=\"Int32\" Format=\"ascii\">\n";
         output_file << "    ";
         for (size_t i = 0; i != total_surface_particles; ++i)

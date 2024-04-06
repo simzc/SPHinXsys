@@ -67,18 +67,7 @@ template <typename DataType>
 using SingleValueVariable = Variable<DataType>;
 
 template <typename DataType>
-class DiscreteVariable : public BaseVariable
-{
-  public:
-    DiscreteVariable(const std::string &name, size_t index)
-        : BaseVariable(name), index_in_container_(index){};
-    virtual ~DiscreteVariable(){};
-
-    size_t IndexInContainer() const { return index_in_container_; };
-
-  private:
-    size_t index_in_container_;
-};
+using DiscreteVariable = Variable<StdLargeVec<DataType>>;
 
 template <typename DataType>
 class MeshVariable : public BaseVariable
@@ -94,7 +83,7 @@ class MeshVariable : public BaseVariable
     size_t index_in_container_;
 };
 
-template <typename DataType, template <typename VariableDataType> class VariableType>
+template <typename DataType, template <typename> class VariableType>
 VariableType<DataType> *findVariableByName(DataContainerAddressAssemble<VariableType> &assemble,
                                            const std::string &name)
 {
@@ -107,7 +96,7 @@ VariableType<DataType> *findVariableByName(DataContainerAddressAssemble<Variable
     return result != variables.end() ? *result : nullptr;
 };
 
-template <typename DataType, template <typename VariableDataType> class VariableType, typename... Args>
+template <typename DataType, template <typename> class VariableType, typename... Args>
 VariableType<DataType> *addVariableToAssemble(DataContainerAddressAssemble<VariableType> &assemble,
                                               DataContainerUniquePtrAssemble<VariableType> &ptr_assemble, Args &&...args)
 {
