@@ -35,27 +35,19 @@ BaseParticles::BaseParticles(SPHBody &sph_body, BaseMaterial *base_material)
 //=================================================================================================//
 void BaseParticles::initializeOtherVariables()
 {
-    //----------------------------------------------------------------------
-    //		register non-geometric data
-    //----------------------------------------------------------------------
     registerSharedVariable<Vecd>("Velocity");
     StdLargeVec<Real> &rho = *registerSharedVariable<Real>("Density", base_material_.ReferenceDensity());
     registerSharedVariable<Real>([&](size_t i) -> Real
                                  { return rho[i] * ParticleVolume(i); },
                                  "Mass");
-    registerSharedVariable<Real>("Indicator"); // 0 for bulk, 1 for free surface indicator, other to be defined
-    /**
-     *	add basic output particle data
-     */
+
     addVariableToWrite<Vecd>("Velocity");
-    /**
-     *	add restart output particle data
-     */
+
     addVariableToList<Vecd>(variables_to_restart_, "Position");
-    addVariableToList<Vecd>(variables_to_restart_, "Velocity");
-    addVariableToList<Vecd>(variables_to_restart_, "ForcePrior");
-    addVariableToList<Vecd>(variables_to_restart_, "Force");
     addVariableToList<Real>(variables_to_restart_, "VolumetricMeasure");
+    addVariableToList<Vecd>(variables_to_restart_, "Velocity");
+    addVariableToList<Real>(variables_to_restart_, "Density");
+    addVariableToList<Real>(variables_to_restart_, "Mass");
     //----------------------------------------------------------------------
     //		initialize unregistered data
     //----------------------------------------------------------------------
