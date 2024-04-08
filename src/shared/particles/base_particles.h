@@ -115,30 +115,32 @@ class BaseParticles
     //		Parameterized management on generalized particle data
     //----------------------------------------------------------------------
     template <typename DataType>
-    StdLargeVec<DataType> *registerSharedVariable(const std::string &variable_name, DataType initial_value = ZeroData<DataType>::value);
-    template <typename DataType, class InitializationFunction>
-    StdLargeVec<DataType> *registerSharedVariable(const InitializationFunction &initialization, const std::string &variable_name);
+    StdLargeVec<DataType> *registerSharedVariable(const std::string &name, DataType initial_value = ZeroData<DataType>::value);
     template <typename DataType>
-    StdLargeVec<DataType> *getVariableByName(const std::string &variable_name);
+    StdLargeVec<DataType> *registerSharedVariable(const std::string &name, const std::string &target_name);
+    template <typename DataType, class InitializationFunction>
+    StdLargeVec<DataType> *registerSharedVariable(const InitializationFunction &initialization, const std::string &name);
+    template <typename DataType>
+    StdLargeVec<DataType> *getVariableByName(const std::string &name);
     ParticleVariables &AllDiscreteVariables() { return all_discrete_variables_; };
 
     template <typename DataType>
-    DataType *registerSingleValueVariable(const std::string &variable_name,
+    DataType *registerSingleValueVariable(const std::string &name,
                                           DataType initial_value = ZeroData<DataType>::value);
     template <typename DataType>
-    DataType *getSingleValueVariableByName(const std::string &variable_name);
+    DataType *getSingleValueVariableByName(const std::string &name);
     //----------------------------------------------------------------------
     //		Manage subsets of particle variables
     //----------------------------------------------------------------------
     template <typename DataType>
-    void addVariableToList(ParticleVariables &variable_set, const std::string &variable_name);
+    void addVariableToList(ParticleVariables &variable_set, const std::string &name);
     template <typename DataType>
-    void addVariableToWrite(const std::string &variable_name);
+    void addVariableToWrite(const std::string &name);
     template <typename DataType>
-    void addVariableToRestart(const std::string &variable_name);
+    void addVariableToRestart(const std::string &name);
     inline const ParticleVariables &getVariablesToRestart() const { return variables_to_restart_; }
     template <typename DataType>
-    void addVariableToReload(const std::string &variable_name);
+    void addVariableToReload(const std::string &name);
     inline const ParticleVariables &getVariablesToReload() const { return variables_to_reload_; }
 
     template <class DerivedVariableMethod, class... Ts>
@@ -155,7 +157,7 @@ class BaseParticles
     ParticleSorting particle_sorting_;
 
     template <typename DataType>
-    void registerSortableVariable(const std::string &variable_name);
+    void registerSortableVariable(const std::string &name);
     template <typename SequenceMethod>
     void sortParticles(SequenceMethod &sequence_method);
     //----------------------------------------------------------------------
@@ -251,9 +253,9 @@ class BaseDerivedVariable
 {
   public:
     using DerivedDataType = DataType;
-    std::string variable_name_;
+    std::string name_;
 
-    BaseDerivedVariable(SPHBody &sph_body, const std::string &variable_name);
+    BaseDerivedVariable(SPHBody &sph_body, const std::string &name);
     virtual ~BaseDerivedVariable(){};
 
   protected:

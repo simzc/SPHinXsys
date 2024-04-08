@@ -14,54 +14,74 @@ namespace SPH
 {
 //=================================================================================================//
 template <typename DataType>
-DataType *BaseParticles::registerSingleValueVariable(const std::string &variable_name, DataType initial_value)
+DataType *BaseParticles::registerSingleValueVariable(const std::string &name, DataType initial_value)
 {
-    SingleValueVariable<DataType> *variable = findVariableByName<DataType>(single_value_variables_, variable_name);
+    SingleValueVariable<DataType> *variable = findVariableByName<DataType>(single_value_variables_, name);
 
     return variable != nullptr
                ? variable->ValueAddress()
                : addVariableToAssemble<DataType>(single_value_variables_,
-                                                 single_value_variable_ptrs_, variable_name, initial_value)
+                                                 single_value_variable_ptrs_, name, initial_value)
                      ->ValueAddress();
 }
 //=================================================================================================//
 template <typename DataType>
-DataType *BaseParticles::getSingleValueVariableByName(const std::string &variable_name)
+DataType *BaseParticles::getSingleValueVariableByName(const std::string &name)
 {
-    SingleValueVariable<DataType> *variable = findVariableByName<DataType>(single_value_variables_, variable_name);
+    SingleValueVariable<DataType> *variable = findVariableByName<DataType>(single_value_variables_, name);
 
     if (variable != nullptr)
     {
         return variable->ValueAddress();
     }
 
-    std::cout << "\nError: the variable '" << variable_name << "' is not registered!\n";
+    std::cout << "\nError: the variable '" << name << "' is not registered!\n";
     std::cout << __FILE__ << ':' << __LINE__ << std::endl;
     return nullptr;
 }
 //=================================================================================================//
 template <typename DataType>
 StdLargeVec<DataType> *BaseParticles::
-    registerSharedVariable(const std::string &variable_name, DataType initial_value)
+    registerSharedVariable(const std::string &name, DataType initial_value)
 {
     return registerSharedVariable<DataType>([initial_value](size_t i) -> DataType
                                             { return initial_value; },
-                                            variable_name);
+                                            name);
+}
+//=================================================================================================//
+template <typename DataType>
+StdLargeVec<DataType> *BaseParticles::
+    registerSharedVariable(const std::string &name, const std::string &target_name)
+{
+    DiscreteVariable<DataType> *target_variable =
+        findVariableByName<DataType, DiscreteVariable>(all_discrete_variables_, target_name);
+
+    if (target_variable != nullptr)
+    {
+        StdLargeVec<DataType> &variable_data = *target_variable->ValueAddress();
+        return registerSharedVariable<DataType>([&variable_data](size_t i) -> DataType
+                                                { return variable_data[i]; },
+                                                name);
+    }
+
+    std::cout << "\nError: the target variable '" << target_name << "' is not registered!\n";
+    std::cout << __FILE__ << ':' << __LINE__ << std::endl;
+    return nullptr;
 }
 //=================================================================================================//
 template <typename DataType, class InitializationFunction>
 StdLargeVec<DataType> *BaseParticles::
-    registerSharedVariable(const InitializationFunction &initialization, const std::string &variable_name)
+    registerSharedVariable(const InitializationFunction &initialization, const std::string &name)
 {
 
     DiscreteVariable<DataType> *variable =
-        findVariableByName<DataType, DiscreteVariable>(all_discrete_variables_, variable_name);
+        findVariableByName<DataType, DiscreteVariable>(all_discrete_variables_, name);
 
     constexpr int type_index = DataTypeIndex<DataType>::value;
     if (variable == nullptr)
     {
         DiscreteVariable<DataType> *new_variable =
-            addVariableToAssemble<DataType, DiscreteVariable>(all_discrete_variables_, all_discrete_variable_ptrs_, variable_name);
+            addVariableToAssemble<DataType, DiscreteVariable>(all_discrete_variables_, all_discrete_variable_ptrs_, name);
         StdLargeVec<DataType> *variable_addrs = new_variable->ValueAddress();
         for (size_t i = 0; i != particles_bound_; ++i)
         {
@@ -77,31 +97,31 @@ StdLargeVec<DataType> *BaseParticles::
 }
 //=================================================================================================//
 template <typename DataType>
-StdLargeVec<DataType> *BaseParticles::getVariableByName(const std::string &variable_name)
+StdLargeVec<DataType> *BaseParticles::getVariableByName(const std::string &name)
 {
     DiscreteVariable<DataType> *variable =
-        findVariableByName<DataType, DiscreteVariable>(all_discrete_variables_, variable_name);
+        findVariableByName<DataType, DiscreteVariable>(all_discrete_variables_, name);
 
     if (variable != nullptr)
     {
         variable->ValueAddress();
     }
 
-    std::cout << "\nError: the variable '" << variable_name << "' is not registered!\n";
+    std::cout << "\nError: the variable '" << name << "' is not registered!\n";
     std::cout << __FILE__ << ':' << __LINE__ << std::endl;
     return nullptr;
 }
 //=================================================================================================//
 template <typename DataType>
-void BaseParticles::addVariableToList(ParticleVariables &variable_set, const std::string &variable_name)
+void BaseParticles::addVariableToList(ParticleVariables &variable_set, const std::string &name)
 {
     DiscreteVariable<DataType> *variable =
-        findVariableByName<DataType, DiscreteVariable>(all_discrete_variables_, variable_name);
+        findVariableByName<DataType, DiscreteVariable>(all_discrete_variables_, name);
 
     if (variable != nullptr)
     {
         DiscreteVariable<DataType> *listed_variable =
-            findVariableByName<DataType, DiscreteVariable>(variable_set, variable_name);
+            findVariableByName<DataType, DiscreteVariable>(variable_set, name);
 
         if (listed_variable == nullptr)
         {
@@ -111,16 +131,16 @@ void BaseParticles::addVariableToList(ParticleVariables &variable_set, const std
     }
     else
     {
-        std::cout << "\n Error: the variable '" << variable_name << "' to write is not particle data!" << std::endl;
+        std::cout << "\n Error: the variable '" << name << "' to write is not particle data!" << std::endl;
         std::cout << __FILE__ << ':' << __LINE__ << std::endl;
         exit(1);
     }
 }
 //=================================================================================================//
 template <typename DataType>
-void BaseParticles::addVariableToWrite(const std::string &variable_name)
+void BaseParticles::addVariableToWrite(const std::string &name)
 {
-    addVariableToList<DataType>(variables_to_write_, variable_name);
+    addVariableToList<DataType>(variables_to_write_, name);
 }
 //=================================================================================================//
 template <class DerivedVariableMethod, class... Ts>
@@ -130,29 +150,29 @@ void BaseParticles::addDerivedVariableToWrite(Ts &&...args)
         derived_particle_data_.createPtr<SimpleDynamics<DerivedVariableMethod>>(sph_body_, std::forward<Ts>(args)...);
     derived_variables_.push_back(derived_data);
     using DerivedDataType = typename DerivedVariableMethod::DerivedDataType;
-    addVariableToList<DerivedDataType>(variables_to_write_, derived_data->variable_name_);
+    addVariableToList<DerivedDataType>(variables_to_write_, derived_data->name_);
 }
 //=================================================================================================//
 template <typename DataType>
-void BaseParticles::addVariableToRestart(const std::string &variable_name)
+void BaseParticles::addVariableToRestart(const std::string &name)
 {
-    addVariableToList<DataType>(variables_to_restart_, variable_name);
+    addVariableToList<DataType>(variables_to_restart_, name);
 }
 //=================================================================================================//
 template <typename DataType>
-void BaseParticles::addVariableToReload(const std::string &variable_name)
+void BaseParticles::addVariableToReload(const std::string &name)
 {
-    addVariableToList<DataType>(variables_to_reload_, variable_name);
+    addVariableToList<DataType>(variables_to_reload_, name);
 }
 //=================================================================================================//
 template <typename DataType>
-void BaseParticles::registerSortableVariable(const std::string &variable_name)
+void BaseParticles::registerSortableVariable(const std::string &name)
 {
-    DiscreteVariable<DataType> *variable = findVariableByName<DataType>(all_discrete_variables_, variable_name);
+    DiscreteVariable<DataType> *variable = findVariableByName<DataType>(all_discrete_variables_, name);
 
     if (variable != nullptr)
     {
-        DiscreteVariable<DataType> *listed_variable = findVariableByName<DataType>(sortable_variables_, variable_name);
+        DiscreteVariable<DataType> *listed_variable = findVariableByName<DataType>(sortable_variables_, name);
 
         if (listed_variable == nullptr)
         {
@@ -164,7 +184,7 @@ void BaseParticles::registerSortableVariable(const std::string &variable_name)
     }
     else
     {
-        std::cout << "\n Error: the variable '" << variable_name << "' to write is not particle data!" << std::endl;
+        std::cout << "\n Error: the variable '" << name << "' to write is not particle data!" << std::endl;
         std::cout << __FILE__ << ':' << __LINE__ << std::endl;
         exit(1);
     }
@@ -323,9 +343,9 @@ void BaseParticles::writeParticlesToVtk(StreamType &output_stream)
 //=================================================================================================//
 template <typename DataType>
 BaseDerivedVariable<DataType>::
-    BaseDerivedVariable(SPHBody &sph_body, const std::string &variable_name)
-    : variable_name_(variable_name),
-      derived_variable_(sph_body.getBaseParticles().registerSharedVariable<DataType>(variable_name)){};
+    BaseDerivedVariable(SPHBody &sph_body, const std::string &name)
+    : name_(name),
+      derived_variable_(sph_body.getBaseParticles().registerSharedVariable<DataType>(name)){};
 //=================================================================================================//
 } // namespace SPH
 #endif // BASE_PARTICLES_HPP
