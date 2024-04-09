@@ -22,35 +22,10 @@ BaseParticles::BaseParticles(SPHBody &sph_body, BaseMaterial *base_material)
       write_restart_variable_to_xml_(variables_to_restart_, restart_xml_parser_),
       write_reload_variable_to_xml_(variables_to_reload_, reload_xml_parser_),
       read_restart_variable_from_xml_(variables_to_restart_, restart_xml_parser_),
-      read_reload_variable_from_xml_(variables_to_reload_, reload_xml_parser_),
-      pos_(*registerSharedVariable<Vecd>("Position")),
-      Vol_(*registerSharedVariable<Real>("VolumetricMeasure"))
-{
-    //----------------------------------------------------------------------
-    //		add particle reload data on geometries
-    //----------------------------------------------------------------------
-    addVariableToList<Vecd>(variables_to_reload_, "Position");
-    addVariableToList<Real>(variables_to_reload_, "VolumetricMeasure");
-}
+      read_reload_variable_from_xml_(variables_to_reload_, reload_xml_parser_) {}
 //=================================================================================================//
 void BaseParticles::initializeOtherVariables()
 {
-    registerSharedVariable<Vecd>("Velocity");
-    StdLargeVec<Real> &rho = *registerSharedVariable<Real>("Density", base_material_.ReferenceDensity());
-    registerSharedVariable<Real>([&](size_t i) -> Real
-                                 { return rho[i] * ParticleVolume(i); },
-                                 "Mass");
-
-    addVariableToWrite<Vecd>("Velocity");
-
-    addVariableToList<Vecd>(variables_to_restart_, "Position");
-    addVariableToList<Real>(variables_to_restart_, "VolumetricMeasure");
-    addVariableToList<Vecd>(variables_to_restart_, "Velocity");
-    addVariableToList<Real>(variables_to_restart_, "Density");
-    addVariableToList<Real>(variables_to_restart_, "Mass");
-    //----------------------------------------------------------------------
-    //		initialize unregistered data
-    //----------------------------------------------------------------------
     for (size_t i = 0; i != particles_bound_; ++i)
     {
         sorted_id_.push_back(sequence_.size());
@@ -95,6 +70,14 @@ void BaseParticles::switchToBufferParticle(size_t index)
     total_real_particles_ -= 1;
 }
 //=================================================================================================//
+void BaseParticles::computeDerivedVariables()
+{
+    for (auto &derived_variable : derived_variables_)
+    {
+        derived_variable->exec();
+    }
+}
+//=================================================================================================//
 void BaseParticles::writePltFileHeader(std::ofstream &output_file)
 {
     output_file << " VARIABLES = \"x\",\"y\",\"z\",\"ID\"";
@@ -121,21 +104,25 @@ void BaseParticles::writePltFileHeader(std::ofstream &output_file)
     };
 }
 //=================================================================================================//
-void BaseParticles::computeDerivedVariables()
+void BaseParticles::writeParticlesToPltFile(std::ofstream &output_file)
 {
-    for (auto &derived_variable : derived_variables_)
+    writePltFileHeader(output_file);
+    output_file << "\n";
+
+    StdLargeVec<Vecd> &pos = *getVariableByName<Vecd>("Positions");
+    size_t total_real_particles = total_real_particles_;
+    for (size_t i = 0; i != total_real_particles; ++i)
     {
-        derived_variable->exec();
-    }
+        // write particle positions and index first
+        Vec3d position = upgradeToVec3d(pos[i]);
+        output_file << position[0] << " " << position[1] << " " << position[2] << " " << i << " ";
+        writePltFileParticleData(output_file, i);
+        output_file << "\n";
+    };
 }
 //=================================================================================================//
 void BaseParticles::writePltFileParticleData(std::ofstream &output_file, size_t index)
 {
-    // write particle positions and index first
-    Vec3d particle_position = upgradeToVec3d(pos_[index]);
-    output_file << particle_position[0] << " " << particle_position[1] << " " << particle_position[2] << " "
-                << index << " ";
-
     constexpr int type_index_int = DataTypeIndex<int>::value;
     for (DiscreteVariable<int> *variable : std::get<type_index_int>(variables_to_write_))
     {
@@ -159,19 +146,6 @@ void BaseParticles::writePltFileParticleData(std::ofstream &output_file, size_t 
     };
 }
 //=================================================================================================//
-void BaseParticles::writeParticlesToPltFile(std::ofstream &output_file)
-{
-    writePltFileHeader(output_file);
-    output_file << "\n";
-
-    size_t total_real_particles = total_real_particles_;
-    for (size_t i = 0; i != total_real_particles; ++i)
-    {
-        writePltFileParticleData(output_file, i);
-        output_file << "\n";
-    };
-}
-//=================================================================================================//
 void BaseParticles::writeSurfaceParticlesToVtuFile(std::ostream &output_file, BodySurface &surface_particles)
 {
     size_t total_surface_particles = surface_particles.body_part_particles_.size();
@@ -180,10 +154,12 @@ void BaseParticles::writeSurfaceParticlesToVtuFile(std::ostream &output_file, Bo
     output_file << "   <Points>\n";
     output_file << "    <DataArray Name=\"Position\" type=\"Float32\"  NumberOfComponents=\"3\" Format=\"ascii\">\n";
     output_file << "    ";
+
+    StdLargeVec<Vecd> &pos = *getVariableByName<Vecd>("Positions");
     for (size_t i = 0; i != total_surface_particles; ++i)
     {
         size_t particle_i = surface_particles.body_part_particles_[i];
-        Vec3d particle_position = upgradeToVec3d(pos_[particle_i]);
+        Vec3d particle_position = upgradeToVec3d(pos[particle_i]);
         output_file << particle_position[0] << " " << particle_position[1] << " " << particle_position[2] << " ";
     }
     output_file << std::endl;

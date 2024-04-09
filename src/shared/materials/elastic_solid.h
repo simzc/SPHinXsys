@@ -103,9 +103,9 @@ class ElasticSolid : public Solid
     /** Define the calculation of the stress matrix for postprocessing */
     virtual std::string getRelevantStressMeasureName() = 0;
     /** Get  average velocity when interacting with fluid. */
-    virtual StdLargeVec<Vecd> *AverageVelocity() override { return getVariableByName<Vecd>("AverageVelocity"); };
+    virtual StdLargeVec<Vecd> *AverageVelocity(BaseParticles *base_particles) override;
     /** Get  average acceleration when interacting with fluid. */
-    virtual StdLargeVec<Vecd> *AverageForce() override { return getVariableByName<Vecd>("AverageForce"); };
+    virtual StdLargeVec<Vecd> *AverageForce(BaseParticles *base_particles) override;
 
     virtual ElasticSolid *ThisObjectPtr() override { return this; };
 };

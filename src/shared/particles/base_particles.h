@@ -174,11 +174,6 @@ class BaseParticles
     void readFromXmlForReloadParticle(std::string &filefullpath);
     XmlParser *getReloadXmlParser() { return &reload_xml_parser_; };
     virtual BaseParticles *ThisObjectPtr() { return this; };
-    //----------------------------------------------------------------------
-    //		Relation relate volume, surface and linear particles
-    //----------------------------------------------------------------------
-    virtual Real ParticleVolume(size_t index) { return Vol_[index]; }
-    virtual Real ParticleSpacing(size_t index) { return std::pow(Vol_[index], 1.0 / Real(Dimensions)); }
 
   protected:
     SPHBody &sph_body_;
@@ -239,9 +234,6 @@ class BaseParticles
   protected:
     OperationOnDataAssemble<ParticleVariables, WriteAParticleVariableToXml> write_restart_variable_to_xml_, write_reload_variable_to_xml_;
     OperationOnDataAssemble<ParticleVariables, ReadAParticleVariableFromXml> read_restart_variable_from_xml_, read_reload_variable_from_xml_;
-
-    StdLargeVec<Vecd> &pos_; /**< Position */
-    StdLargeVec<Real> &Vol_; /**< Volumetric measure, also area and length of surface and linear particle */
 };
 
 /**

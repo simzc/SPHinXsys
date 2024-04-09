@@ -10,8 +10,13 @@ namespace SPH
 ParticleGenerator<Base>::ParticleGenerator(SPHBody &sph_body)
     : base_particles_(sph_body.getBaseParticles()),
       particle_spacing_ref_(sph_body.sph_adaptation_->ReferenceSpacing()),
-      pos_(base_particles_.pos_), Vol_(base_particles_.Vol_),
-      unsorted_id_(base_particles_.unsorted_id_) {}
+      pos_(*base_particles_.registerSharedVariable<Vecd>("Positions")),
+      Vol_(*base_particles_.registerSharedVariable<Real>("VolumetricMeasure")),
+      unsorted_id_(base_particles_.unsorted_id_)
+{
+    base_particles_.addVariableToReload<Vecd>("Position");
+    base_particles_.addVariableToReload<Real>("VolumetricMeasure");
+}
 //=================================================================================================//
 void ParticleGenerator<Base>::initializePosition(const Vecd &position)
 {
@@ -35,13 +40,21 @@ void ParticleGenerator<Base>::initializePositionAndVolumetricMeasure(
 //=================================================================================================//
 ParticleGenerator<Surface>::ParticleGenerator(SPHBody &sph_body)
     : ParticleGenerator<Base>(sph_body),
-      n_(*base_particles_.getVariableByName<Vecd>("NormalDirection")),
-      thickness_(*base_particles_.getVariableByName<Real>("Thickness")) {}
+      n_(*base_particles_.registerSharedVariable<Vecd>("NormalDirection")),
+      thickness_(*base_particles_.registerSharedVariable<Real>("Thickness")),
+      transformation_matrix_(*base_particles_.registerSharedVariable<Matd>("TransformationMatrix"))
+{
+    base_particles_.addVariableToReload<Vecd>("NormalDirection");
+    base_particles_.addVariableToReload<Real>("Thickness");
+    base_particles_.addVariableToReload<Matd>("TransformationMatrix");
+    sph_body.sph_adaptation_->getKernel()->reduceOnce();
+}
 //=================================================================================================//
 void ParticleGenerator<Surface>::initializeSurfaceProperties(const Vecd &surface_normal, Real thickness)
 {
     n_.push_back(surface_normal);
     thickness_.push_back(thickness);
+    transformation_matrix_.push_back(getTransformationMatrix(surface_normal));
 }
 //=================================================================================================//
 void ParticleGenerator<Observer>::initializeGeometricVariables()

@@ -551,7 +551,7 @@ void InnerRelationInFVM::searchNeighborsByParticles(size_t total_particles, Base
                     {
                         r_ij = node1_to_center_direction.dot(normal_vector) * 2.0;
                     }
-                    Real dW_ij = -interface_area_size  / (2.0 * Vol_i * Vol_n[index_j]);
+                    Real dW_ij = -interface_area_size / (2.0 * Vol_i * Vol_n[index_j]);
                     get_neighbor_relation(neighborhood, r_ij, dW_ij, normal_vector, index_j);
                 }
             }
@@ -731,11 +731,7 @@ void BodyStatesRecordingInMeshToVtp::writeWithFileName(const std::string &sequen
 //=================================================================================================//
 BoundaryConditionSetupInFVM::
     BoundaryConditionSetupInFVM(BaseInnerRelationInFVM &inner_relation, GhostCreationFromMesh &ghost_creation)
-    : fluid_dynamics::FluidDataInner(inner_relation), rho_(particles_->rho_),
-      Vol_(particles_->Vol_), mass_(particles_->mass_),
-      p_(*particles_->getVariableByName<Real>("Pressure")),
-      vel_(particles_->vel_), pos_(particles_->pos_),
-      mom_(*particles_->getVariableByName<Vecd>("Momentum")),
+    : fluid_dynamics::FluidDataInner(inner_relation),
       ghost_bound_(ghost_creation.ghost_bound_),
       each_boundary_type_with_all_ghosts_index_(ghost_creation.each_boundary_type_with_all_ghosts_index_),
       each_boundary_type_with_all_ghosts_eij_(ghost_creation.each_boundary_type_with_all_ghosts_eij_),
