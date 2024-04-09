@@ -50,10 +50,7 @@ class SolidParticles : public BaseParticles
     virtual ~SolidParticles(){};
     Solid &solid_;
 
-    /** Get wall average velocity when interacting with fluid. */
-    virtual StdLargeVec<Vecd> *AverageVelocity() { return getVariableByName<Vecd>("Velocity"); };
-    /** Get wall average acceleration when interacting with fluid. */
-    virtual StdLargeVec<Vecd> *AverageForce() { return getVariableByName<Vecd>("Force"); };
+
     /** Initialized variables for solid particles. */
     virtual void initializeOtherVariables() override;
     /** Return this pointer. */
@@ -70,11 +67,6 @@ class ElasticSolidParticles : public SolidParticles
     ElasticSolidParticles(SPHBody &sph_body, ElasticSolid *elastic_solid);
     virtual ~ElasticSolidParticles(){};
     ElasticSolid &elastic_solid_;
-
-    /** Get wall average velocity when interacting with fluid. */
-    virtual StdLargeVec<Vecd> *AverageVelocity() override { return getVariableByName<Vecd>("AverageVelocity"); };
-    /** Get wall average acceleration when interacting with fluid. */
-    virtual StdLargeVec<Vecd> *AverageForce() override { return getVariableByName<Vecd>("AverageForce"); };
 
     /** Initialize the variables for elastic particle. */
     virtual void initializeOtherVariables() override;
