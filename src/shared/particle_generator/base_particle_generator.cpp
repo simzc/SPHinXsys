@@ -41,12 +41,10 @@ void ParticleGenerator<Base>::initializePositionAndVolumetricMeasure(
 ParticleGenerator<Surface>::ParticleGenerator(SPHBody &sph_body)
     : ParticleGenerator<Base>(sph_body),
       n_(*base_particles_.registerSharedVariable<Vecd>("NormalDirection")),
-      thickness_(*base_particles_.registerSharedVariable<Real>("Thickness")),
-      transformation_matrix_(*base_particles_.registerSharedVariable<Matd>("TransformationMatrix"))
+      thickness_(*base_particles_.registerSharedVariable<Real>("Thickness"))
 {
     base_particles_.addVariableToReload<Vecd>("NormalDirection");
     base_particles_.addVariableToReload<Real>("Thickness");
-    base_particles_.addVariableToReload<Matd>("TransformationMatrix");
     sph_body.sph_adaptation_->getKernel()->reduceOnce();
 }
 //=================================================================================================//
@@ -54,7 +52,6 @@ void ParticleGenerator<Surface>::initializeSurfaceProperties(const Vecd &surface
 {
     n_.push_back(surface_normal);
     thickness_.push_back(thickness);
-    transformation_matrix_.push_back(getTransformationMatrix(surface_normal));
 }
 //=================================================================================================//
 void ParticleGenerator<Observer>::initializeGeometricVariables()
