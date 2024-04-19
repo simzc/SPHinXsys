@@ -31,6 +31,7 @@
 
 #include "secondary_structure.h"
 
+#include "body_part_by_particle.h"
 namespace SPH
 {
 /**
@@ -53,7 +54,7 @@ class TreeBody : public SecondaryStructure, public RealBody
     Branch *root_;
 
     template <typename... Args>
-    TreeBody(Args &&...args)
+    TreeBody(Args &&... args)
         : SecondaryStructure(), RealBody(std::forward<Args>(args)...), last_branch_id_(0)
     {
         root_ = branches_ptr_keeper_.createPtr<Branch>(this);

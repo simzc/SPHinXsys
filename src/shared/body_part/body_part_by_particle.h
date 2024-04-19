@@ -21,41 +21,19 @@
  *                                                                           *
  * ------------------------------------------------------------------------- */
 /**
- * @file 	base_body_part.h
+ * @file 	body_part_by_particle.h
  * @brief 	This is the base classes of body parts.
  * @details	There two main type of body parts. One is part by particle.
  * @author	Chi Zhang and Xiangyu Hu
  */
 
-#ifndef BASE_BODY_PART_H
-#define BASE_BODY_PART_H
+#ifndef BODY_PART_BY_PARTICLE_H
+#define BODY_PART_BY_PARTICLE_H
 
-#include "base_body.h"
-
-#include <string>
+#include "body_part.h"
 
 namespace SPH
 {
-/**
- * @class BodyPart
- * @brief An auxillary class for SPHBody to indicate a part of the body.
- */
-using namespace std::placeholders;
-class BodyPart
-{
-  public:
-    BodyPart(SPHBody &sph_body, const std::string &body_part_name)
-        : sph_body_(sph_body), body_part_name_(body_part_name){};
-    virtual ~BodyPart(){};
-
-    SPHBody &getSPHBody() { return sph_body_; };
-    std::string getName() { return body_part_name_; };
-
-  protected:
-    SPHBody &sph_body_;
-    std::string body_part_name_;
-};
-
 /**
  * @class BodyPartByParticle
  * @brief A body part with a collection of particles.
@@ -93,27 +71,6 @@ class BodyPartByParticle : public BodyPart
 
     typedef std::function<void(size_t)> TaggingParticleMethod;
     void tagParticles(TaggingParticleMethod &tagging_particle_method);
-};
-
-/**
- * @class BodyPartByCell
- * @brief A body part with a collection of cell lists.
- */
-class BodyPartByCell : public BodyPart
-{
-  public:
-    ConcurrentCellLists body_part_cells_; /**< Collection of cells to indicate the body part. */
-    ConcurrentCellLists &LoopRange() { return body_part_cells_; };
-    size_t SizeOfLoopRange();
-
-    BodyPartByCell(RealBody &real_body, const std::string &body_part_name)
-        : BodyPart(real_body, body_part_name), cell_linked_list_(real_body.getCellLinkedList()){};
-    virtual ~BodyPartByCell(){};
-
-  protected:
-    BaseCellLinkedList &cell_linked_list_;
-    typedef std::function<bool(Vecd, Real)> TaggingCellMethod;
-    void tagCells(TaggingCellMethod &tagging_cell_method);
 };
 
 /**
@@ -166,67 +123,5 @@ class BodySurfaceLayer : public BodyPartByParticle
     void tagSurfaceLayer(size_t particle_index);
 };
 
-/**
- * @class BodyRegionByCell
- * @brief A body part with the cell lists within a prescribed shape.
- */
-class BodyRegionByCell : public BodyPartByCell
-{
-  private:
-    SharedPtrKeeper<Shape> shape_ptr_keeper_;
-
-  public:
-    BodyRegionByCell(RealBody &real_body, Shape &body_part_shape);
-    BodyRegionByCell(RealBody &real_body, SharedPtr<Shape> shape_ptr);
-    virtual ~BodyRegionByCell(){};
-    Shape &getBodyPartShape() { return body_part_shape_; };
-
-  private:
-    Shape &body_part_shape_;
-    bool checkNotFar(Vecd cell_position, Real threshold);
-};
-
-/**
- * @class NearShapeSurface
- * @brief A body part with the cell lists near the surface of a prescribed shape.
- * @ details The body part shape can be that of the body,
- * or a sub shape of the body shape, or a shape independent of the body shape.
- * Note that only cells near the surface of the body part shape are included.
- */
-class NearShapeSurface : public BodyPartByCell
-{
-  private:
-    UniquePtrKeeper<LevelSetShape> level_set_shape_keeper_;
-
-  public:
-    NearShapeSurface(RealBody &real_body, SharedPtr<Shape> shape_ptr);
-    NearShapeSurface(RealBody &real_body, LevelSetShape &level_set_shape);
-    explicit NearShapeSurface(RealBody &real_body);
-    NearShapeSurface(RealBody &real_body, const std::string &sub_shape_name);
-    virtual ~NearShapeSurface(){};
-    LevelSetShape &getLevelSetShape() { return level_set_shape_; };
-
-  private:
-    LevelSetShape &level_set_shape_;
-    bool checkNearSurface(Vecd cell_position, Real threshold);
-};
-
-/**
- * @class AlignedBoxRegion
- * @brief A template body part with the collection of particles within by an AlignedBoxShape.
- */
-template <class BodyRegionType>
-class AlignedBoxRegion : public BodyRegionType
-{
-  public:
-    AlignedBoxShape &aligned_box_;
-
-    AlignedBoxRegion(RealBody &real_body, SharedPtr<AlignedBoxShape> aligned_box_ptr)
-        : BodyRegionType(real_body, aligned_box_ptr), aligned_box_(*aligned_box_ptr.get()){};
-    virtual ~AlignedBoxRegion(){};
-};
-
-using BodyAlignedBoxByParticle = AlignedBoxRegion<BodyRegionByParticle>;
-using BodyAlignedBoxByCell = AlignedBoxRegion<BodyRegionByCell>;
 } // namespace SPH
-#endif // BASE_BODY_PART_H
+#endif // BODY_PART_BY_PARTICLE_H

@@ -30,7 +30,7 @@
 #define SOLID_BODY_H
 
 #include "base_body.h"
-#include "base_body_part.h"
+#include "body_part_by_particle.h"
 
 namespace SPH
 {
@@ -47,7 +47,7 @@ class SolidBody : public RealBody
 {
   public:
     template <typename... Args>
-    SolidBody(Args &&...args)
+    SolidBody(Args &&... args)
         : RealBody(std::forward<Args>(args)...)
     {
         sph_system_.solid_bodies_.push_back(this);

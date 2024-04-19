@@ -21,35 +21,38 @@
  *                                                                           *
  * ------------------------------------------------------------------------- */
 /**
- * @file 	secondary_structure.h
- * @brief 	A complex body is characterized with a secondary structure,
- * 			which can be imported externally or created according to specific rules.
- * 			The secondary structure will be used or even created by the corresponding
- * 			particle generator.
+ * @file 	body_part.h
+ * @brief 	This is the base classes of body parts.
+ * @details	There two main type of body parts. One is part by particle.
  * @author	Chi Zhang and Xiangyu Hu
  */
 
-#ifndef SECONDARY_STRUCTURE_H
-#define SECONDARY_STRUCTURE_H
+#ifndef BODY_PART_H
+#define BODY_PART_H
 
 #include "base_body.h"
-#include "base_geometry.h"
 
 namespace SPH
 {
+using namespace std::placeholders;
+
 /**
- * @class SecondaryStructure
- * @brief Abstract class as interface for all secondary structures.
- * Currently, it provides interface on building inner configuration.
- * The interface can be extended.
+ * @class BodyPart
+ * @brief An auxillary class for SPHBody to indicate a part of the body.
  */
-class SecondaryStructure
+class BodyPart
 {
   public:
-    explicit SecondaryStructure(){};
-    virtual ~SecondaryStructure(){};
+    BodyPart(SPHBody &sph_body, const std::string &body_part_name)
+        : sph_body_(sph_body), body_part_name_(body_part_name){};
+    virtual ~BodyPart(){};
 
-    virtual void buildParticleConfiguration(ParticleConfiguration &particle_configuration) = 0;
+    SPHBody &getSPHBody() { return sph_body_; };
+    std::string getName() { return body_part_name_; };
+
+  protected:
+    SPHBody &sph_body_;
+    std::string body_part_name_;
 };
 } // namespace SPH
-#endif // SECONDARY_STRUCTURE_H
+#endif // BODY_PART_H

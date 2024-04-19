@@ -21,35 +21,37 @@
  *                                                                           *
  * ------------------------------------------------------------------------- */
 /**
- * @file 	secondary_structure.h
- * @brief 	A complex body is characterized with a secondary structure,
- * 			which can be imported externally or created according to specific rules.
- * 			The secondary structure will be used or even created by the corresponding
- * 			particle generator.
+ * @file 	aligned_box_region.h
+ * @brief 	This is the base classes of body parts.
+ * @details	There two main type of body parts. One is part by particle.
  * @author	Chi Zhang and Xiangyu Hu
  */
 
-#ifndef SECONDARY_STRUCTURE_H
-#define SECONDARY_STRUCTURE_H
+#ifndef ALIGNED_BOX_REGION_H
+#define ALIGNED_BOX_REGION_H
 
-#include "base_body.h"
-#include "base_geometry.h"
+#include "body_part.h"
+#include "body_part_by_cell.h"
+#include "body_part_by_particle.h"
 
 namespace SPH
 {
 /**
- * @class SecondaryStructure
- * @brief Abstract class as interface for all secondary structures.
- * Currently, it provides interface on building inner configuration.
- * The interface can be extended.
+ * @class AlignedBoxRegion
+ * @brief A template body part with the collection of particles within by an AlignedBoxShape.
  */
-class SecondaryStructure
+template <class BodyRegionType>
+class AlignedBoxRegion : public BodyRegionType
 {
   public:
-    explicit SecondaryStructure(){};
-    virtual ~SecondaryStructure(){};
+    AlignedBoxShape &aligned_box_;
 
-    virtual void buildParticleConfiguration(ParticleConfiguration &particle_configuration) = 0;
+    AlignedBoxRegion(RealBody &real_body, SharedPtr<AlignedBoxShape> aligned_box_ptr)
+        : BodyRegionType(real_body, aligned_box_ptr), aligned_box_(*aligned_box_ptr.get()){};
+    virtual ~AlignedBoxRegion(){};
 };
+
+using BodyAlignedBoxByParticle = AlignedBoxRegion<BodyRegionByParticle>;
+using BodyAlignedBoxByCell = AlignedBoxRegion<BodyRegionByCell>;
 } // namespace SPH
-#endif // SECONDARY_STRUCTURE_H
+#endif // ALIGNED_BOX_REGION_H

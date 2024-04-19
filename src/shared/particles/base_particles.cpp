@@ -1,7 +1,6 @@
 #include "base_particles.hpp"
 
 #include "base_body.h"
-#include "base_body_part.h"
 #include "base_material.h"
 #include "base_particle_generator.h"
 #include "xml_parser.h"
@@ -46,8 +45,7 @@ void BaseParticles::initializeOtherVariables()
     registerVariable(force_prior_, "ForcePrior");
     registerVariable(rho_, "Density", base_material_.ReferenceDensity());
     registerVariable(mass_, "Mass",
-                     [&](size_t i) -> Real
-                     { return rho_[i] * ParticleVolume(i); });
+                     [&](size_t i) -> Real { return rho_[i] * ParticleVolume(i); });
     registerVariable(indicator_, "Indicator");
     /**
      *	add basic output particle data

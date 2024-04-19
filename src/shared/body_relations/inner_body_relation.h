@@ -31,6 +31,8 @@
 
 #include "base_body_relation.h"
 
+#include "body_part_by_particle.h"
+
 namespace SPH
 {
 /**

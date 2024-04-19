@@ -21,35 +21,19 @@
  *                                                                           *
  * ------------------------------------------------------------------------- */
 /**
- * @file 	secondary_structure.h
- * @brief 	A complex body is characterized with a secondary structure,
- * 			which can be imported externally or created according to specific rules.
- * 			The secondary structure will be used or even created by the corresponding
- * 			particle generator.
- * @author	Chi Zhang and Xiangyu Hu
+ * @file 	body_part_by_scope.h
+ * @brief 	This is the base classes of body parts.
+ * @details	There two main type of body parts. One is part by particle.
+ * @author	Xiangyu Hu
  */
 
-#ifndef SECONDARY_STRUCTURE_H
-#define SECONDARY_STRUCTURE_H
+#ifndef BODY_PART_BY_SCOPE_H
+#define BODY_PART_BY_SCOPE_H
 
 #include "base_body.h"
-#include "base_geometry.h"
 
 namespace SPH
 {
-/**
- * @class SecondaryStructure
- * @brief Abstract class as interface for all secondary structures.
- * Currently, it provides interface on building inner configuration.
- * The interface can be extended.
- */
-class SecondaryStructure
-{
-  public:
-    explicit SecondaryStructure(){};
-    virtual ~SecondaryStructure(){};
 
-    virtual void buildParticleConfiguration(ParticleConfiguration &particle_configuration) = 0;
-};
 } // namespace SPH
-#endif // SECONDARY_STRUCTURE_H
+#endif // BODY_PART_BY_SCOPE_H

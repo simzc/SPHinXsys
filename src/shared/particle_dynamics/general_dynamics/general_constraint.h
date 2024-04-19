@@ -30,6 +30,7 @@
 #ifndef GENERAL_CONSTRAINT_H
 #define GENERAL_CONSTRAINT_H
 
+#include "all_body_parts.h"
 #include "base_general_dynamics.h"
 
 namespace SPH
@@ -73,8 +74,7 @@ class MotionConstraint : public BaseLocalDynamics<DynamicsIdentifier>, public Ge
           GeneralDataDelegateSimple(identifier.getSPHBody()),
           pos_(this->particles_->pos_),
           pos0_(*this->particles_->template registerSharedVariable<Vecd>(
-              "InitialPosition", [&](size_t index_i)
-              { return pos_[index_i]; })),
+              "InitialPosition", [&](size_t index_i) { return pos_[index_i]; })),
           vel_(this->particles_->vel_){};
 
     virtual ~MotionConstraint(){};

@@ -1,8 +1,8 @@
 #include "contact_body_relation.h"
+
 #include "all_particles.h"
 #include "base_particle_dynamics.h"
 #include "cell_linked_list.hpp"
-#include <numeric>
 
 namespace SPH
 {
@@ -47,8 +47,7 @@ void SurfaceContactRelation::resetNeighborhoodCurrentSize()
     for (size_t k = 0; k != contact_bodies_.size(); ++k)
     {
         particle_for(execution::ParallelPolicy(), body_part_particles_,
-                     [&](size_t index_i)
-                     {
+                     [&](size_t index_i) {
                          contact_configuration_[k][index_i].current_size_ = 0;
                      });
     }

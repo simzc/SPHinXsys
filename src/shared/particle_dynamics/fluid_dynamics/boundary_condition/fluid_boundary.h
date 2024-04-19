@@ -30,6 +30,7 @@
 #ifndef FLUID_BOUNDARY_H
 #define FLUID_BOUNDARY_H
 
+#include "all_body_parts.h"
 #include "base_fluid_dynamics.h"
 #include <mutex>
 

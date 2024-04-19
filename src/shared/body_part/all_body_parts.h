@@ -21,35 +21,17 @@
  *                                                                           *
  * ------------------------------------------------------------------------- */
 /**
- * @file 	secondary_structure.h
- * @brief 	A complex body is characterized with a secondary structure,
- * 			which can be imported externally or created according to specific rules.
- * 			The secondary structure will be used or even created by the corresponding
- * 			particle generator.
+ * @file 	all_body_parts.h
+ * @brief 	This is the header file that user code should include to pick up all
+ *          bodies used in SPHinXsys.
  * @author	Chi Zhang and Xiangyu Hu
  */
+#ifndef ALL_BODY_PARTS_H
+#define ALL_BODY_PARTS_H
 
-#ifndef SECONDARY_STRUCTURE_H
-#define SECONDARY_STRUCTURE_H
+#include "aligned_box_region.h"
+#include "body_part_by_cell.h"
+#include "body_part_by_particle.h"
+#include "body_part_by_scope.h"
 
-#include "base_body.h"
-#include "base_geometry.h"
-
-namespace SPH
-{
-/**
- * @class SecondaryStructure
- * @brief Abstract class as interface for all secondary structures.
- * Currently, it provides interface on building inner configuration.
- * The interface can be extended.
- */
-class SecondaryStructure
-{
-  public:
-    explicit SecondaryStructure(){};
-    virtual ~SecondaryStructure(){};
-
-    virtual void buildParticleConfiguration(ParticleConfiguration &particle_configuration) = 0;
-};
-} // namespace SPH
-#endif // SECONDARY_STRUCTURE_H
+#endif // ALL_BODY_PARTS_H
