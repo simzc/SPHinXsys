@@ -52,15 +52,15 @@ class AllParticles : public ParticleScope
 template <int INDICATOR>
 class IndicatedParticles : public ParticleScope
 {
-    StdLargeVec<int> &indicator_;
+    StdLargeVec<int> *indicator_;
 
   public:
     explicit IndicatedParticles(BaseParticles *base_particles)
         : ParticleScope(),
-          indicator_(*base_particles->getVariableByName<int>("Indicator")){};
+          indicator_(base_particles->getVariableByName<int>("Indicator")){};
     bool operator()(size_t index_i)
     {
-        return indicator_[index_i] == INDICATOR;
+        return (*indicator_)[index_i] == INDICATOR;
     };
 };
 
@@ -69,15 +69,15 @@ using BulkParticles = IndicatedParticles<0>;
 template <int INDICATOR>
 class NotIndicatedParticles : public ParticleScope
 {
-    StdLargeVec<int> &indicator_;
+    StdLargeVec<int> *indicator_;
 
   public:
     explicit NotIndicatedParticles(BaseParticles *base_particles)
         : ParticleScope(),
-          indicator_(*base_particles->getVariableByName<int>("Indicator")){};
+          indicator_(base_particles->getVariableByName<int>("Indicator")){};
     bool operator()(size_t index_i)
     {
-        return indicator_[index_i] != INDICATOR;
+        return (*indicator_)[index_i] != INDICATOR;
     };
 };
 //----------------------------------------------------------------------

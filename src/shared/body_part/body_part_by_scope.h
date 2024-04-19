@@ -34,6 +34,32 @@
 
 namespace SPH
 {
+template <class RangeType, class ScopeType>
+class ParticleRange : public RangeType, public ScopeType
+{
+  public:
+    template <typename... Args>
+    ParticleRange(const ScopeType &scope, Args &&... args)
+        : RangeType(std::forward<Args>(args)...),
+          ScopeType(scope){};
+};
 
+template <typename ParticleScope>
+class BodyPartByScope : public BodyPart
+{
+  public:
+    BodyPartByScope(SPHBody &sph_body, std::string body_part_name)
+        : BodyPart(sph_body, body_part_name),
+          particle_scope_(&sph_body.getBaseParticles()){};
+
+    template <typename Range>
+    ParticleRange<Range, ParticleScope> LoopRange()
+    {
+        return ParticleRange<Range, ParticleScope>(particle_scope_, sph_body_.LoopRange());
+    };
+
+  protected:
+    ParticleScope particle_scope_;
+};
 } // namespace SPH
 #endif // BODY_PART_BY_SCOPE_H
