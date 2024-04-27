@@ -38,13 +38,6 @@ BaseParticles::BaseParticles(SPHBody &sph_body, BaseMaterial *base_material)
 //=================================================================================================//
 void BaseParticles::initializeOtherVariables()
 {
-    //----------------------------------------------------------------------
-    //		register non-geometric data
-    //----------------------------------------------------------------------
-    registerVariable(rho_, "Density", base_material_.ReferenceDensity());
-    registerVariable(mass_, "Mass",
-                     [&](size_t i) -> Real
-                     { return rho_[i] * ParticleVolume(i); });
     registerVariable(indicator_, "Indicator");
     //----------------------------------------------------------------------
     //		initialize unregistered data

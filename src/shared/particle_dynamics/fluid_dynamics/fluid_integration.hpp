@@ -49,6 +49,8 @@ Integration1stHalf<Inner<>, RiemannSolverType, KernelCorrectionType>::
     //----------------------------------------------------------------------
     particles_->addVariableToRestart<Vecd>("Position");
     particles_->addVariableToRestart<Real>("VolumetricMeasure");
+    particles_->addVariableToRestart<Real>("Density");
+    particles_->addVariableToRestart<Real>("Mass");
     particles_->addVariableToRestart<Real>("Pressure");
     particles_->addVariableToRestart<Real>("DensityChangeRate");
     particles_->addVariableToRestart<Vecd>("Velocity");
