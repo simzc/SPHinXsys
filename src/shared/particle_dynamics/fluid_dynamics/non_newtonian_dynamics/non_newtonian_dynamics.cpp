@@ -55,7 +55,7 @@ void Oldroyd_BIntegration1stHalf<Contact<Wall>>::interaction(size_t index_i, Rea
     Vecd force = Vecd::Zero();
     for (size_t k = 0; k < contact_configuration_.size(); ++k)
     {
-        StdLargeVec<Real>& Vol_k = *(wall_Vol_[k]);
+        StdLargeVec<Real> &Vol_k = *(wall_Vol_[k]);
         Neighborhood &wall_neighborhood = (*contact_configuration_[k])[index_i];
         for (size_t n = 0; n != wall_neighborhood.current_size_; ++n)
         {
